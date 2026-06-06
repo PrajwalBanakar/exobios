@@ -1,51 +1,108 @@
 <script setup>
-import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import AppShell from '../components/AppShell.vue'
+import { usePatientsStore } from '../stores/patients'
 
 const router = useRouter()
+const route  = useRoute()
+const store  = usePatientsStore()
+
+const isEdit   = computed(() => route.name === 'EditAssessment')
+const patientId = computed(() => isEdit.value ? Number(route.params.id) : null)
+const patient  = computed(() => isEdit.value ? store.getById(patientId.value) : null)
 
 const form = reactive({
-  fullName: 'Ramesh Kumar',
-  age: '45',
-  gender: 'Male',
-  phone: '9876543210',
-  location: 'Rampur, Uttar Pradesh - 244901',
-  village: 'Rampur',
-  abhaId: '',
+  fullName: '', age: '', gender: 'Male', phone: '', location: '', village: '', abhaId: '',
 })
 
-const sections = ref({
-  basic: true,
-  family: false,
-  history: false,
-  symptoms: false,
-  examination: false,
-  legacy: false,
+const sections = ref({ basic: true, family: false, history: false, symptoms: false, examination: false, legacy: false })
+
+function toggleSection(key) { sections.value[key] = !sections.value[key] }
+
+// Vitals: "-" for new, static data for edit
+const vitals = computed(() => {
+  if (isEdit.value) {
+    return {
+      temperature: { value: '101.2 °F', color: 'text-red-500',    label: 'Temperature' },
+      bp:          { value: '120/80',   sub: 'mmHg', color: 'text-green-500',  label: 'BP' },
+      spo2:        { value: '98%',      color: 'text-green-500',  label: 'SpO₂' },
+      pulse:       { value: '88',       sub: 'BPM',  color: 'text-orange-400', label: 'Pulse' },
+      respRate:    { value: '20',       sub: '/min', color: 'text-gray-800',   label: 'Resp. Rate' },
+      sugar:       { value: '110',      sub: 'mg/dL', color: 'text-red-500',   label: 'Sugar' },
+    }
+  }
+  return {
+    temperature: { value: '—', color: 'text-gray-400', label: 'Temperature' },
+    bp:          { value: '—', color: 'text-gray-400', label: 'BP' },
+    spo2:        { value: '—', color: 'text-gray-400', label: 'SpO₂' },
+    pulse:       { value: '—', color: 'text-gray-400', label: 'Pulse' },
+    respRate:    { value: '—', color: 'text-gray-400', label: 'Resp. Rate' },
+    sugar:       { value: '—', color: 'text-gray-400', label: 'Sugar' },
+  }
 })
 
-const vitals = {
-  temperature: { value: '101.2 °F', color: 'text-red-500', label: 'Temperature' },
-  bp:          { value: '120/80',  sub: 'mmHg', color: 'text-green-500', label: 'BP' },
-  spo2:        { value: '98%',     color: 'text-green-500', label: 'SpO₂' },
-  pulse:       { value: '88',      sub: 'BPM',  color: 'text-orange-400', label: 'Pulse' },
-  respRate:    { value: '20',      sub: '/min', color: 'text-gray-800', label: 'Resp. Rate' },
-  sugar:       { value: '110',     sub: 'mg/dL', color: 'text-red-500', label: 'Sugar' },
-}
+const draftKey = computed(() => isEdit.value ? `assessment_draft_${patientId.value}` : 'assessment_draft_new')
+const savingDraft = ref(false)
+const draftSaved  = ref(false)
 
-function toggleSection(key) {
-  sections.value[key] = !sections.value[key]
+onMounted(() => {
+  if (isEdit.value && patient.value) {
+    form.fullName = patient.value.name    || ''
+    form.age      = String(patient.value.age || '')
+    form.gender   = patient.value.gender  || 'Male'
+    form.phone    = patient.value.phone   || ''
+    form.location = patient.value.location || ''
+    form.village  = patient.value.village  || ''
+    form.abhaId   = patient.value.abhaId   || ''
+  } else {
+    // Load draft if exists
+    const saved = localStorage.getItem(draftKey.value)
+    if (saved) {
+      try {
+        const d = JSON.parse(saved)
+        Object.assign(form, d)
+      } catch {}
+    }
+  }
+})
+
+function saveDraft() {
+  savingDraft.value = true
+  localStorage.setItem(draftKey.value, JSON.stringify({ ...form }))
+  setTimeout(() => { savingDraft.value = false; draftSaved.value = true }, 400)
+  setTimeout(() => { draftSaved.value = false }, 2200)
 }
 
 function analyze() {
-  router.push('/assessment/1/result')
+  const now = new Date()
+  const assessmentTime = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) +
+    ', ' + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+
+  if (isEdit.value) {
+    store.update(patientId.value, {
+      name: form.fullName, age: Number(form.age), gender: form.gender,
+      phone: form.phone, location: form.location, village: form.village, abhaId: form.abhaId,
+      assessmentTime,
+    })
+    localStorage.removeItem(draftKey.value)
+    router.push(`/assessment/${patientId.value}/result`)
+  } else {
+    const newId = store.add({
+      name: form.fullName, age: Number(form.age) || 0, gender: form.gender,
+      phone: form.phone, location: form.location, village: form.village, abhaId: form.abhaId,
+      assessmentTime,
+    })
+    localStorage.removeItem(draftKey.value)
+    router.push(`/assessment/${newId}/result`)
+  }
 }
 </script>
 
 <template>
   <AppShell>
-    <template #page-title>New Assessment</template>
-    <template #page-subtitle>Start a new patient assessment</template>
+    <template #page-title>{{ isEdit ? 'Edit Assessment' : 'New Assessment' }}</template>
+    <template #page-subtitle>{{ isEdit ? `Editing patient: ${patient?.name || ''}` : 'Start a new patient assessment' }}</template>
 
     <div class="p-6">
       <button @click="router.back()" class="flex items-center gap-1.5 text-sm text-blue-600 hover:underline mb-5">
@@ -66,32 +123,29 @@ function analyze() {
               </div>
               <div>
                 <div class="text-xs text-gray-500">Patient ID</div>
-                <div class="text-sm font-semibold text-gray-800">PT-2025-000123</div>
+                <div class="text-sm font-semibold text-gray-800">{{ isEdit ? `PT-2025-00${String(patientId).padStart(4,'0')}` : 'Auto-assigned on save' }}</div>
               </div>
             </div>
             <button class="flex items-center gap-2 px-3 py-2 border border-blue-200 text-blue-600 text-xs font-medium rounded-lg hover:bg-blue-50 transition">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                 <rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/>
-                <rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/>
-                <path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/>
-                <path d="M16 12h1"/><path d="M21 12v.01"/>
+                <rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/>
               </svg>
               Scan ABHA ID
             </button>
             <div class="ml-auto text-right text-xs text-gray-500">
               <div class="font-medium text-gray-700">Date &amp; Time</div>
-              <div>16 May 2025, 10:30 AM</div>
+              <div>{{ new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) }}, {{ new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) }}</div>
             </div>
             <div class="text-right text-xs">
               <div class="text-gray-500 mb-1">Assessment Type</div>
-              <span class="px-2.5 py-1 bg-blue-50 text-blue-600 border border-blue-200 text-xs font-medium rounded-md">New Assessment</span>
+              <span class="px-2.5 py-1 bg-blue-50 text-blue-600 border border-blue-200 text-xs font-medium rounded-md">{{ isEdit ? 'Edit Assessment' : 'New Assessment' }}</span>
             </div>
           </div>
 
           <!-- Basic Patient Info -->
           <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-            <button class="w-full flex items-center justify-between px-5 py-4"
-              @click="toggleSection('basic')">
+            <button class="w-full flex items-center justify-between px-5 py-4" @click="toggleSection('basic')">
               <div class="flex items-center gap-3">
                 <svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
@@ -106,28 +160,33 @@ function analyze() {
               <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="col-span-2 lg:col-span-1">
                   <label class="block text-xs font-medium text-gray-600 mb-1.5">Full Name <span class="text-red-500">*</span></label>
-                  <input v-model="form.fullName" type="text" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                  <input v-model="form.fullName" type="text" placeholder="Enter full name"
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                 </div>
                 <div>
                   <label class="block text-xs font-medium text-gray-600 mb-1.5">Age <span class="text-red-500">*</span></label>
-                  <input v-model="form.age" type="number" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                  <input v-model="form.age" type="number" min="0" max="120" placeholder="Age"
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                 </div>
                 <div>
                   <label class="block text-xs font-medium text-gray-600 mb-1.5">Gender <span class="text-red-500">*</span></label>
-                  <select v-model="form.gender" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                  <select v-model="form.gender"
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                     <option>Male</option><option>Female</option><option>Other</option>
                   </select>
                 </div>
                 <div>
                   <label class="block text-xs font-medium text-gray-600 mb-1.5">Phone Number <span class="text-red-500">*</span></label>
-                  <input v-model="form.phone" type="tel" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                  <input v-model="form.phone" type="tel" maxlength="10" placeholder="10-digit number"
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                 </div>
               </div>
               <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
                 <div class="col-span-2 lg:col-span-1">
                   <label class="block text-xs font-medium text-gray-600 mb-1.5">Location <span class="text-red-500">*</span></label>
                   <div class="relative">
-                    <input v-model="form.location" type="text" class="w-full border border-gray-200 rounded-lg px-3 py-2 pr-9 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                    <input v-model="form.location" type="text" placeholder="City, State - PIN"
+                      class="w-full border border-gray-200 rounded-lg px-3 py-2 pr-9 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                     <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
                     </svg>
@@ -135,7 +194,8 @@ function analyze() {
                 </div>
                 <div>
                   <label class="block text-xs font-medium text-gray-600 mb-1.5">Village / Area</label>
-                  <input v-model="form.village" type="text" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                  <input v-model="form.village" type="text" placeholder="Village or area name"
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                 </div>
                 <div>
                   <label class="block text-xs font-medium text-gray-600 mb-1.5">ABHA ID (Optional)</label>
@@ -145,7 +205,7 @@ function analyze() {
                     <button class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-500">
                       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                         <rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/>
-                        <rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/>
+                        <rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/>
                       </svg>
                     </button>
                   </div>
@@ -156,21 +216,18 @@ function analyze() {
 
           <!-- Collapsible sections -->
           <div v-for="sec in [
-            { key: 'family',      icon: 'family',  label: 'Family Information',   hint: 'Add relevant family medical history' },
-            { key: 'history',     icon: 'history', label: 'Past History',          hint: 'Add past illnesses, surgeries, allergies, medications' },
-            { key: 'symptoms',    icon: 'symptoms',label: 'Symptoms',              hint: 'Add chief complaint and select symptoms' },
-            { key: 'examination', icon: 'exam',    label: 'Examination Findings',  hint: 'Add clinical signs or examination findings' },
-            { key: 'legacy',      icon: 'legacy',  label: 'Legacy',                hint: 'Add relevant legacy information' },
+            { key: 'family',      label: 'Family Information',   hint: 'Add relevant family medical history' },
+            { key: 'history',     label: 'Past History',          hint: 'Add past illnesses, surgeries, allergies, medications' },
+            { key: 'symptoms',    label: 'Symptoms',              hint: 'Add chief complaint and select symptoms' },
+            { key: 'examination', label: 'Examination Findings',  hint: 'Add clinical signs or examination findings' },
+            { key: 'legacy',      label: 'Legacy Information',    hint: 'Add relevant legacy information' },
           ]" :key="sec.key"
             class="bg-white rounded-xl border border-gray-100 shadow-sm">
-            <button class="w-full flex items-center justify-between px-5 py-4"
-              @click="toggleSection(sec.key)">
+            <button class="w-full flex items-center justify-between px-5 py-4" @click="toggleSection(sec.key)">
               <div class="flex items-center gap-3">
-                <div class="w-5 h-5 text-blue-500">
-                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                  </svg>
-                </div>
+                <svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                </svg>
                 <span class="font-semibold text-gray-800">{{ sec.label }}</span>
                 <span class="text-xs text-gray-400">{{ sec.hint }}</span>
               </div>
@@ -190,7 +247,6 @@ function analyze() {
 
         <!-- Right: Vitals + AI -->
         <div class="w-72 flex-shrink-0 space-y-4">
-          <!-- Vitals card -->
           <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
             <div class="flex items-center gap-2 mb-4">
               <svg class="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
@@ -208,12 +264,10 @@ function analyze() {
             </div>
           </div>
 
-          <!-- AI Assistant -->
           <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
             <div class="flex items-center gap-2 mb-2">
               <svg class="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                <path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2z"/>
-                <path d="M12 8v4l3 3"/>
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
               </svg>
               <h3 class="font-semibold text-gray-800 text-sm">AI Assistant</h3>
             </div>
@@ -232,11 +286,11 @@ function analyze() {
       <div class="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
         <div class="flex items-center gap-3">
           <button @click="router.back()" class="px-5 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition">Cancel</button>
-          <button class="flex items-center gap-2 px-5 py-2.5 border border-blue-200 text-blue-600 text-sm font-medium rounded-lg hover:bg-blue-50 transition">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
-            </svg>
-            Save Draft
+          <button @click="saveDraft"
+            class="flex items-center gap-2 px-5 py-2.5 border border-blue-200 text-blue-600 text-sm font-medium rounded-lg hover:bg-blue-50 transition">
+            <svg v-if="savingDraft" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v8H4z"/></svg>
+            <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            {{ draftSaved ? 'Draft Saved!' : 'Save Draft' }}
           </button>
         </div>
         <button @click="analyze"
