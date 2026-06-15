@@ -1,7 +1,12 @@
 import { computed } from 'vue'
-import { useLocaleStore } from '../stores/locale'
+import { useLocaleStore } from './locale'
 import translations from './translations'
 
+/**
+ * Composable for translating UI strings.
+ * Returns `t(key)` for lookups, plus reactive `locale` and `setLocale` for language switching.
+ * Falls back to English when a key is missing in the active language.
+ */
 export function useI18n() {
   const localeStore = useLocaleStore()
 

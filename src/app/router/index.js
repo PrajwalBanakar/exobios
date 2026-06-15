@@ -1,0 +1,153 @@
+import { createRouter, createWebHistory } from 'vue-router'
+
+/**
+ * All route definitions.
+ * Views are lazy-loaded so each feature chunk is only downloaded when needed.
+ * Routes with `meta.requiresAuth: true` are guarded by the beforeEach hook below.
+ */
+const routes = [
+  {
+    path: '/',
+    name: 'Login',
+    component: () => import('@/features/auth/views/LoginView.vue'),
+  },
+  {
+    path: '/dashboard',
+    name: 'Dashboard',
+    component: () => import('@/features/dashboard/views/DashboardView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/patients',
+    name: 'Patients',
+    component: () => import('@/features/patients/views/PatientsView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/patients/new',
+    name: 'AddPatient',
+    component: () => import('@/features/patients/views/AddPatientView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/patients/:id/edit',
+    name: 'EditPatient',
+    component: () => import('@/features/patients/views/AddPatientView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/patients/:id',
+    name: 'PatientDetail',
+    component: () => import('@/features/patients/views/PatientDetailView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/assessment/new',
+    name: 'NewAssessment',
+    component: () => import('@/features/assessments/views/NewAssessmentView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/assessment/:id/edit',
+    name: 'EditAssessment',
+    component: () => import('@/features/assessments/views/NewAssessmentView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/assessment/:id/result',
+    name: 'AIResult',
+    component: () => import('@/features/assessments/views/AIResultView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/assessment/:id/analysis',
+    name: 'FullAnalysis',
+    component: () => import('@/features/assessments/views/FullAnalysisView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/assessment/:id/measures',
+    name: 'Measures',
+    component: () => import('@/features/measures/views/MeasuresView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/sos',
+    name: 'SOS',
+    component: () => import('@/features/sos/views/SOSView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/reports',
+    name: 'Reports',
+    component: () => import('@/features/reports/views/ReportsView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/users',
+    name: 'Users',
+    component: () => import('@/features/admin/views/UsersView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/settings',
+    name: 'Settings',
+    component: () => import('@/features/settings/views/SettingsView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/notifications',
+    name: 'Notifications',
+    component: () => import('@/features/notifications/views/NotificationsView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('@/features/settings/views/ProfileView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/referrals',
+    name: 'Referrals',
+    component: () => import('@/features/referrals/views/ReferralsView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/teleconsult',
+    name: 'Teleconsult',
+    component: () => import('@/features/teleconsult/views/TeleconsultView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/feedback',
+    name: 'Feedback',
+    component: () => import('@/features/feedback/views/FeedbackView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/admin',
+    name: 'SuperAdmin',
+    component: () => import('@/features/admin/views/SuperAdminView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('@/pages/NotFoundView.vue'),
+  },
+]
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes,
+})
+
+// Auth guard: redirect unauthenticated users to login, skip login redirect if already in
+router.beforeEach((to) => {
+  const isLoggedIn = !!localStorage.getItem('exobios_auth')
+  if (to.meta.requiresAuth && !isLoggedIn) return { name: 'Login' }
+  if (to.name === 'Login' && isLoggedIn) return { name: 'Dashboard' }
+})
+
+export default router
