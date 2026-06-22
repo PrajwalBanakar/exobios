@@ -15,8 +15,8 @@ const patientId = computed(() => isEdit.value ? Number(route.params.id) : null)
 const existing  = computed(() => isEdit.value ? store.getById(patientId.value) : null)
 
 const form = reactive({
-  name: '', dob: '', gender: '', phone: '', occupation: '', abhaId: '', fatherSpouseName: '',
-  address: { details: '', village: '', pincode: '', taluk: '', district: '', state: '' },
+  name: '', dob: '', gender: '', phone: '', education: '', occupation: '', abhaId: '', abArkId: '', fatherSpouseName: '',
+  address: { houseNo: '', streetArea: '', village: '', pincode: '', taluk: '', district: '', state: '' },
   family: {
     maritalStatus: '', spouseName: '', spouseAge: '',
     children: [], householdMembers: [],
@@ -43,8 +43,8 @@ const guardianLabel = computed(() =>
 if (isEdit.value && existing.value) {
   const p = existing.value
   form.name = p.name || ''; form.dob = p.dob || ''; form.gender = p.gender || ''
-  form.phone = p.phone || ''; form.occupation = p.occupation || ''
-  form.abhaId = p.abhaId || ''; form.fatherSpouseName = p.fatherSpouseName || ''; form.photo = p.photo || ''
+  form.phone = p.phone || ''; form.education = p.education || ''; form.occupation = p.occupation || ''
+  form.abhaId = p.abhaId || ''; form.abArkId = p.abArkId || ''; form.fatherSpouseName = p.fatherSpouseName || ''; form.photo = p.photo || ''
   if (p.address) Object.assign(form.address, p.address)
   if (p.family)  Object.assign(form.family,  { ...p.family, children: [...(p.family?.children || [])], householdMembers: [...(p.family?.householdMembers || [])] })
 }
@@ -96,7 +96,8 @@ async function savePatient() {
   const now      = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
   const data     = {
     name: form.name.trim(), dob: form.dob, gender: form.gender, phone: form.phone,
-    occupation: form.occupation, abhaId: form.abhaId, fatherSpouseName: form.fatherSpouseName, photo: form.photo,
+    education: form.education, occupation: form.occupation, abhaId: form.abhaId, abArkId: form.abArkId,
+    fatherSpouseName: form.fatherSpouseName, photo: form.photo,
     address: { ...form.address },
     family: { ...form.family, children: [...form.family.children], householdMembers: [...form.family.householdMembers] },
     location, risk: isEdit.value ? (existing.value?.risk || 'Low') : 'Low', date: now,
@@ -190,8 +191,26 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
                 <p v-if="errors.phone" class="text-red-500 text-xs mt-1">{{ errors.phone }}</p>
               </div>
               <div>
+                <label :class="LC">Education</label>
+                <select v-model="form.education" :class="IC + ' bg-white'">
+                  <option value="">— Select —</option>
+                  <option>Upto 10th</option>
+                  <option>+2</option>
+                  <option>Graduation and above</option>
+                </select>
+              </div>
+              <div>
                 <label :class="LC">Occupation</label>
-                <input v-model="form.occupation" type="text" placeholder="e.g. Farmer, Teacher, Homemaker" :class="IC"/>
+                <select v-model="form.occupation" :class="IC + ' bg-white'">
+                  <option value="">— Select —</option>
+                  <option>Farmer</option>
+                  <option>Teacher</option>
+                  <option>Business</option>
+                  <option>House wife</option>
+                  <option>Govt employee</option>
+                  <option>Private employee</option>
+                  <option>Others</option>
+                </select>
               </div>
               <div>
                 <label :class="LC">{{ guardianLabel }}</label>
@@ -200,6 +219,10 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
               <div>
                 <label :class="LC">ABHA ID</label>
                 <input v-model="form.abhaId" type="text" placeholder="12-XXXX-XXXX-XXXX" :class="IC"/>
+              </div>
+              <div>
+                <label :class="LC">AB-Ark ID</label>
+                <input v-model="form.abArkId" type="text" placeholder="AB-Ark ID" :class="IC"/>
               </div>
             </div>
           </div>
@@ -217,9 +240,15 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
             </div>
           </div>
           <div class="px-5 py-5 space-y-3">
-            <div>
-              <label :class="LC">House / Door Details</label>
-              <input v-model="form.address.details" type="text" placeholder="House No., Street, Landmark" :class="IC"/>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label :class="LC">House No.</label>
+                <input v-model="form.address.houseNo" type="text" placeholder="e.g. 12A, Plot 5" :class="IC"/>
+              </div>
+              <div>
+                <label :class="LC">Street / Area</label>
+                <input v-model="form.address.streetArea" type="text" placeholder="Street name and area" :class="IC"/>
+              </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div>

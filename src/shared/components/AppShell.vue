@@ -125,7 +125,7 @@ const notifDotColor = {
     >
       <!-- Logo row -->
       <div class="px-5 py-5 flex items-center justify-between">
-        <div class="flex items-center gap-2">
+        <button class="flex items-center gap-2 hover:opacity-80 transition" @click="router.push('/dashboard')">
           <div class="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="white" stroke-width="2" stroke-linejoin="round"/>
@@ -134,7 +134,7 @@ const notifDotColor = {
             </svg>
           </div>
           <span class="text-white font-bold text-lg tracking-tight">Exobios</span>
-        </div>
+        </button>
         <!-- Close button visible only on mobile -->
         <button class="lg:hidden text-slate-400 hover:text-white p-1" @click="closeSidebar">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>

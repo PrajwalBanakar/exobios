@@ -225,7 +225,7 @@ export const usePatientsStore = defineStore('patients', () => {
     const entry = {
       date, time,
       risk: assessmentData.risk || 'Low',
-      primaryComplaint: assessmentData.complaints?.[0]?.complaint || 'General Assessment',
+      primaryComplaint: assessmentData.primaryComplaint || assessmentData.complaints?.[0]?.complaint || assessmentData.complaints?.selected?.map(id => id)?.join(', ') || 'General Assessment',
       complaints:    assessmentData.complaints    || [],
       pastHistory:   assessmentData.pastHistory   || {},
       familyHistory: assessmentData.familyHistory || {},
