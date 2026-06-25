@@ -2,10 +2,13 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppShell from '@/shared/components/AppShell.vue'
+import SyncStatusBadge from '@/shared/components/SyncStatusBadge.vue'
 import { usePatientsStore } from '@/features/patients/stores/patients'
 import { useReferralsStore } from '@/features/referrals/stores/referrals'
 import { useTeleconsultStore } from '@/features/teleconsult/stores/teleconsult'
 import { useAuthStore } from '@/features/auth/stores/auth'
+import { addToQueue } from '@/shared/offline/syncQueue'
+import { isOnline } from '@/shared/offline/network'
 
 const router           = useRouter()
 const route            = useRoute()
@@ -46,8 +49,6 @@ const responseColors  = {
 
 const referral    = reactive({ required: 'no', center: 'Rampur Community Health Center', time: '', transport: 'Ambulance' })
 const teleconsult = reactive({ done: 'no', doctor: 'Dr. Anjali Sharma', time: '', advice: '' })
-const outcome     = ref('')
-
 // Evidence upload
 const evidenceSlots = [
   { key: 'photo',    label: 'Patient Photo',    accept: 'image/*' },
@@ -74,7 +75,6 @@ function buildSnapshot() {
     patientResponse: patientResponse.value,
     referral:    JSON.parse(JSON.stringify(referral)),
     teleconsult: JSON.parse(JSON.stringify(teleconsult)),
-    outcome:     outcome.value,
   }
 }
 
@@ -93,25 +93,42 @@ function loadDraft() {
     patientResponse.value = d.patientResponse
     Object.assign(referral,    d.referral)
     Object.assign(teleconsult, d.teleconsult)
-    outcome.value = d.outcome
   } catch {}
 }
 
 onMounted(loadDraft)
 
-const submitting = ref(false)
-const submitted  = ref(false)
+const submitting     = ref(false)
+const submitted      = ref(false)
+const submittedOffline = ref(false)
 
 async function submitMeasures() {
   submitting.value = true
   try {
-    await new Promise(r => setTimeout(r, 800))
+    await new Promise(r => setTimeout(r, 600))
     const workerName = auth.user?.name || 'ASHA Worker'
+    const measuresPayload = {
+      patientId: patientId.value,
+      implemented: JSON.parse(JSON.stringify(implemented)),
+      additional:  JSON.parse(JSON.stringify(additional)),
+      patientResponse: patientResponse.value,
+      referral: JSON.parse(JSON.stringify(referral)),
+      teleconsult: JSON.parse(JSON.stringify(teleconsult)),
+      workerName,
+      submittedAt: new Date().toISOString(),
+    }
+
+    if (!isOnline.value) {
+      await addToQueue('add_measures', measuresPayload)
+      submittedOffline.value = true
+    }
+
+    // Apply locally regardless of network so referral/teleconsult stores reflect the submission
     if (referral.required === 'yes' && referral.center) {
       referralsStore.add({
         patientId: patientId.value, patientName: patient.value.name,
         hospital: referral.center, transport: referral.transport,
-        ashaWorker: workerName, notes: outcome.value.slice(0, 80),
+        ashaWorker: workerName, notes: '',
       })
     }
     if (teleconsult.done === 'yes' && teleconsult.doctor) {
@@ -138,6 +155,8 @@ async function submitMeasures() {
     <template #page-title>Measures Implemented</template>
     <template #page-subtitle>Record the measures and actions implemented for the patient.</template>
 
+    <SyncStatusBadge variant="bar"/>
+
     <!-- Success overlay -->
     <div v-if="submitted" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
       <div class="bg-white rounded-2xl shadow-2xl px-10 py-8 flex flex-col items-center gap-4 max-w-xs w-full mx-4">
@@ -150,10 +169,18 @@ async function submitMeasures() {
     </div>
 
     <div class="p-4 md:p-6 space-y-5">
+      <div class="flex items-center justify-between">
       <button @click="router.push('/dashboard')" class="flex items-center gap-1.5 text-sm text-blue-600 hover:underline">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-        Back to Dashboard
-      </button>
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Back to Dashboard
+        </button>
+        <transition enter-active-class="transition-all duration-300" enter-from-class="opacity-0 scale-95">
+          <div v-if="submittedOffline && !submitted" class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-xs font-medium">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400"/>
+            Saved offline — will sync when connected
+          </div>
+        </transition>
+      </div>
 
       <!-- Patient strip -->
       <div class="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-3 flex items-center gap-5 flex-wrap text-xs">
@@ -247,13 +274,6 @@ async function submitMeasures() {
             </div>
           </div>
 
-          <!-- Outcome summary -->
-          <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-            <h3 class="font-semibold text-gray-800 text-sm mb-3">8. Outcome Summary <span class="text-red-500">*</span></h3>
-            <textarea v-model="outcome" rows="5" maxlength="1000" placeholder="Describe the outcome and observations…"
-              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"/>
-            <div class="text-right text-xs text-gray-400 mt-1">{{ outcome.length }} / 1000</div>
-          </div>
         </div>
 
         <!-- Col 3: Patient Response + Referral + Teleconsult -->

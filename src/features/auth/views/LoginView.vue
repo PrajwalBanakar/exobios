@@ -18,13 +18,18 @@ const showPass = ref(false)
 const remember = ref(false)
 const loading  = ref(false)
 const error    = ref('')
+// Demo role selector (replaces hardcoded ASHA Worker)
+const demoRole = ref('ASHA Worker')
+const DEMO_ROLES = ['ASHA Worker', 'ANM', 'Doctor', 'Supervisor', 'Admin', 'Hospital Staff', 'Super Admin']
 
 async function handleLogin() {
   if (!loginId.value || !password.value) { error.value = 'Please enter Login ID and Password.'; return }
+  if (password.value.length < 4) { error.value = 'Password must be at least 4 characters.'; return }
   loading.value = true; error.value = ''
   try {
     await new Promise(r => setTimeout(r, 600))
-    auth.login({ loginId: loginId.value, name: loginId.value, role: 'ASHA Worker' })
+    const name = loginId.value.includes('@') ? loginId.value.split('@')[0] : loginId.value
+    auth.login({ loginId: loginId.value, name, role: demoRole.value })
     await router.push('/dashboard')
   } catch {
     error.value = 'Login failed. Please try again.'
@@ -275,6 +280,13 @@ async function submitContact() {
                 <svg v-if="!showPass" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
               </button>
+            </div>
+            <!-- Demo role selector -->
+            <div class="bg-amber-50 border border-amber-100 rounded-xl px-3.5 py-3">
+              <label class="block text-[10px] font-semibold text-amber-600 uppercase tracking-wide mb-1.5">Demo Role (Dev Only)</label>
+              <select v-model="demoRole" class="w-full text-sm bg-white border border-amber-200 rounded-lg px-2.5 py-1.5 text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-400">
+                <option v-for="r in DEMO_ROLES" :key="r" :value="r">{{ r }}</option>
+              </select>
             </div>
             <div class="flex items-center justify-between">
               <label class="flex items-center gap-2 cursor-pointer">

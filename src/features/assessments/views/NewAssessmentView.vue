@@ -2,10 +2,13 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppShell from '@/shared/components/AppShell.vue'
+import SyncStatusBadge from '@/shared/components/SyncStatusBadge.vue'
 import { usePatientsStore } from '@/features/patients/stores/patients'
 import { useAuthStore } from '@/features/auth/stores/auth'
 import { useI18n } from '@/i18n'
 import { COMPLAINTS_DEF, COMPLAINT_COLOR_MAP } from '@/features/assessments/constants/complaintsDef'
+import { addToQueue } from '@/shared/offline/syncQueue'
+import { isOnline } from '@/shared/offline/network'
 
 const router = useRouter()
 const route  = useRoute()
@@ -252,7 +255,9 @@ function saveVersion(id) {
   localStorage.setItem(key, JSON.stringify(prev.slice(-10)))
 }
 
-function analyze() {
+const analyzedOffline = ref(false)
+
+async function analyze() {
   const now = new Date()
   const assessmentTime = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) +
     ', ' + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
@@ -269,19 +274,29 @@ function analyze() {
     familyHistory: JSON.parse(JSON.stringify(familyHistory)),
     examForm: { ...examForm }, vitals: { ...vitals },
   }
+
   if (isEdit.value) {
     saveVersion(patientId.value)
     store.addAssessment(patientId.value, fullData)
+    if (!isOnline.value) await addToQueue('add_assessment', { patientId: patientId.value, data: fullData })
     localStorage.removeItem(draftKey.value)
     router.push(`/patients/${patientId.value}`)
   } else if (linkedPatientId.value) {
     saveVersion(linkedPatientId.value)
     store.addAssessment(linkedPatientId.value, fullData)
+    if (!isOnline.value) {
+      await addToQueue('add_assessment', { patientId: linkedPatientId.value, data: fullData })
+      analyzedOffline.value = true
+    }
     localStorage.removeItem(draftKey.value)
-    router.push(`/patients/${linkedPatientId.value}`)
+    router.push(`/assessment/${linkedPatientId.value}/result`)
   } else {
     const newId = store.add(fullData)
     saveVersion(newId)
+    if (!isOnline.value) {
+      await addToQueue('add_assessment', { patientId: newId, data: fullData })
+      analyzedOffline.value = true
+    }
     localStorage.removeItem(draftKey.value)
     router.push(`/assessment/${newId}/result`)
   }
@@ -299,11 +314,21 @@ const SEL = ' bg-white'
     <template #page-title>{{ isEdit ? t('assessment.edit') : t('assessment.new') }}</template>
     <template #page-subtitle>{{ isEdit ? (patient?.name || '') : linkedPatient ? linkedPatient.name : 'Patient complaint, history & examination' }}</template>
 
+    <SyncStatusBadge variant="bar"/>
+
     <div class="p-4 md:p-6">
-      <button @click="router.back()" class="flex items-center gap-1.5 text-sm text-blue-600 hover:underline mb-5">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-        {{ t('common.back') }}
-      </button>
+      <div class="flex items-center justify-between mb-5">
+      <button @click="router.back()" class="flex items-center gap-1.5 text-sm text-blue-600 hover:underline">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          {{ t('common.back') }}
+        </button>
+        <transition enter-active-class="transition-all duration-300" enter-from-class="opacity-0 scale-95">
+          <div v-if="analyzedOffline" class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-xs font-medium">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400"/>
+            Assessment saved offline — will sync when connected
+          </div>
+        </transition>
+      </div>
 
       <!-- Linked patient banner -->
       <div v-if="linkedPatient" class="mb-4 bg-green-50 border border-green-200 rounded-xl px-5 py-3.5 flex items-center gap-4 flex-wrap">

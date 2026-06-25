@@ -2,12 +2,16 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AppShell from '@/shared/components/AppShell.vue'
+import SyncStatusBadge from '@/shared/components/SyncStatusBadge.vue'
+import ConfirmModal from '@/shared/components/ConfirmModal.vue'
 import { usePatientsStore } from '@/features/patients/stores/patients'
 import { useI18n } from '@/i18n'
+import { useToast } from '@/shared/composables/useToast'
 
 const router = useRouter()
 const store  = usePatientsStore()
 const { t }  = useI18n()
+const { showToast } = useToast()
 
 const stats = computed(() => [
   { labelKey: 'dashboard.totalPatients', value: store.patients.length,                                    color: 'bg-blue-600',   icon: 'patients'  },
@@ -32,7 +36,8 @@ const filteredPatients = computed(() => {
   if (!q) return store.patients
   return store.patients.filter(p =>
     p.name.toLowerCase().includes(q) ||
-    p.location.toLowerCase().includes(q) ||
+    (p.address?.village || p.location || '').toLowerCase().includes(q) ||
+    (p.address?.district || '').toLowerCase().includes(q) ||
     p.risk.toLowerCase().includes(q) ||
     String(p.id).includes(q)
   )
@@ -50,18 +55,22 @@ function editPatient(p, e)      { e.stopPropagation(); router.push(`/patients/${
 function newAssessment(id, e)   { e.stopPropagation(); router.push(`/assessment/new?patientId=${id}`) }
 
 function confirmDelete(id, e) { e.stopPropagation(); deleteConfirmId.value = id }
-function cancelDelete(e)      { e.stopPropagation(); deleteConfirmId.value = null }
-function doDelete(id, e) {
-  e.stopPropagation()
+function cancelDelete(e)      { if (e) e.stopPropagation(); deleteConfirmId.value = null }
+function doDelete() {
+  const id = deleteConfirmId.value
+  const name = store.patients.find(p => p.id === id)?.name || 'Patient'
   store.remove(id)
   deleteConfirmId.value = null
   if (currentPage.value > totalPages.value) currentPage.value = totalPages.value
+  showToast(`${name} removed`, 'success')
 }
 </script>
 
 <template>
   <AppShell>
     <template #page-title>{{ t('nav.dashboard') }}</template>
+
+    <SyncStatusBadge variant="bar"/>
 
     <!-- Topbar search slot -->
     <template #topbar-left>
@@ -76,6 +85,14 @@ function doDelete(id, e) {
     </template>
 
     <div class="p-4 md:p-6 space-y-6">
+      <!-- Mobile search (hidden on md+) -->
+      <div class="relative md:hidden">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input v-model="search" type="search" :placeholder="t('dashboard.searchPlaceholder')"
+          class="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          @input="currentPage = 1"/>
+      </div>
+
       <!-- Stat cards -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div v-for="s in stats" :key="s.labelKey" class="bg-white rounded-xl border border-gray-100 p-5 flex items-center gap-4 shadow-sm">
@@ -123,55 +140,39 @@ function doDelete(id, e) {
               </tr>
             </thead>
             <tbody>
-              <template v-for="p in pagedPatients" :key="p.id">
-                <!-- Normal row -->
-                <tr v-if="deleteConfirmId !== p.id"
-                  class="border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors"
-                  @click="openPatient(p.id)">
-                  <td class="px-5 py-3.5">
-                    <div class="flex items-center gap-2.5">
-                      <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs font-semibold text-blue-600 flex-shrink-0">
-                        {{ p.name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase() }}
-                      </div>
-                      <span class="font-medium text-gray-800">{{ p.name }}</span>
+              <tr v-for="p in pagedPatients" :key="p.id"
+                class="border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors"
+                @click="openPatient(p.id)">
+                <td class="px-5 py-3.5">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs font-semibold text-blue-600 flex-shrink-0">
+                      {{ p.name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase() }}
                     </div>
-                  </td>
-                  <td class="px-4 py-3.5 text-gray-600">{{ p.age }} / {{ p.gender }}</td>
-                  <td class="px-4 py-3.5 text-gray-600 max-w-[160px] truncate">{{ p.location }}</td>
-                  <td class="px-4 py-3.5">
-                    <span :class="[riskClasses[p.risk] || 'bg-gray-100 text-gray-600', 'px-2.5 py-1 rounded-full text-xs font-semibold']">
-                      {{ p.risk === 'High' ? t('risk.high') : p.risk === 'Moderate' ? t('risk.moderate') : t('risk.low') }}
-                    </span>
-                  </td>
-                  <td class="px-4 py-3.5 text-gray-500 text-xs">{{ p.date }}</td>
-                  <td class="px-4 py-3.5">
-                    <div class="flex items-center gap-1">
-                      <button title="New Assessment" class="p-1.5 text-green-600 hover:bg-green-50 rounded transition" @click="newAssessment(p.id, $event)">
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-3-3v6m9-6a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
-                      </button>
-                      <button title="Edit Patient" class="p-1.5 text-blue-500 hover:bg-blue-50 rounded transition" @click="editPatient(p, $event)">
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                      </button>
-                      <button title="Delete" class="p-1.5 text-red-400 hover:bg-red-50 rounded transition" @click="confirmDelete(p.id, $event)">
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-
-                <!-- Delete confirmation row -->
-                <tr v-else class="border-b border-red-100 bg-red-50">
-                  <td colspan="6" class="px-5 py-3">
-                    <div class="flex items-center justify-between">
-                      <span class="text-sm text-red-700 font-medium">{{ t('common.delete') }} <strong>{{ p.name }}</strong>? {{ t('patients.deleteConfirm') }}</span>
-                      <div class="flex items-center gap-2">
-                        <button @click="cancelDelete($event)" class="px-3 py-1.5 text-xs border border-gray-300 text-gray-600 rounded-lg hover:bg-white transition">{{ t('common.cancel') }}</button>
-                        <button @click="doDelete(p.id, $event)" class="px-3 py-1.5 text-xs bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg transition">{{ t('common.yesDelete') }}</button>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              </template>
+                    <span class="font-medium text-gray-800">{{ p.name }}</span>
+                  </div>
+                </td>
+                <td class="px-4 py-3.5 text-gray-600">{{ p.age }} / {{ p.gender }}</td>
+                <td class="px-4 py-3.5 text-gray-600 max-w-[160px] truncate">{{ p.address?.village || p.location || '—' }}</td>
+                <td class="px-4 py-3.5">
+                  <span :class="[riskClasses[p.risk] || 'bg-gray-100 text-gray-600', 'px-2.5 py-1 rounded-full text-xs font-semibold']">
+                    {{ p.risk === 'High' ? t('risk.high') : p.risk === 'Moderate' ? t('risk.moderate') : t('risk.low') }}
+                  </span>
+                </td>
+                <td class="px-4 py-3.5 text-gray-500 text-xs">{{ p.date }}</td>
+                <td class="px-4 py-3.5">
+                  <div class="flex items-center gap-1">
+                    <button title="New Assessment" class="p-1.5 text-green-600 hover:bg-green-50 rounded transition" @click="newAssessment(p.id, $event)">
+                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-3-3v6m9-6a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+                    </button>
+                    <button title="Edit Patient" class="p-1.5 text-blue-500 hover:bg-blue-50 rounded transition" @click="editPatient(p, $event)">
+                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button title="Delete" class="p-1.5 text-red-400 hover:bg-red-50 rounded transition" @click="confirmDelete(p.id, $event)">
+                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -199,5 +200,16 @@ function doDelete(id, e) {
         </div>
       </div>
     </div>
+
+    <!-- Delete confirm modal -->
+    <ConfirmModal
+      :show="!!deleteConfirmId"
+      title="Delete Patient"
+      :message="`Remove ${store.patients.find(p => p.id === deleteConfirmId)?.name || 'this patient'}? This cannot be undone.`"
+      confirm-text="Delete"
+      :danger="true"
+      @confirm="doDelete"
+      @cancel="cancelDelete(null)"
+    />
   </AppShell>
 </template>

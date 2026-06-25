@@ -5,6 +5,7 @@ const translations = {
     'nav.sos':           'SOS / Emergency',
     'nav.referrals':     'Referrals',
     'nav.teleconsult':   'Teleconsult',
+    'nav.devices':       'Devices',
     'nav.notifications': 'Notifications',
     'nav.feedback':      'Feedback',
     'nav.reports':       'Reports',
@@ -374,6 +375,7 @@ const translations = {
 
     'nav.referrals':   'Referrals',
     'nav.teleconsult': 'Teleconsult',
+    'nav.devices':     'Devices',
 
     'referrals.title':            'Referrals',
     'referrals.subtitle':         'Track and manage patient referrals to hospitals',
@@ -931,6 +933,7 @@ const translations = {
 
     'nav.referrals':   'रेफरल',
     'nav.teleconsult': 'टेलीकंसल्ट',
+    'nav.devices':     'उपकरण',
 
     'referrals.title':            'रेफरल',
     'referrals.subtitle':         'अस्पताल में मरीज़ रेफरल ट्रैक और प्रबंधित करें',
@@ -1488,6 +1491,7 @@ const translations = {
 
     'nav.referrals':   'ರೆಫರಲ್‌ಗಳು',
     'nav.teleconsult': 'ಟೆಲಿಕನ್ಸಲ್ಟ್',
+    'nav.devices':     'ಸಾಧನಗಳು',
 
     'referrals.title':            'ರೆಫರಲ್‌ಗಳು',
     'referrals.subtitle':         'ಆಸ್ಪತ್ರೆಗೆ ರೋಗಿ ರೆಫರಲ್‌ಗಳನ್ನು ಟ್ರ್ಯಾಕ್ ಮತ್ತು ನಿರ್ವಹಿಸಿ',

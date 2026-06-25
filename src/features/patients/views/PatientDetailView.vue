@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppShell from '@/shared/components/AppShell.vue'
+import SyncStatusBadge from '@/shared/components/SyncStatusBadge.vue'
 import { usePatientsStore } from '@/features/patients/stores/patients'
 
 const router    = useRouter()
@@ -32,6 +33,8 @@ const initials = computed(() => {
   <AppShell>
     <template #page-title>Patient Profile</template>
     <template #page-subtitle>{{ patient?.name || 'Unknown Patient' }}</template>
+
+    <SyncStatusBadge variant="bar"/>
 
     <div v-if="!patient" class="p-8 text-center text-gray-400">Patient not found.</div>
 

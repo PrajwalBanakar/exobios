@@ -22,7 +22,7 @@ const DEFAULT_PATIENTS = [
     phone: '9876543210', occupation: 'Homemaker', abhaId: '12-3456-7890-0001',
     fatherSpouseName: 'Amit Sharma (Spouse)',
     address: { details: 'House No. 12, Near Temple', village: 'Rampur Village', pincode: '244901', taluk: 'Rampur', district: 'Rampur', state: 'Uttar Pradesh' },
-    family: { maritalStatus: 'Married', spouseName: 'Amit Sharma', spouseAge: 32, children: [{ name: 'Riya Sharma', age: 4 }], householdMembers: [], fatherName: '', fatherAge: '', motherName: '', motherAge: '' },
+    family: { maritalStatus: 'Married', spouses: [{ name: 'Amit Sharma', age: 32 }], widows: [], children: [{ name: 'Riya Sharma', age: 4 }], householdMembers: [], fatherName: '', fatherAge: '', motherName: '', motherAge: '' },
     photo: '', risk: 'High', date: '15 Jun 2025', assessmentTime: '15 Jun 2025, 10:30 AM',
     assessmentHistory: [
       {
@@ -59,7 +59,7 @@ const DEFAULT_PATIENTS = [
     phone: '9765432109', occupation: 'Farmer', abhaId: '12-3456-7890-0002',
     fatherSpouseName: 'Savita Kumar (Spouse)',
     address: { details: 'Plot 5, Main Road', village: 'Sitapur Town', pincode: '261001', taluk: 'Sitapur', district: 'Sitapur', state: 'Uttar Pradesh' },
-    family: { maritalStatus: 'Married', spouseName: 'Savita Kumar', spouseAge: 40, children: [], householdMembers: [], fatherName: '', fatherAge: '', motherName: '', motherAge: '' },
+    family: { maritalStatus: 'Married', spouses: [{ name: 'Savita Kumar', age: 40 }], widows: [], children: [], householdMembers: [], fatherName: '', fatherAge: '', motherName: '', motherAge: '' },
     photo: '', risk: 'Moderate', date: '14 Jun 2025', assessmentTime: '14 Jun 2025, 02:15 PM',
     assessmentHistory: [
       {
@@ -87,7 +87,7 @@ const DEFAULT_PATIENTS = [
     phone: '9654321098', occupation: 'Teacher', abhaId: '12-3456-7890-0003',
     fatherSpouseName: 'Ram Prasad (Father)',
     address: { details: 'Village Main, Near School', village: 'Lakhimpur Block', pincode: '262701', taluk: 'Lakhimpur', district: 'Lakhimpur Kheri', state: 'Uttar Pradesh' },
-    family: { maritalStatus: 'Unmarried', spouseName: '', spouseAge: '', children: [], householdMembers: [], fatherName: 'Ram Prasad', fatherAge: 60, motherName: 'Kamla Devi', motherAge: 55 },
+    family: { maritalStatus: 'Unmarried', spouses: [], widows: [], children: [], householdMembers: [], fatherName: 'Ram Prasad', fatherAge: 60, motherName: 'Kamla Devi', motherAge: 55 },
     photo: '', risk: 'Low', date: '13 Jun 2025', assessmentTime: '13 Jun 2025, 11:00 AM',
     assessmentHistory: [
       {
@@ -115,7 +115,7 @@ const DEFAULT_PATIENTS = [
     phone: '9543210987', occupation: 'Retired', abhaId: '12-3456-7890-0004',
     fatherSpouseName: 'Fatima Iqbal (Spouse)',
     address: { details: 'Mohalla Ansari, Old Town', village: 'Bhira', pincode: '262801', taluk: 'Bhira', district: 'Pilibhit', state: 'Uttar Pradesh' },
-    family: { maritalStatus: 'Married', spouseName: 'Fatima Iqbal', spouseAge: 63, children: [{ name: 'Imran Iqbal', age: 35 }], householdMembers: [], fatherName: '', fatherAge: '', motherName: '', motherAge: '' },
+    family: { maritalStatus: 'Married', spouses: [{ name: 'Fatima Iqbal', age: 63 }], widows: [], children: [{ name: 'Imran Iqbal', age: 35 }], householdMembers: [], fatherName: '', fatherAge: '', motherName: '', motherAge: '' },
     photo: '', risk: 'High', date: '12 Jun 2025', assessmentTime: '12 Jun 2025, 09:45 AM',
     assessmentHistory: [
       {
@@ -152,7 +152,7 @@ const DEFAULT_PATIENTS = [
     phone: '9432109876', occupation: 'Student', abhaId: '12-3456-7890-0005',
     fatherSpouseName: 'Suresh Verma (Father)',
     address: { details: 'Near Pond, East Side', village: 'Nanpara Village', pincode: '271865', taluk: 'Nanpara', district: 'Bahraich', state: 'Uttar Pradesh' },
-    family: { maritalStatus: 'Unmarried', spouseName: '', spouseAge: '', children: [], householdMembers: [], fatherName: 'Suresh Verma', fatherAge: 48, motherName: 'Meena Verma', motherAge: 44 },
+    family: { maritalStatus: 'Unmarried', spouses: [], widows: [], children: [], householdMembers: [], fatherName: 'Suresh Verma', fatherAge: 48, motherName: 'Meena Verma', motherAge: 44 },
     photo: '', risk: 'Low', date: '11 Jun 2025', assessmentTime: '11 Jun 2025, 04:00 PM',
     assessmentHistory: [
       {

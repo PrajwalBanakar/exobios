@@ -222,7 +222,51 @@ function printResult() { window.print() }
         </button>
       </div>
 
-      <!-- ── SECTION 2: Plan of Action ── -->
+      <!-- ── SECTION 2: AI Chatbot ── -->
+      <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <button class="w-full flex items-center justify-between px-5 py-4" @click="chatOpen = !chatOpen">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+              <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div>
+              <div class="font-semibold text-gray-800 text-sm">Ask AI for Clarification</div>
+              <div class="text-xs text-gray-400">Get detailed explanation or ask follow-up questions</div>
+            </div>
+          </div>
+          <svg :class="['w-5 h-5 text-gray-400 transition-transform', chatOpen ? 'rotate-180' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>
+        </button>
+
+        <div v-if="chatOpen" class="border-t border-gray-100">
+          <!-- Chat history -->
+          <div class="h-52 overflow-y-auto px-4 py-3 space-y-3 bg-gray-50/40">
+            <div v-for="(msg, i) in chatHistory" :key="i"
+              :class="['flex', msg.role === 'user' ? 'justify-end' : 'justify-start']">
+              <div :class="['max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed', msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-sm' : 'bg-white border border-gray-100 text-gray-700 rounded-tl-sm shadow-sm']">
+                {{ msg.text }}
+              </div>
+            </div>
+            <div v-if="chatLoading" class="flex justify-start">
+              <div class="bg-white border border-gray-100 shadow-sm px-4 py-3 rounded-2xl rounded-tl-sm">
+                <div class="flex gap-1">
+                  <span v-for="n in 3" :key="n" :style="`animation-delay:${n*0.15}s`" class="w-2 h-2 bg-blue-400 rounded-full animate-bounce"/>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Chat input -->
+          <div class="flex items-center gap-2 px-4 py-3 border-t border-gray-100">
+            <input v-model="chatInput" type="text" placeholder="Ask about diagnosis, treatment, or next steps..." @keyup.enter="sendChat"
+              class="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+            <button @click="sendChat" :disabled="!chatInput.trim() || chatLoading"
+              class="flex items-center justify-center w-10 h-10 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl transition">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 3: Plan of Action ── -->
       <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
         <h2 class="font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <svg class="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -345,50 +389,6 @@ function printResult() { window.print() }
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── SECTION 3: AI Chatbot ── -->
-      <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <button class="w-full flex items-center justify-between px-5 py-4" @click="chatOpen = !chatOpen">
-          <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
-              <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            </div>
-            <div>
-              <div class="font-semibold text-gray-800 text-sm">Ask AI for Clarification</div>
-              <div class="text-xs text-gray-400">Get detailed explanation or ask follow-up questions</div>
-            </div>
-          </div>
-          <svg :class="['w-5 h-5 text-gray-400 transition-transform', chatOpen ? 'rotate-180' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>
-        </button>
-
-        <div v-if="chatOpen" class="border-t border-gray-100">
-          <!-- Chat history -->
-          <div class="h-52 overflow-y-auto px-4 py-3 space-y-3 bg-gray-50/40">
-            <div v-for="(msg, i) in chatHistory" :key="i"
-              :class="['flex', msg.role === 'user' ? 'justify-end' : 'justify-start']">
-              <div :class="['max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed', msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-sm' : 'bg-white border border-gray-100 text-gray-700 rounded-tl-sm shadow-sm']">
-                {{ msg.text }}
-              </div>
-            </div>
-            <div v-if="chatLoading" class="flex justify-start">
-              <div class="bg-white border border-gray-100 shadow-sm px-4 py-3 rounded-2xl rounded-tl-sm">
-                <div class="flex gap-1">
-                  <span v-for="n in 3" :key="n" :style="`animation-delay:${n*0.15}s`" class="w-2 h-2 bg-blue-400 rounded-full animate-bounce"/>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- Chat input -->
-          <div class="flex items-center gap-2 px-4 py-3 border-t border-gray-100">
-            <input v-model="chatInput" type="text" placeholder="Ask about diagnosis, treatment, or next steps..." @keyup.enter="sendChat"
-              class="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-            <button @click="sendChat" :disabled="!chatInput.trim() || chatLoading"
-              class="flex items-center justify-center w-10 h-10 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl transition">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </button>
           </div>
         </div>
       </div>

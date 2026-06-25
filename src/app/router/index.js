@@ -102,6 +102,12 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/system-updates',
+    name: 'SystemUpdates',
+    component: () => import('@/features/notifications/views/SystemUpdatesView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/features/settings/views/ProfileView.vue'),
@@ -120,6 +126,12 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/devices',
+    name: 'Devices',
+    component: () => import('@/features/devices/views/DeviceView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/feedback',
     name: 'Feedback',
     component: () => import('@/features/feedback/views/FeedbackView.vue'),
@@ -130,6 +142,11 @@ const routes = [
     name: 'SuperAdmin',
     component: () => import('@/features/admin/views/SuperAdminView.vue'),
     meta: { requiresAuth: true },
+  },
+  {
+    path: '/unauthorized',
+    name: 'Unauthorized',
+    component: () => import('@/pages/UnauthorizedView.vue'),
   },
   {
     path: '/:pathMatch(.*)*',
@@ -143,9 +160,21 @@ const router = createRouter({
   routes,
 })
 
-// Auth guard: redirect unauthenticated users to login, skip login redirect if already in
+// Auth guard: redirect unauthenticated or expired sessions to login
 router.beforeEach((to) => {
-  const isLoggedIn = !!localStorage.getItem('exobios_auth')
+  let session = null
+  try {
+    const raw = localStorage.getItem('exobios_auth')
+    if (raw) {
+      session = JSON.parse(raw)
+      if (Date.now() > (session?.expiresAt ?? 0)) {
+        localStorage.removeItem('exobios_auth')
+        session = null
+      }
+    }
+  } catch { session = null }
+
+  const isLoggedIn = !!session
   if (to.meta.requiresAuth && !isLoggedIn) return { name: 'Login' }
   if (to.name === 'Login' && isLoggedIn) return { name: 'Dashboard' }
 })

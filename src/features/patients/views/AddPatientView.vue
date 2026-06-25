@@ -2,8 +2,11 @@
 import { ref, reactive, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppShell from '@/shared/components/AppShell.vue'
+import SyncStatusBadge from '@/shared/components/SyncStatusBadge.vue'
 import { usePatientsStore } from '@/features/patients/stores/patients'
 import { useI18n } from '@/i18n'
+import { addToQueue } from '@/shared/offline/syncQueue'
+import { isOnline } from '@/shared/offline/network'
 
 const router = useRouter()
 const route  = useRoute()
@@ -18,7 +21,8 @@ const form = reactive({
   name: '', dob: '', gender: '', phone: '', education: '', occupation: '', abhaId: '', abArkId: '', fatherSpouseName: '',
   address: { houseNo: '', streetArea: '', village: '', pincode: '', taluk: '', district: '', state: '' },
   family: {
-    maritalStatus: '', spouseName: '', spouseAge: '',
+    maritalStatus: '',
+    spouses: [], widows: [],
     children: [], householdMembers: [],
     fatherName: '', fatherAge: '', motherName: '', motherAge: '',
   },
@@ -46,7 +50,18 @@ if (isEdit.value && existing.value) {
   form.phone = p.phone || ''; form.education = p.education || ''; form.occupation = p.occupation || ''
   form.abhaId = p.abhaId || ''; form.abArkId = p.abArkId || ''; form.fatherSpouseName = p.fatherSpouseName || ''; form.photo = p.photo || ''
   if (p.address) Object.assign(form.address, p.address)
-  if (p.family)  Object.assign(form.family,  { ...p.family, children: [...(p.family?.children || [])], householdMembers: [...(p.family?.householdMembers || [])] })
+  if (p.family) {
+    const f = p.family
+    // support old single-spouse format
+    const spouses = f.spouses?.length ? [...f.spouses] : (f.spouseName ? [{ name: f.spouseName, age: f.spouseAge || '' }] : [])
+    Object.assign(form.family, {
+      ...f,
+      spouses,
+      widows:           [...(f.widows || [])],
+      children:         [...(f.children || [])],
+      householdMembers: [...(f.householdMembers || [])],
+    })
+  }
 }
 
 // Children list
@@ -57,6 +72,24 @@ function addChild() {
   newChild.name = ''; newChild.age = ''
 }
 function removeChild(i) { form.family.children.splice(i, 1) }
+
+// Spouses list
+const newSpouse = reactive({ name: '', age: '' })
+function addSpouse() {
+  if (!newSpouse.name.trim()) return
+  form.family.spouses.push({ name: newSpouse.name.trim(), age: Number(newSpouse.age) || 0 })
+  newSpouse.name = ''; newSpouse.age = ''
+}
+function removeSpouse(i) { form.family.spouses.splice(i, 1) }
+
+// Widows list
+const newWidow = reactive({ name: '', age: '' })
+function addWidow() {
+  if (!newWidow.name.trim()) return
+  form.family.widows.push({ name: newWidow.name.trim(), age: Number(newWidow.age) || 0 })
+  newWidow.name = ''; newWidow.age = ''
+}
+function removeWidow(i) { form.family.widows.splice(i, 1) }
 
 // Household members
 const newMember = reactive({ name: '', relation: '', age: '' })
@@ -78,6 +111,7 @@ function handlePhoto(e) {
 
 const saving = ref(false)
 const errors = ref({})
+const savedOffline = ref(false)
 
 function validate() {
   errors.value = {}
@@ -99,17 +133,29 @@ async function savePatient() {
     education: form.education, occupation: form.occupation, abhaId: form.abhaId, abArkId: form.abArkId,
     fatherSpouseName: form.fatherSpouseName, photo: form.photo,
     address: { ...form.address },
-    family: { ...form.family, children: [...form.family.children], householdMembers: [...form.family.householdMembers] },
+    family: { ...form.family, spouses: [...form.family.spouses], widows: [...form.family.widows], children: [...form.family.children], householdMembers: [...form.family.householdMembers] },
     location, risk: isEdit.value ? (existing.value?.risk || 'Low') : 'Low', date: now,
   }
+
   if (isEdit.value) {
-    store.update(patientId.value, data)
+    if (isOnline.value) {
+      store.update(patientId.value, data)
+    } else {
+      // Apply locally immediately so the UI stays consistent; queue for server sync
+      store.update(patientId.value, data)
+      await addToQueue('update_patient', { id: patientId.value, data })
+      savedOffline.value = true
+    }
     saving.value = false
     router.push('/patients')
   } else {
+    // Always apply locally so the ASHA worker can continue working
     const newId = store.add(data)
+    if (!isOnline.value) {
+      await addToQueue('add_patient', data)
+      savedOffline.value = true
+    }
     saving.value = false
-    // Continue to assessment for this newly registered patient
     router.push(`/assessment/new?patientId=${newId}`)
   }
 }
@@ -123,11 +169,21 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
     <template #page-title>{{ isEdit ? 'Edit Patient' : 'Register Patient' }}</template>
     <template #page-subtitle>{{ isEdit ? 'Update patient information' : 'Add a new patient record' }}</template>
 
+    <SyncStatusBadge variant="bar"/>
+
     <div class="p-4 md:p-6">
-      <button @click="router.back()" class="flex items-center gap-1.5 text-sm text-blue-600 hover:underline mb-5">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-        Back
-      </button>
+      <div class="flex items-center justify-between mb-5">
+        <button @click="router.back()" class="flex items-center gap-1.5 text-sm text-blue-600 hover:underline">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Back
+        </button>
+        <transition enter-active-class="transition-all duration-300" enter-from-class="opacity-0 scale-95">
+          <div v-if="savedOffline" class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-xs font-medium">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400"/>
+            Saved offline — will sync when connected
+          </div>
+        </transition>
+      </div>
 
       <div class="max-w-3xl space-y-5">
 
@@ -300,16 +356,69 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
               </div>
             </div>
 
-            <!-- Married / Widowed fields -->
-            <template v-if="form.family.maritalStatus === 'Married' || form.family.maritalStatus === 'Widowed'">
-              <div class="grid grid-cols-2 gap-3 p-4 bg-blue-50/40 rounded-xl border border-blue-100">
-                <div>
-                  <label :class="LC">Spouse Name</label>
-                  <input v-model="form.family.spouseName" type="text" placeholder="Spouse's full name" :class="IC"/>
+            <!-- Married fields: Spouses list -->
+            <template v-if="form.family.maritalStatus === 'Married'">
+              <div class="p-4 bg-blue-50/40 rounded-xl border border-blue-100">
+                <label :class="LC">Spouses</label>
+                <div class="space-y-2 mb-2">
+                  <div v-for="(s, i) in form.family.spouses" :key="i"
+                    class="flex items-center gap-2 bg-white rounded-lg px-3 py-2 text-sm border border-blue-100">
+                    <span class="text-xs text-gray-500 font-semibold w-5">{{ i + 1 }}.</span>
+                    <span class="flex-1 text-gray-700">{{ s.name }}</span>
+                    <span class="text-gray-400 text-xs">{{ s.age }} yrs</span>
+                    <button type="button" @click="removeSpouse(i)" class="ml-2 text-red-400 hover:text-red-600">
+                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                    </button>
+                  </div>
                 </div>
-                <div>
-                  <label :class="LC">Spouse Age</label>
-                  <input v-model="form.family.spouseAge" type="number" min="0" max="120" placeholder="Age" :class="IC"/>
+                <div class="flex gap-2">
+                  <input v-model="newSpouse.name" type="text" placeholder="Spouse's full name" :class="IC"/>
+                  <input v-model="newSpouse.age" type="number" min="0" max="120" placeholder="Age" class="w-20 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                  <button type="button" @click="addSpouse" class="px-3 py-2 bg-blue-50 text-blue-600 text-sm rounded-lg hover:bg-blue-100 transition flex-shrink-0 font-medium">+ Add</button>
+                </div>
+              </div>
+
+              <!-- Children -->
+              <div>
+                <label :class="LC">Children</label>
+                <div class="space-y-2 mb-2">
+                  <div v-for="(c, i) in form.family.children" :key="i"
+                    class="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 text-sm">
+                    <span class="text-xs text-gray-500 font-semibold w-5">{{ i + 1 }}.</span>
+                    <span class="flex-1 text-gray-700">{{ c.name }}</span>
+                    <span class="text-gray-400 text-xs">{{ c.age }} yrs</span>
+                    <button type="button" @click="removeChild(i)" class="ml-2 text-red-400 hover:text-red-600">
+                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="flex gap-2">
+                  <input v-model="newChild.name" type="text" placeholder="Child's name" :class="IC"/>
+                  <input v-model="newChild.age" type="number" min="0" max="30" placeholder="Age" class="w-20 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                  <button type="button" @click="addChild" class="px-3 py-2 bg-blue-50 text-blue-600 text-sm rounded-lg hover:bg-blue-100 transition flex-shrink-0 font-medium">+ Add</button>
+                </div>
+              </div>
+            </template>
+
+            <!-- Widowed fields: Widows list -->
+            <template v-if="form.family.maritalStatus === 'Widowed'">
+              <div class="p-4 bg-purple-50/40 rounded-xl border border-purple-100">
+                <label :class="LC">Deceased Spouse(s) / Widows</label>
+                <div class="space-y-2 mb-2">
+                  <div v-for="(w, i) in form.family.widows" :key="i"
+                    class="flex items-center gap-2 bg-white rounded-lg px-3 py-2 text-sm border border-purple-100">
+                    <span class="text-xs text-gray-500 font-semibold w-5">{{ i + 1 }}.</span>
+                    <span class="flex-1 text-gray-700">{{ w.name }}</span>
+                    <span class="text-gray-400 text-xs">{{ w.age }} yrs</span>
+                    <button type="button" @click="removeWidow(i)" class="ml-2 text-red-400 hover:text-red-600">
+                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="flex gap-2">
+                  <input v-model="newWidow.name" type="text" placeholder="Deceased spouse's name" :class="IC"/>
+                  <input v-model="newWidow.age" type="number" min="0" max="120" placeholder="Age" class="w-20 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                  <button type="button" @click="addWidow" class="px-3 py-2 bg-purple-50 text-purple-600 text-sm rounded-lg hover:bg-purple-100 transition flex-shrink-0 font-medium">+ Add</button>
                 </div>
               </div>
 
@@ -368,6 +477,14 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
                   </button>
                 </div>
+              </div>
+              <div class="flex flex-wrap gap-1.5 mb-2">
+                <button v-for="rel in ['Spouse', 'Widow', 'Son', 'Daughter', 'Parent', 'Sibling']" :key="rel"
+                  type="button"
+                  :class="['px-2.5 py-1 rounded-md text-xs border transition', newMember.relation === rel ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-500 hover:border-blue-300 bg-white']"
+                  @click="newMember.relation = newMember.relation === rel ? '' : rel">
+                  {{ rel }}
+                </button>
               </div>
               <div class="grid grid-cols-3 gap-2">
                 <input v-model="newMember.name" type="text" placeholder="Name" :class="IC"/>
