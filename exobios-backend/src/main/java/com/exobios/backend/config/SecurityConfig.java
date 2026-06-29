@@ -52,13 +52,13 @@ public class SecurityConfig {
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                    "/actuator/health",
-                    "/actuator/info",
+                    "/api/v1/auth/login",
+                    "/api/v1/auth/refresh",
+                    "/actuator/**",
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/webjars/**",
-                    "/api/v1/auth/**",
                     "/error"
                 ).permitAll()
                 .anyRequest().authenticated()

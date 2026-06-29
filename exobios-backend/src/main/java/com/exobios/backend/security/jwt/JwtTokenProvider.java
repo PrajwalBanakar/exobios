@@ -1,5 +1,6 @@
 package com.exobios.backend.security.jwt;
 
+import com.exobios.backend.security.UserPrincipal;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -22,11 +23,12 @@ public class JwtTokenProvider {
 
     private final JwtProperties properties;
 
-    public String generateAccessToken(String userId, String role) {
+    public String generateAccessToken(UserPrincipal principal) {
         long now = System.currentTimeMillis();
         return Jwts.builder()
-                .subject(userId)
-                .claim("role", role)
+                .subject(principal.getId().toString())
+                .claim("phone", principal.getPhone())
+                .claim("role",  principal.getRole())
                 .issuedAt(new Date(now))
                 .expiration(new Date(now + properties.getAccessTokenExpiryMs()))
                 .signWith(signingKey())
@@ -53,6 +55,10 @@ public class JwtTokenProvider {
 
     public String extractUserId(String token) {
         return claims(token).getSubject();
+    }
+
+    public String extractPhone(String token) {
+        return claims(token).get("phone", String.class);
     }
 
     public String extractRole(String token) {
