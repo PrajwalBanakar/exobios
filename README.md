@@ -1,39 +1,89 @@
-﻿# Exobios — AI-Assisted ASHA Worker Healthcare Platform
-
-Monorepo containing all services for the Exobios platform.
-
-## Structure
+﻿
+```
+exobios
+├─ docs
+│  ├─ api
+│  ├─ architecture
+│  ├─ database
+│  └─ deployment
+├─ exobios-ai
+├─ exobios-backend
+│  ├─ docker-compose.yml
+│  ├─ Dockerfile
+│  ├─ pom.xml
+│  └─ target
+│     ├─ classes
+│     │  ├─ application-dev.yml
+│     │  ├─ application-prod.yml
+│     │  ├─ application.yml
+│     │  ├─ com
+│     │  │  └─ exobios
+│     │  │     └─ backend
+│     │  │        ├─ common
+│     │  │        │  ├─ constants
+│     │  │        │  │  └─ AppConstants.class
+│     │  │        │  ├─ dto
+│     │  │        │  │  ├─ ApiResponse.class
+│     │  │        │  │  ├─ ErrorResponse.class
+│     │  │        │  │  └─ PageResponse.class
+│     │  │        │  ├─ entity
+│     │  │        │  │  └─ BaseEntity.class
+│     │  │        │  ├─ enums
+│     │  │        │  │  └─ ApiErrorCode.class
+│     │  │        │  ├─ exception
+│     │  │        │  │  ├─ BadRequestException.class
+│     │  │        │  │  ├─ BusinessException.class
+│     │  │        │  │  ├─ ConflictException.class
+│     │  │        │  │  ├─ ForbiddenException.class
+│     │  │        │  │  ├─ GlobalExceptionHandler.class
+│     │  │        │  │  ├─ ResourceNotFoundException.class
+│     │  │        │  │  └─ UnauthorizedException.class
+│     │  │        │  └─ utils
+│     │  │        │     ├─ DateUtils.class
+│     │  │        │     └─ SecurityUtils.class
+│     │  │        ├─ config
+│     │  │        │  ├─ CorsProperties.class
+│     │  │        │  ├─ JpaAuditingConfig.class
+│     │  │        │  └─ SecurityConfig.class
+│     │  │        ├─ ExobiosApplication.class
+│     │  │        └─ security
+│     │  │           ├─ jwt
+│     │  │           │  ├─ JwtAuthenticationFilter.class
+│     │  │           │  ├─ JwtProperties.class
+│     │  │           │  └─ JwtTokenProvider.class
+│     │  │           ├─ JwtAccessDeniedHandler.class
+│     │  │           ├─ JwtAuthenticationEntryPoint.class
+│     │  │           ├─ UserDetailsServiceImpl.class
+│     │  │           └─ UserPrincipal.class
+│     │  └─ db
+│     │     └─ migration
+│     ├─ generated-sources
+│     │  └─ annotations
+│     ├─ generated-test-sources
+│     │  └─ test-annotations
+│     ├─ maven-status
+│     │  └─ maven-compiler-plugin
+│     │     ├─ compile
+│     │     │  └─ default-compile
+│     │     │     ├─ createdFiles.lst
+│     │     │     └─ inputFiles.lst
+│     │     └─ testCompile
+│     │        └─ default-testCompile
+│     │           ├─ createdFiles.lst
+│     │           └─ inputFiles.lst
+│     └─ test-classes
+├─ exobios-frontend
+│  ├─ index.html
+│  ├─ package-lock.json
+│  ├─ package.json
+│  ├─ postcss.config.js
+│  ├─ public
+│  │  ├─ favicon.svg
+│  │  ├─ icons.svg
+│  │  └─ manifest.json
+│  ├─ README.md
+│  ├─ tailwind.config.js
+│  └─ vite.config.js
+└─ README.md
 
 ```
-Exobios/
-├── exobios-frontend/   Vue 3 + Vite + Tailwind — ASHA Worker web app
-├── exobios-backend/    Java 21 + Spring Boot 3 — REST API
-├── exobios-ai/         Python FastAPI + LLM — AI analysis service (upcoming)
-└── docs/               Architecture, API, database, and deployment docs
-```
-
-## Quick Start
-
-### Frontend
-```bash
-cd exobios-frontend
-npm install
-npm run dev
-```
-
-### Backend
-```bash
-cd exobios-backend
-cp .env.example .env   # fill in values
-docker compose up postgres -d
-mvn spring-boot:run
-```
-
-## Tech Stack
-
-| Layer    | Technology                                    |
-|----------|-----------------------------------------------|
-| Frontend | Vue 3, Pinia, Tailwind CSS, Vite              |
-| Backend  | Java 21, Spring Boot 3, PostgreSQL, Flyway    |
-| AI       | Python 3.12, FastAPI, LangChain (upcoming)    |
-| Infra    | Docker, Docker Compose                        |

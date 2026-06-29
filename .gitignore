@@ -2,12 +2,11 @@
 # Each sub-project has its own .gitignore for project-specific rules.
 # This file covers root-level artifacts only.
 
-# Legacy frontend artifacts left at root after monorepo restructure.
-# Safe to delete once VS Code is reopened with exobios-frontend/ as workspace root.
-node_modules/
-dist/
-src/
-.vite/
+# Root-level build/install artifacts (anchored to repo root — does not affect sub-projects)
+/node_modules/
+/dist/
+/src/
+/.vite/
 
 # Claude Code workspace files
 .claude/
