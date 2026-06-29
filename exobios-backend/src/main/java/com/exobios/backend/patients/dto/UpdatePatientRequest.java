@@ -44,6 +44,6 @@ public class UpdatePatientRequest {
     private String state;
 
     /** Pass null to leave Aadhaar unchanged; pass an empty string to clear it. */
-    @Pattern(regexp = "^\\d{12}$", message = "Aadhaar number must be exactly 12 digits")
+    @Pattern(regexp = "^(\\d{12})?$", message = "Aadhaar number must be exactly 12 digits")
     private String aadhaarNumber;
 }
