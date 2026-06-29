@@ -75,12 +75,29 @@ public class UserService {
         User user = findOrThrow(id);
         user.setName(request.getName());
 
-        if (StringUtils.hasText(request.getAshaId())
-                && !request.getAshaId().equals(user.getAshaId())) {
-            if (userRepository.existsByAshaId(request.getAshaId())) {
+        if (StringUtils.hasText(request.getPhone()) && !request.getPhone().equals(user.getPhone())) {
+            if (userRepository.existsByPhone(request.getPhone())) {
+                throw new ConflictException("Phone number already registered: " + request.getPhone());
+            }
+            user.setPhone(request.getPhone());
+        }
+
+        if (request.getAshaId() != null && !request.getAshaId().equals(user.getAshaId())) {
+            if (StringUtils.hasText(request.getAshaId()) && userRepository.existsByAshaId(request.getAshaId())) {
                 throw new ConflictException("ASHA ID already registered: " + request.getAshaId());
             }
-            user.setAshaId(request.getAshaId());
+            user.setAshaId(StringUtils.hasText(request.getAshaId()) ? request.getAshaId() : null);
+        }
+
+        if (request.getRole() != null && request.getRole() != user.getRole()) {
+            if (request.getRole() == Role.ASHA) {
+                String effectiveAshaId = StringUtils.hasText(request.getAshaId())
+                        ? request.getAshaId() : user.getAshaId();
+                if (!StringUtils.hasText(effectiveAshaId)) {
+                    throw new BadRequestException("ASHA ID is required when changing role to ASHA");
+                }
+            }
+            user.setRole(request.getRole());
         }
 
         user.setArea(request.getArea());
