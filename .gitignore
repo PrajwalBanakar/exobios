@@ -1,24 +1,28 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+﻿# ── Monorepo root .gitignore ──────────────────────────────────────────────────
+# Each sub-project has its own .gitignore for project-specific rules.
+# This file covers root-level artifacts only.
 
-node_modules
-dist
-dist-ssr
-*.local
+# Legacy frontend artifacts left at root after monorepo restructure.
+# Safe to delete once VS Code is reopened with exobios-frontend/ as workspace root.
+node_modules/
+dist/
+src/
+.vite/
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# Claude Code workspace files
+.claude/
+
+# IDE / editor
+.vscode/
+*.code-workspace
+.idea/
+
+# OS
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+Thumbs.db
+desktop.ini
+
+# Environment files (never commit real secrets)
+.env
+.env.local
+.env.*.local
