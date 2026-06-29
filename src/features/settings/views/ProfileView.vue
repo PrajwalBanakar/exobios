@@ -15,7 +15,7 @@ const saved         = ref(false)
 
 const form = reactive({ name: '', role: '', phone: '', ashaId: '', area: '', email: '' })
 
-const roleOptions = ['ASHA Worker', 'ANM', 'Supervisor', 'Doctor', 'Admin']
+const roleOptions = ['ASHA Worker', 'Super Admin']
 
 onMounted(() => {
   form.name   = auth.user?.name || 'Sunita Devi'

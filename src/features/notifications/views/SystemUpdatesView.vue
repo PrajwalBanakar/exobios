@@ -9,7 +9,7 @@ const types      = ['All', 'Error', 'Warning', 'Success', 'Info']
 
 const updates = ref([
   { id: 1, type: 'error',   title: 'High Risk Case Alert',          body: 'Ramesh Kumar (PT-2025-000001) from Rampur has been flagged as HIGH RISK. Immediate follow-up required.',            time: '10:32 AM', date: '20 May 2025', read: false },
-  { id: 2, type: 'warning', title: '3 Referrals Pending Approval',  body: 'Three patient referrals from Rampur and Bhelwa areas are awaiting supervisor approval. Please review.',             time: '10:15 AM', date: '20 May 2025', read: false },
+  { id: 2, type: 'warning', title: '3 Referrals Pending Review',    body: 'Three patient referrals from Rampur and Bhelwa areas are awaiting review. Please follow up.',                   time: '10:15 AM', date: '20 May 2025', read: false },
   { id: 3, type: 'success', title: 'Teleconsultation Available',    body: 'Dr. Anjali Sharma (General Physician) is now available for teleconsultation. Schedule a call for high-risk cases.',  time: '09:58 AM', date: '20 May 2025', read: true  },
   { id: 4, type: 'info',    title: 'System Maintenance Completed',  body: 'Scheduled maintenance completed. All services are operational. Patient data has been backed up successfully.',        time: '09:00 AM', date: '20 May 2025', read: true  },
   { id: 5, type: 'warning', title: 'Dengue Alert — Rampur District',body: 'District health authorities have issued a dengue advisory for Rampur. Increased screening recommended.',            time: '08:30 AM', date: '20 May 2025', read: false },

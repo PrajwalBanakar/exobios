@@ -18,18 +18,15 @@ const showPass = ref(false)
 const remember = ref(false)
 const loading  = ref(false)
 const error    = ref('')
-// Demo role selector (replaces hardcoded ASHA Worker)
-const demoRole = ref('ASHA Worker')
-const DEMO_ROLES = ['ASHA Worker', 'ANM', 'Doctor', 'Supervisor', 'Admin', 'Hospital Staff', 'Super Admin']
 
 async function handleLogin() {
   if (!loginId.value || !password.value) { error.value = 'Please enter Login ID and Password.'; return }
-  if (password.value.length < 4) { error.value = 'Password must be at least 4 characters.'; return }
   loading.value = true; error.value = ''
   try {
     await new Promise(r => setTimeout(r, 600))
-    const name = loginId.value.includes('@') ? loginId.value.split('@')[0] : loginId.value
-    auth.login({ loginId: loginId.value, name, role: demoRole.value })
+    const found = auth.findUser(loginId.value, password.value)
+    if (!found) { error.value = 'Invalid credentials. Please check your Login ID (phone/ASHA ID) and password.'; return }
+    auth.login({ loginId: found.phone, name: found.name, role: found.role })
     await router.push('/dashboard')
   } catch {
     error.value = 'Login failed. Please try again.'
@@ -46,6 +43,7 @@ const otpError        = ref('')
 const otpSending      = ref(false)
 const otpLoading      = ref(false)
 const resendCountdown = ref(0)
+const generatedOtp    = ref('')
 let resendTimer = null
 
 function startResendCountdown() {
@@ -75,7 +73,10 @@ async function sendOtp() {
   if (!otpPhone.value || otpPhone.value.length < 10) { otpError.value = 'Enter a valid 10-digit phone number.'; return }
   otpSending.value = true; otpError.value = ''
   await new Promise(r => setTimeout(r, 800))
+  const user = auth.findUserByPhone(otpPhone.value)
   otpSending.value = false
+  if (!user) { otpError.value = 'This phone number is not registered. Please sign up first.'; return }
+  generatedOtp.value = String(Math.floor(100000 + Math.random() * 900000))
   otpStep.value = 'verify'
   startResendCountdown()
 }
@@ -88,7 +89,9 @@ async function verifyOtp() {
   otpLoading.value = true
   try {
     await new Promise(r => setTimeout(r, 600))
-    auth.login({ loginId: otpPhone.value, name: otpPhone.value, role: 'ASHA Worker' })
+    if (code !== generatedOtp.value) { otpError.value = 'Incorrect OTP. Please try again.'; return }
+    const user = auth.findUserByPhone(otpPhone.value)
+    auth.login({ loginId: user.phone, name: user.name, role: user.role })
     await router.push('/dashboard')
   } catch {
     otpError.value = 'Something went wrong. Please try again.'
@@ -139,23 +142,28 @@ const signupSuccess = ref(false)
 
 async function handleSignup() {
   if (!signup.name || !signup.phone || !signup.ashaId || !signup.password) { signupError.value = 'Please fill all required fields.'; return }
+  if (signup.phone.length < 10) { signupError.value = 'Enter a valid 10-digit phone number.'; return }
+  if (signup.password.length < 4) { signupError.value = 'Password must be at least 4 characters.'; return }
   if (signup.password !== signup.confirm) { signupError.value = 'Passwords do not match.'; return }
   signupError.value = ''
   loading.value = true
   await new Promise(r => setTimeout(r, 800))
   loading.value = false
+  const result = auth.registerUser({ name: signup.name, phone: signup.phone, ashaId: signup.ashaId, role: signup.role, password: signup.password })
+  if (!result.success) { signupError.value = result.error; return }
   signupSuccess.value = true
   setTimeout(() => { mode.value = 'login'; signupSuccess.value = false }, 2000)
 }
 
 // ─── Forgot Password ──────────────────────────────────────────────────────────
-const forgotStep    = ref('phone') // phone | otp | newpass
-const forgotPhone   = ref('')
-const forgotOtp     = ref(['', '', '', '', '', ''])
-const forgotNewPass = ref('')
-const forgotConfirm = ref('')
-const forgotError   = ref('')
-const forgotSuccess = ref(false)
+const forgotStep         = ref('phone') // phone | otp | newpass
+const forgotPhone        = ref('')
+const forgotOtp          = ref(['', '', '', '', '', ''])
+const forgotNewPass      = ref('')
+const forgotConfirm      = ref('')
+const forgotError        = ref('')
+const forgotSuccess      = ref(false)
+const forgotGeneratedOtp = ref('')
 
 async function sendForgotOtp() {
   if (!forgotPhone.value || forgotPhone.value.length < 10) { forgotError.value = 'Enter a valid phone number.'; return }
@@ -163,21 +171,28 @@ async function sendForgotOtp() {
   loading.value = true
   await new Promise(r => setTimeout(r, 800))
   loading.value = false
+  const user = auth.findUserByPhone(forgotPhone.value)
+  if (!user) { forgotError.value = 'This phone number is not registered.'; return }
+  forgotGeneratedOtp.value = String(Math.floor(100000 + Math.random() * 900000))
   forgotStep.value = 'otp'
 }
 
 async function verifyForgotOtp() {
-  if (forgotOtp.value.join('').length < 6) { forgotError.value = 'Enter all 6 digits.'; return }
+  const code = forgotOtp.value.join('')
+  if (code.length < 6) { forgotError.value = 'Enter all 6 digits.'; return }
+  if (code !== forgotGeneratedOtp.value) { forgotError.value = 'Incorrect OTP. Please try again.'; return }
   forgotError.value = ''
   forgotStep.value = 'newpass'
 }
 
 async function resetPassword() {
   if (!forgotNewPass.value) { forgotError.value = 'Enter a new password.'; return }
+  if (forgotNewPass.value.length < 4) { forgotError.value = 'Password must be at least 4 characters.'; return }
   if (forgotNewPass.value !== forgotConfirm.value) { forgotError.value = 'Passwords do not match.'; return }
   loading.value = true
   await new Promise(r => setTimeout(r, 800))
   loading.value = false
+  auth.updateUserPassword(forgotPhone.value, forgotNewPass.value)
   forgotSuccess.value = true
   setTimeout(() => { mode.value = 'login'; forgotSuccess.value = false; forgotStep.value = 'phone' }, 2000)
 }
@@ -281,13 +296,6 @@ async function submitContact() {
                 <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
               </button>
             </div>
-            <!-- Demo role selector -->
-            <div class="bg-amber-50 border border-amber-100 rounded-xl px-3.5 py-3">
-              <label class="block text-[10px] font-semibold text-amber-600 uppercase tracking-wide mb-1.5">Demo Role (Dev Only)</label>
-              <select v-model="demoRole" class="w-full text-sm bg-white border border-amber-200 rounded-lg px-2.5 py-1.5 text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-400">
-                <option v-for="r in DEMO_ROLES" :key="r" :value="r">{{ r }}</option>
-              </select>
-            </div>
             <div class="flex items-center justify-between">
               <label class="flex items-center gap-2 cursor-pointer">
                 <input v-model="remember" type="checkbox" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"/>
@@ -364,7 +372,9 @@ async function submitContact() {
           <template v-else>
             <p class="text-sm text-gray-500 mb-1">{{ t('login.otpSent') }} <strong>+91 {{ otpPhone }}</strong></p>
             <p class="text-xs text-gray-400 mb-4">{{ t('login.enterCode') }}</p>
-            <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-center mb-4">{{ t('login.demoHint') }}</p>
+            <p class="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-center mb-4">
+              Your OTP: <strong class="text-base tracking-widest">{{ generatedOtp }}</strong>
+            </p>
             <div class="flex gap-2 sm:gap-3 justify-center mb-4">
               <input v-for="(_, idx) in 6" :key="idx"
                 :id="`otp-${idx}`" type="text" inputmode="numeric" maxlength="1" autocomplete="one-time-code"
@@ -420,7 +430,7 @@ async function submitContact() {
               <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ t('login.role') }}</label>
               <select v-model="signup.role"
                 class="w-full px-3.5 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option>ASHA Worker</option><option>ANM</option><option>Doctor</option><option>Supervisor</option>
+                <option>ASHA Worker</option>
               </select>
             </div>
             <div>
@@ -471,7 +481,7 @@ async function submitContact() {
             </div>
             <div>
               <label class="block text-xs font-medium text-gray-600 mb-1.5">Occupation</label>
-              <input v-model="contactForm.occupation" type="text" placeholder="e.g. ASHA Worker, ANM, Doctor"
+              <input v-model="contactForm.occupation" type="text" placeholder="e.g. ASHA Worker, Health Official"
                 class="w-full px-3.5 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
             </div>
             <div>
@@ -480,8 +490,8 @@ async function submitContact() {
                 class="w-full px-3.5 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1.5">ASHA ID / Doctor ID</label>
-              <input v-model="contactForm.workerId" type="text" placeholder="Your worker or doctor ID"
+              <label class="block text-xs font-medium text-gray-600 mb-1.5">ASHA ID / Worker ID</label>
+              <input v-model="contactForm.workerId" type="text" placeholder="Your ASHA ID or worker ID"
                 class="w-full px-3.5 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
             </div>
             <div>
@@ -528,7 +538,9 @@ async function submitContact() {
           <!-- Step 2: Verify OTP -->
           <template v-else-if="forgotStep === 'otp'">
             <p class="text-sm text-gray-500 mb-2">{{ t('login.otpSent') }} <strong>+91 {{ forgotPhone }}</strong></p>
-            <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-center mb-4">{{ t('login.demoHint') }}</p>
+            <p class="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-center mb-4">
+              Your OTP: <strong class="text-base tracking-widest">{{ forgotGeneratedOtp }}</strong>
+            </p>
             <div class="flex gap-2 sm:gap-3 justify-center mb-4">
               <input v-for="(_, idx) in forgotOtp" :key="idx"
                 :id="`fotp-${idx}`" type="text" inputmode="numeric" maxlength="1"

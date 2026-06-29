@@ -23,7 +23,6 @@ const patient   = computed(() => isEdit.value ? store.getById(patientId.value) :
 const linkedPatientId = computed(() => route.query.patientId ? Number(route.query.patientId) : null)
 const linkedPatient   = computed(() => linkedPatientId.value ? store.getById(linkedPatientId.value) : null)
 
-const isDoctor = computed(() => auth.user?.role === 'Doctor' || auth.user?.role === 'ANM')
 
 // ── Section visibility ────────────────────────────────────────────────────────
 const sections = ref({ basic: true, complaints: false, pastHistory: false, familyHistory: false, examination: false })
@@ -897,8 +896,6 @@ const SEL = ' bg-white'
               <div class="flex items-center gap-3">
                 <svg class="w-5 h-5 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                 <span class="font-semibold text-gray-800">Examination &amp; Vitals</span>
-                <span v-if="isDoctor" class="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-medium">Doctor</span>
-                <span v-else class="text-[10px] bg-teal-100 text-teal-600 px-2 py-0.5 rounded-full font-medium">ASHA / ANM</span>
               </div>
               <svg :class="['w-5 h-5 text-gray-400 transition-transform', sections.examination ? 'rotate-180' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>
             </button>
@@ -940,23 +937,6 @@ const SEL = ' bg-white'
                   <textarea v-model="examForm.generalOther" rows="2" placeholder="Pallor, icterus, cyanosis, other observations..." :class="TC" lang="auto"/>
                 </div>
               </div>
-
-              <!-- Doctor-only: Specific Examination -->
-              <template v-if="isDoctor">
-                <div>
-                  <h4 class="text-sm font-semibold text-gray-700 mb-3">Specific / Systemic Examination</h4>
-                  <div class="space-y-3">
-                    <div>
-                      <label :class="LC">Systemic Examination</label>
-                      <textarea v-model="examForm.systemicExam" rows="3" placeholder="CVS, Respiratory, Abdomen, CNS..." :class="TC" lang="auto"/>
-                    </div>
-                    <div>
-                      <label :class="LC">Specific Findings / Remarks</label>
-                      <textarea v-model="examForm.specificFindings" rows="2" placeholder="Any specific clinical findings..." :class="TC" lang="auto"/>
-                    </div>
-                  </div>
-                </div>
-              </template>
 
               <!-- Exam Photo -->
               <div>

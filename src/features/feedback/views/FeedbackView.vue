@@ -11,40 +11,33 @@ function loadFeedback() { try { return JSON.parse(localStorage.getItem(FEEDBACK_
 function saveFeedback(list) { localStorage.setItem(FEEDBACK_KEY, JSON.stringify(list)) }
 
 const feedbackList = ref(loadFeedback().length ? loadFeedback() : [
-  { id: 1, from: 'Sunita Devi',  fromRole: 'ASHA Worker', to: 'Dr. Anjali Sharma', type: 'worker-to-doctor', rating: 5, comment: 'Very helpful and prompt response during teleconsult.', date: '5 Jun 2025', responded: false },
-  { id: 2, from: 'Dr. Vivek Singh', fromRole: 'Doctor',   to: 'Sunita Devi',       type: 'doctor-to-worker', rating: 4, comment: 'Good documentation of patient history and vitals.', date: '4 Jun 2025', responded: false },
-  { id: 3, from: 'Kavita Sharma', fromRole: 'ASHA Worker', to: 'Dr. Neha Verma',   type: 'worker-to-doctor', rating: 3, comment: 'Response was delayed by a few hours.', date: '3 Jun 2025', responded: true },
+  { id: 1, from: 'Sunita Devi',   fromRole: 'ASHA Worker', category: 'Teleconsult',    rating: 5, comment: 'Very helpful and prompt teleconsult experience.', date: '5 Jun 2025', responded: false },
+  { id: 2, from: 'Kavita Sharma', fromRole: 'ASHA Worker', category: 'App Usability',  rating: 4, comment: 'Good patient history and vitals recording interface.', date: '4 Jun 2025', responded: false },
+  { id: 3, from: 'Meena Kumari',  fromRole: 'ASHA Worker', category: 'Teleconsult',    rating: 3, comment: 'Response from the teleconsult was delayed by a few hours.', date: '3 Jun 2025', responded: true },
 ])
 
-const filterType = ref('All')
-const showModal  = ref(false)
-const submitted  = ref(false)
+const showModal = ref(false)
+const submitted = ref(false)
 
-const DOCTORS  = ['Dr. Anjali Sharma', 'Dr. Vivek Singh', 'Dr. Neha Verma', 'Dr. Rajesh Kumar']
-const WORKERS  = ['Sunita Devi', 'Kavita Sharma', 'Meena Kumari', 'Priya Singh']
+const CATEGORIES = ['Teleconsult', 'App Usability', 'Patient Care', 'Training', 'Other']
 
-const form = reactive({ type: 'worker-to-doctor', to: '', rating: 0, comment: '', anonymous: false })
+const form = reactive({ category: 'Teleconsult', rating: 0, comment: '', anonymous: false })
 
-const toOptions = computed(() => form.type === 'worker-to-doctor' ? DOCTORS : WORKERS)
-const filtered  = computed(() => {
-  if (filterType.value === 'All') return feedbackList.value
-  if (filterType.value === 'To Doctor') return feedbackList.value.filter(f => f.type === 'worker-to-doctor')
-  return feedbackList.value.filter(f => f.type === 'doctor-to-worker')
-})
+const filtered = computed(() => feedbackList.value)
 
 function openModal() {
-  form.type = 'worker-to-doctor'; form.to = ''; form.rating = 0; form.comment = ''; form.anonymous = false
+  form.category = 'Teleconsult'; form.rating = 0; form.comment = ''; form.anonymous = false
   showModal.value = true
 }
 
 function submitFeedback() {
-  if (!form.to || !form.rating || !form.comment.trim()) return
+  if (!form.rating || !form.comment.trim()) return
   const dateStr = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
   feedbackList.value.unshift({
     id: Date.now(),
     from:     form.anonymous ? t('feedback.anonymous') : 'Sunita Devi',
-    fromRole: form.type === 'worker-to-doctor' ? 'ASHA Worker' : 'Doctor',
-    to: form.to, type: form.type, rating: form.rating, comment: form.comment, date: dateStr, responded: false,
+    fromRole: 'ASHA Worker',
+    category: form.category, rating: form.rating, comment: form.comment, date: dateStr, responded: false,
   })
   saveFeedback(feedbackList.value)
   showModal.value = false
@@ -53,7 +46,6 @@ function submitFeedback() {
 }
 
 const ratingColor = (r) => r >= 4 ? 'text-green-600' : r === 3 ? 'text-yellow-500' : 'text-red-500'
-const typeLabel   = (type) => type === 'worker-to-doctor' ? t('feedback.fromWorker') : t('feedback.fromDoctor')
 const avgRating   = computed(() => !feedbackList.value.length ? 0 : (feedbackList.value.reduce((a, f) => a + f.rating, 0) / feedbackList.value.length).toFixed(1))
 </script>
 
@@ -73,10 +65,10 @@ const avgRating   = computed(() => !feedbackList.value.length ? 0 : (feedbackLis
       <!-- Stats -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div v-for="stat in [
-          { label: 'Total Feedback',        val: feedbackList.length,                                              color: 'bg-blue-600'   },
-          { label: t('feedback.fromWorker'), val: feedbackList.filter(f=>f.type==='worker-to-doctor').length,     color: 'bg-purple-500' },
-          { label: t('feedback.fromDoctor'), val: feedbackList.filter(f=>f.type==='doctor-to-worker').length,     color: 'bg-teal-500'   },
-          { label: 'Avg Rating',            val: avgRating + ' ★',                                                color: 'bg-amber-500'  },
+          { label: 'Total Feedback', val: feedbackList.length,                                              color: 'bg-blue-600'   },
+          { label: 'This Month',     val: feedbackList.filter(f=>f.date.includes('Jun 2025')).length,       color: 'bg-purple-500' },
+          { label: 'Responded',      val: feedbackList.filter(f=>f.responded).length,                       color: 'bg-teal-500'   },
+          { label: 'Avg Rating',     val: avgRating + ' ★',                                                 color: 'bg-amber-500'  },
         ]" :key="stat.label"
           class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
           <div :class="[stat.color, 'w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0']">
@@ -92,13 +84,7 @@ const avgRating   = computed(() => !feedbackList.value.length ? 0 : (feedbackLis
       <!-- Feedback card -->
       <div class="bg-white rounded-xl border border-gray-100 shadow-sm">
         <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 gap-3 flex-wrap">
-          <div class="flex items-center gap-2">
-            <button v-for="f in ['All', 'To Doctor', 'To Worker']" :key="f"
-              :class="['px-3 py-1.5 rounded-full text-xs font-medium transition', filterType===f ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200']"
-              @click="filterType=f">
-              {{ f === 'All' ? t('feedback.allTypes') : f }}
-            </button>
-          </div>
+          <h2 class="font-semibold text-gray-900 text-sm">{{ t('feedback.allTypes') }}</h2>
           <button @click="openModal" class="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
             {{ t('feedback.giveFeedback') }}
@@ -119,11 +105,7 @@ const avgRating   = computed(() => !feedbackList.value.length ? 0 : (feedbackLis
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
                   <span class="font-medium text-gray-800 text-sm">{{ fb.from }}</span>
-                  <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                  <span class="font-medium text-gray-700 text-sm">{{ fb.to }}</span>
-                  <span :class="[fb.type === 'worker-to-doctor' ? 'bg-purple-100 text-purple-600' : 'bg-teal-100 text-teal-600', 'px-2 py-0.5 text-xs font-medium rounded']">
-                    {{ typeLabel(fb.type) }}
-                  </span>
+                  <span class="bg-blue-100 text-blue-600 px-2 py-0.5 text-xs font-medium rounded">{{ fb.category }}</span>
                 </div>
                 <div class="flex items-center gap-1 mt-1">
                   <span v-for="s in 5" :key="s" :class="['text-base', s <= fb.rating ? 'text-amber-400' : 'text-gray-200']">★</span>
@@ -152,19 +134,8 @@ const avgRating   = computed(() => !feedbackList.value.length ? 0 : (feedbackLis
           <div class="px-6 py-5 space-y-4">
             <div>
               <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ t('feedback.type') }}</label>
-              <div class="flex gap-2">
-                <button v-for="opt in [{ val: 'worker-to-doctor', label: t('feedback.fromWorker') }, { val: 'doctor-to-worker', label: t('feedback.fromDoctor') }]" :key="opt.val"
-                  :class="['flex-1 py-2 rounded-lg text-xs font-medium border transition', form.type===opt.val ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-600 hover:border-blue-300']"
-                  @click="form.type=opt.val; form.to=''">
-                  {{ opt.label }}
-                </button>
-              </div>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ t('feedback.to') }} <span class="text-red-500">*</span></label>
-              <select v-model="form.to" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                <option value="">—</option>
-                <option v-for="opt in toOptions" :key="opt" :value="opt">{{ opt }}</option>
+              <select v-model="form.category" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <option v-for="c in CATEGORIES" :key="c" :value="c">{{ c }}</option>
               </select>
             </div>
             <div>
@@ -186,7 +157,7 @@ const avgRating   = computed(() => !feedbackList.value.length ? 0 : (feedbackLis
           </div>
           <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100">
             <button @click="showModal=false" class="px-4 py-2 text-sm border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50">{{ t('common.cancel') }}</button>
-            <button @click="submitFeedback" :disabled="!form.to || !form.rating || !form.comment.trim()"
+            <button @click="submitFeedback" :disabled="!form.rating || !form.comment.trim()"
               class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
               {{ t('feedback.submit') }}
             </button>

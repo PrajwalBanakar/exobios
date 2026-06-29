@@ -18,26 +18,20 @@ const showLangMenu      = ref(false)
 const syncTime          = ref('')
 const isOnline          = ref(navigator.onLine)
 
-// Field workers (ASHA / ANM) vs clinical roles (Doctor, Supervisor, Admin)
-const isFieldWorker = computed(() => ['ASHA Worker', 'ANM'].includes(auth.user?.role))
-
-// Role-aware nav — SOS is prominent for field workers; Reports visible to clinical/admin roles
 const nav = computed(() => {
   const items = [
-    { key: 'nav.dashboard',   icon: 'grid',     to: '/dashboard' },
-    { key: 'nav.patients',    icon: 'person',   to: '/patients'  },
-    // SOS shown prominently for field workers; still accessible to doctors via route
-    ...(isFieldWorker.value ? [{ key: 'nav.sos', icon: 'sos', to: '/sos' }] : []),
-    { key: 'nav.referrals',   icon: 'referral', to: '/referrals' },
-    { key: 'nav.teleconsult', icon: 'video',    to: '/teleconsult' },
-    { key: 'nav.devices',     icon: 'device',   to: '/devices' },
-    { key: 'nav.notifications', icon: 'bell',   to: '/notifications' },
-    { key: 'nav.feedback',    icon: 'feedback', to: '/feedback' },
-    // Reports only for roles with view_reports permission
+    { key: 'nav.dashboard',     icon: 'grid',     to: '/dashboard' },
+    { key: 'nav.patients',      icon: 'person',   to: '/patients'  },
+    { key: 'nav.sos',           icon: 'sos',      to: '/sos' },
+    { key: 'nav.referrals',     icon: 'referral', to: '/referrals' },
+    { key: 'nav.teleconsult',   icon: 'video',    to: '/teleconsult' },
+    { key: 'nav.devices',       icon: 'device',   to: '/devices' },
+    { key: 'nav.notifications', icon: 'bell',     to: '/notifications' },
+    { key: 'nav.feedback',      icon: 'feedback', to: '/feedback' },
     ...(auth.hasPermission('view_reports') ? [{ key: 'nav.reports', icon: 'chart', to: '/reports' }] : []),
     ...(auth.canManageUsers ? [{ key: 'nav.users', icon: 'shield', to: '/users' }] : []),
     ...(auth.isSuperAdmin   ? [{ key: 'nav.admin', icon: 'cog',    to: '/admin' }] : []),
-    { key: 'nav.settings',   icon: 'settings', to: '/settings' },
+    { key: 'nav.settings', icon: 'settings', to: '/settings' },
   ]
   return items
 })
@@ -171,16 +165,8 @@ const notifDotColor = {
         </router-link>
       </nav>
 
-      <!-- Role badge + CTA -->
-      <div class="px-3 pb-4 flex-shrink-0 space-y-2">
-        <!-- Role indicator chip -->
-        <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10">
-          <div :class="['w-2 h-2 rounded-full flex-shrink-0', isFieldWorker ? 'bg-green-400' : 'bg-blue-400']"/>
-          <div class="min-w-0">
-            <div class="text-[10px] text-slate-500 leading-none mb-0.5">Logged in as</div>
-            <div class="text-xs text-slate-200 font-semibold truncate">{{ auth.user?.role || 'User' }}</div>
-          </div>
-        </div>
+      <!-- CTA -->
+      <div class="px-3 pb-4 flex-shrink-0">
         <router-link
           to="/patients/new"
           @click="closeSidebar"

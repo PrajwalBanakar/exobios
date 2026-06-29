@@ -2,13 +2,8 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
 const ROLE_PERMISSIONS = {
-  'ASHA Worker':     ['view_patients', 'add_patient', 'create_assessment'],
-  'ANM':             ['view_patients', 'add_patient', 'create_assessment', 'view_reports'],
-  'Doctor':          ['view_patients', 'add_patient', 'create_assessment', 'view_reports', 'manage_teleconsult'],
-  'Supervisor':      ['view_patients', 'add_patient', 'create_assessment', 'view_reports', 'manage_teleconsult', 'manage_users'],
-  'Admin':           ['view_patients', 'add_patient', 'create_assessment', 'view_reports', 'manage_teleconsult', 'manage_users', 'manage_system'],
-  'Hospital Staff':  ['view_patients', 'view_reports'],
-  'Super Admin':     ['view_patients', 'add_patient', 'create_assessment', 'view_reports', 'manage_teleconsult', 'manage_users', 'manage_system', 'super_admin'],
+  'ASHA Worker': ['view_patients', 'add_patient', 'create_assessment'],
+  'Super Admin': ['view_patients', 'add_patient', 'create_assessment', 'view_reports', 'manage_teleconsult', 'manage_users', 'manage_system', 'super_admin'],
 }
 
 // 8-hour session
@@ -16,7 +11,40 @@ const SESSION_TTL_MS = 8 * 60 * 60 * 1000
 // Warn 5 minutes before expiry
 const SESSION_WARN_MS = 5 * 60 * 1000
 
-const AUTH_KEY = 'exobios_auth'
+const AUTH_KEY  = 'exobios_auth'
+const USERS_KEY = 'exobios_users'
+
+function getRegisteredUsers() {
+  try { return JSON.parse(localStorage.getItem(USERS_KEY) || '[]') } catch { return [] }
+}
+
+function registerUser({ name, phone, ashaId, role, password }) {
+  const users = getRegisteredUsers()
+  if (users.find(u => u.phone === phone))  return { success: false, error: 'This phone number is already registered.' }
+  if (users.find(u => u.ashaId === ashaId)) return { success: false, error: 'This ASHA ID is already registered.' }
+  users.push({ name, phone, ashaId, role, password })
+  localStorage.setItem(USERS_KEY, JSON.stringify(users))
+  return { success: true }
+}
+
+function findUser(loginId, password) {
+  const users = getRegisteredUsers()
+  return users.find(u => (u.phone === loginId || u.ashaId === loginId) && u.password === password) || null
+}
+
+function findUserByPhone(phone) {
+  const users = getRegisteredUsers()
+  return users.find(u => u.phone === phone) || null
+}
+
+function updateUserPassword(phone, newPassword) {
+  const users = getRegisteredUsers()
+  const idx = users.findIndex(u => u.phone === phone)
+  if (idx === -1) return false
+  users[idx].password = newPassword
+  localStorage.setItem(USERS_KEY, JSON.stringify(users))
+  return true
+}
 
 function loadSession() {
   try {
@@ -39,9 +67,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const user       = computed(() => session.value?.user ?? null)
   const isLoggedIn = computed(() => !!session.value && Date.now() < (session.value?.expiresAt ?? 0))
-  const isAdmin       = computed(() => ['Admin', 'Super Admin'].includes(user.value?.role))
-  const isDoctor      = computed(() => user.value?.role === 'Doctor')
-  const isSuperAdmin  = computed(() => user.value?.role === 'Super Admin')
+  const isSuperAdmin   = computed(() => user.value?.role === 'Super Admin')
   const canManageUsers = computed(() => (ROLE_PERMISSIONS[user.value?.role] ?? []).includes('manage_users'))
 
   // Reactive session-expiry warning (true when < 5 min left)
@@ -108,8 +134,9 @@ export const useAuthStore = defineStore('auth', () => {
   scheduleExpiry()
 
   return {
-    user, isLoggedIn, isAdmin, isDoctor, isSuperAdmin, canManageUsers,
+    user, isLoggedIn, isSuperAdmin, canManageUsers,
     hasPermission, login, logout, extendSession,
     sessionNearExpiry, sessionExpired,
+    registerUser, findUser, findUserByPhone, updateUserPassword,
   }
 })

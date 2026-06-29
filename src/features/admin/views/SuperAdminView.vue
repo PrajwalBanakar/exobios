@@ -8,19 +8,16 @@ const { t } = useI18n()
 const auth  = useAuthStore()
 
 const USERS_KEY      = 'exobios_admin_users'
-const ROLES          = ['ASHA Worker', 'ANM', 'Doctor', 'Supervisor', 'Admin', 'Hospital Staff', 'Super Admin']
+const ROLES          = ['ASHA Worker', 'Super Admin']
 const STATUS_OPTIONS = ['Active', 'Inactive', 'Suspended']
 
 function seedUsers() {
   return [
-    { id: 1, name: 'Sunita Devi',       email: 'sunita@asha.in',      phone: '9876543210', role: 'ASHA Worker',    status: 'Active',   lastLogin: '8 Jun 2025' },
-    { id: 2, name: 'Kavita Sharma',     email: 'kavita@asha.in',      phone: '9876543211', role: 'ASHA Worker',    status: 'Active',   lastLogin: '7 Jun 2025' },
-    { id: 3, name: 'Meena Kumari',      email: 'meena@anm.in',        phone: '9876543212', role: 'ANM',            status: 'Active',   lastLogin: '6 Jun 2025' },
-    { id: 4, name: 'Dr. Anjali Sharma', email: 'anjali@doctor.in',    phone: '9876543213', role: 'Doctor',         status: 'Active',   lastLogin: '8 Jun 2025' },
-    { id: 5, name: 'Dr. Vivek Singh',   email: 'vivek@doctor.in',     phone: '9876543214', role: 'Doctor',         status: 'Active',   lastLogin: '5 Jun 2025' },
-    { id: 6, name: 'Rajesh Gupta',      email: 'rajesh@admin.in',     phone: '9876543215', role: 'Admin',          status: 'Active',   lastLogin: '8 Jun 2025' },
-    { id: 7, name: 'Priya Singh',       email: 'priya@hospital.in',   phone: '9876543216', role: 'Hospital Staff', status: 'Inactive', lastLogin: '1 Jun 2025' },
-    { id: 8, name: 'Vinod Kumar',       email: 'vinod@supervisor.in', phone: '9876543217', role: 'Supervisor',     status: 'Active',   lastLogin: '7 Jun 2025' },
+    { id: 1, name: 'Sunita Devi',   email: 'sunita@asha.in',  phone: '9876543210', role: 'ASHA Worker', status: 'Active',   lastLogin: '8 Jun 2025' },
+    { id: 2, name: 'Kavita Sharma', email: 'kavita@asha.in',  phone: '9876543211', role: 'ASHA Worker', status: 'Active',   lastLogin: '7 Jun 2025' },
+    { id: 3, name: 'Geeta Bai',     email: 'geeta@asha.in',   phone: '9876543212', role: 'ASHA Worker', status: 'Active',   lastLogin: '6 Jun 2025' },
+    { id: 4, name: 'Rekha Devi',    email: 'rekha@asha.in',   phone: '9876543213', role: 'ASHA Worker', status: 'Inactive', lastLogin: '1 Jun 2025' },
+    { id: 5, name: 'Rajesh Gupta',  email: 'rajesh@admin.in', phone: '9876543214', role: 'Super Admin', status: 'Active',   lastLogin: '8 Jun 2025' },
   ]
 }
 
@@ -87,7 +84,7 @@ function deleteUser() {
 function showToast(msg) { toast.value = msg; setTimeout(() => { toast.value = '' }, 2500) }
 
 const statusColor = (s) => s === 'Active' ? 'bg-green-100 text-green-700' : s === 'Inactive' ? 'bg-gray-100 text-gray-500' : 'bg-red-100 text-red-600'
-const roleColor   = (r) => ({ 'ASHA Worker': 'bg-blue-100 text-blue-700', 'ANM': 'bg-cyan-100 text-cyan-700', 'Doctor': 'bg-purple-100 text-purple-700', 'Supervisor': 'bg-amber-100 text-amber-700', 'Admin': 'bg-orange-100 text-orange-700', 'Hospital Staff': 'bg-teal-100 text-teal-700', 'Super Admin': 'bg-red-100 text-red-700' }[r] || 'bg-gray-100 text-gray-600')
+const roleColor   = (r) => ({ 'ASHA Worker': 'bg-blue-100 text-blue-700', 'Super Admin': 'bg-red-100 text-red-700' }[r] || 'bg-gray-100 text-gray-600')
 const sortIcon    = (key) => sortKey.value === key ? (sortDir.value === 'asc' ? '↑' : '↓') : '↕'
 </script>
 
@@ -108,7 +105,7 @@ const sortIcon    = (key) => sortKey.value === key ? (sortDir.value === 'asc' ? 
 
       <!-- Role summary cards (clickable filter) -->
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-        <div v-for="role in ROLES.filter(r=>r!=='Super Admin')" :key="role"
+        <div v-for="role in ROLES" :key="role"
           :class="['bg-white rounded-xl border border-gray-100 shadow-sm p-3 flex items-center gap-3 cursor-pointer transition hover:shadow-md', roleFilter===role ? 'ring-2 ring-blue-400' : '']"
           @click="roleFilter = roleFilter === role ? 'All' : role">
           <div class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">

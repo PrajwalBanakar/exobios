@@ -10,19 +10,15 @@ const showAddModal = ref(false)
 const addSuccess   = ref(false)
 
 const users = ref([
-  { id: 1, name: 'Sunita Devi',    role: 'ASHA Worker', area: 'Rampur Block',    phone: '9876543210', status: 'Active',   patients: 32, lastActive: '2 hrs ago'  },
-  { id: 2, name: 'Kavita Sharma',  role: 'ANM',         area: 'Bhelwa Block',    phone: '9876543220', status: 'Active',   patients: 28, lastActive: '1 day ago'  },
-  { id: 3, name: 'Meena Kumari',   role: 'ASHA Worker', area: 'Shahabad Block',  phone: '9876543230', status: 'Active',   patients: 21, lastActive: '3 hrs ago'  },
-  { id: 4, name: 'Dr. Anil Gupta', role: 'Doctor',      area: 'CHC Rampur',      phone: '9876543240', status: 'Active',   patients: 0,  lastActive: '5 hrs ago'  },
-  { id: 5, name: 'Priya Singh',    role: 'Supervisor',  area: 'Rampur District', phone: '9876543250', status: 'Active',   patients: 0,  lastActive: 'Just now'   },
-  { id: 6, name: 'Rekha Verma',    role: 'ASHA Worker', area: 'Rampur Block',    phone: '9876543260', status: 'Inactive', patients: 18, lastActive: '5 days ago' },
+  { id: 1, name: 'Sunita Devi',   role: 'ASHA Worker', area: 'Rampur Block',   phone: '9876543210', status: 'Active',   patients: 32, lastActive: '2 hrs ago'  },
+  { id: 2, name: 'Kavita Sharma', role: 'ASHA Worker', area: 'Bhelwa Block',   phone: '9876543220', status: 'Active',   patients: 28, lastActive: '1 day ago'  },
+  { id: 3, name: 'Meena Kumari',  role: 'ASHA Worker', area: 'Shahabad Block', phone: '9876543230', status: 'Active',   patients: 21, lastActive: '3 hrs ago'  },
+  { id: 4, name: 'Rekha Verma',   role: 'ASHA Worker', area: 'Rampur Block',   phone: '9876543260', status: 'Inactive', patients: 18, lastActive: '5 days ago' },
 ])
 
 const roleColors = {
   'ASHA Worker': 'bg-blue-100 text-blue-600',
-  'ANM':         'bg-purple-100 text-purple-600',
-  'Doctor':      'bg-green-100 text-green-600',
-  'Supervisor':  'bg-orange-100 text-orange-600',
+  'Super Admin': 'bg-red-100 text-red-600',
 }
 
 const filtered = computed(() => {
@@ -48,7 +44,7 @@ const summaryStats = computed(() => [
   { labelKey: 'users.totalUsers',  val: users.value.length },
   { labelKey: 'users.ashaWorkers', val: users.value.filter(u => u.role === 'ASHA Worker').length },
   { labelKey: 'users.activeUsers', val: users.value.filter(u => u.status === 'Active').length },
-  { labelKey: 'users.supervisors', val: users.value.filter(u => u.role === 'Supervisor').length },
+  { labelKey: 'users.inactiveUsers', val: users.value.filter(u => u.status !== 'Active').length },
 ])
 </script>
 
@@ -165,7 +161,7 @@ const summaryStats = computed(() => [
           <div>
             <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ t('users.role') }}</label>
             <select v-model="newUser.role" class="w-full border border-gray-200 rounded-xl px-3.5 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option>ASHA Worker</option><option>ANM</option><option>Doctor</option><option>Supervisor</option>
+              <option>ASHA Worker</option>
             </select>
           </div>
           <div>

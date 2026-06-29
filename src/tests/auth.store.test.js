@@ -38,11 +38,22 @@ describe('Auth Store', () => {
     expect(localStorage.removeItem).toHaveBeenCalledWith('exobios_auth')
   })
 
-  it('hasPermission() returns true for allowed action', () => {
+  it('hasPermission() returns correct permissions for ASHA Worker', () => {
     const auth = useAuthStore()
-    auth.login({ loginId: 'doc01', name: 'Dr Anjali', role: 'Doctor' })
-    expect(auth.hasPermission('view_reports')).toBe(true)
+    auth.login({ loginId: 'asha01', name: 'Sunita', role: 'ASHA Worker' })
+    expect(auth.hasPermission('view_patients')).toBe(true)
+    expect(auth.hasPermission('create_assessment')).toBe(true)
+    expect(auth.hasPermission('view_reports')).toBe(false)
     expect(auth.hasPermission('manage_users')).toBe(false)
+  })
+
+  it('hasPermission() returns all permissions for Super Admin', () => {
+    const auth = useAuthStore()
+    auth.login({ loginId: 'sa01', name: 'Rajesh', role: 'Super Admin' })
+    expect(auth.hasPermission('view_reports')).toBe(true)
+    expect(auth.hasPermission('manage_users')).toBe(true)
+    expect(auth.hasPermission('manage_system')).toBe(true)
+    expect(auth.hasPermission('super_admin')).toBe(true)
   })
 
   it('canManageUsers is false for ASHA Worker', () => {
@@ -51,9 +62,9 @@ describe('Auth Store', () => {
     expect(auth.canManageUsers).toBe(false)
   })
 
-  it('canManageUsers is true for Admin', () => {
+  it('canManageUsers is true for Super Admin', () => {
     const auth = useAuthStore()
-    auth.login({ loginId: 'admin01', name: 'Rajesh', role: 'Admin' })
+    auth.login({ loginId: 'sa01', name: 'Rajesh', role: 'Super Admin' })
     expect(auth.canManageUsers).toBe(true)
   })
 
@@ -62,7 +73,7 @@ describe('Auth Store', () => {
     auth.login({ loginId: 'sa01', name: 'SA', role: 'Super Admin' })
     expect(auth.isSuperAdmin).toBe(true)
     auth.logout()
-    auth.login({ loginId: 'admin01', name: 'Admin', role: 'Admin' })
+    auth.login({ loginId: 'asha01', name: 'Sunita', role: 'ASHA Worker' })
     expect(auth.isSuperAdmin).toBe(false)
   })
 
