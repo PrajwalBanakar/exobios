@@ -65,7 +65,7 @@ public class AuthService {
         }
 
         UserPrincipal principal = UserPrincipal.from(
-                user.getId(), user.getPhone(), user.getRole().name(), true);
+                user.getId(), user.getPhone(), null, user.getRole().name(), true);
         String newAccessToken = tokenProvider.generateAccessToken(principal);
 
         return RefreshTokenResponse.builder()

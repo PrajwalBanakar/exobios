@@ -24,6 +24,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         return UserPrincipal.from(
                 user.getId(),
                 user.getPhone(),
+                user.getPasswordHash(),
                 user.getRole().name(),
                 user.getStatus() == UserStatus.ACTIVE
         );
