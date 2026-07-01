@@ -1,5 +1,6 @@
 package com.exobios.backend.assessments.entity;
 
+import com.exobios.backend.assessments.entity.enums.AiResultStatus;
 import com.exobios.backend.assessments.entity.enums.RiskLevel;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -36,6 +37,10 @@ public class AiAssessmentResult {
     @JoinColumn(name = "assessment_id", nullable = false, unique = true)
     private Assessment assessment;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private AiResultStatus status = AiResultStatus.PENDING;
+
     @Column(name = "summary", columnDefinition = "TEXT")
     private String summary;
 
@@ -46,8 +51,17 @@ public class AiAssessmentResult {
     @Column(name = "confidence_score", precision = 5, scale = 4)
     private BigDecimal confidenceScore;
 
+    @Column(name = "red_flags", columnDefinition = "TEXT")
+    private String redFlags;
+
     @Column(name = "recommendations", columnDefinition = "TEXT")
     private String recommendations;
+
+    @Column(name = "processing_time_ms")
+    private Long processingTimeMs;
+
+    @Column(name = "model_version", length = 50)
+    private String modelVersion;
 
     @Column(name = "generated_at")
     private Instant generatedAt;

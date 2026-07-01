@@ -1,5 +1,6 @@
 package com.exobios.backend.assessments.dto;
 
+import com.exobios.backend.assessments.entity.enums.AiResultStatus;
 import com.exobios.backend.assessments.entity.enums.RiskLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,11 +16,15 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AiAssessmentResultDto {
-    private UUID       id;
-    private String     summary;
-    private RiskLevel  riskLevel;
-    private BigDecimal confidenceScore;
-    private String     recommendations;
-    private Instant    generatedAt;
-    private String     source;
+    private UUID           id;
+    private AiResultStatus status;
+    private String         summary;
+    private RiskLevel      riskLevel;
+    private BigDecimal     confidenceScore;
+    private String         redFlags;
+    private String         recommendations;
+    private Long           processingTimeMs;
+    private String         modelVersion;
+    private Instant        generatedAt;
+    private String         source;
 }

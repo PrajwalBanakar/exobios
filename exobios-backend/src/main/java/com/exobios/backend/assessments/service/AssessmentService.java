@@ -8,12 +8,14 @@ import com.exobios.backend.assessments.dto.MedicalHistoryRequest;
 import com.exobios.backend.assessments.dto.SymptomRequest;
 import com.exobios.backend.assessments.dto.UpdateAssessmentRequest;
 import com.exobios.backend.assessments.dto.VitalsRequest;
+import com.exobios.backend.assessments.entity.AiAssessmentResult;
 import com.exobios.backend.assessments.entity.Assessment;
 import com.exobios.backend.assessments.entity.ExaminationFinding;
 import com.exobios.backend.assessments.entity.LegacyInformation;
 import com.exobios.backend.assessments.entity.MedicalHistory;
 import com.exobios.backend.assessments.entity.Symptom;
 import com.exobios.backend.assessments.entity.Vitals;
+import com.exobios.backend.assessments.entity.enums.AiResultStatus;
 import com.exobios.backend.assessments.entity.enums.AssessmentStatus;
 import com.exobios.backend.assessments.exception.AssessmentNotFoundException;
 import com.exobios.backend.assessments.mapper.AssessmentMapper;
@@ -22,6 +24,9 @@ import com.exobios.backend.common.dto.PageResponse;
 import com.exobios.backend.common.exception.BadRequestException;
 import com.exobios.backend.common.exception.ForbiddenException;
 import com.exobios.backend.common.exception.ResourceNotFoundException;
+import com.exobios.backend.integration.ai.AiGateway;
+import com.exobios.backend.integration.ai.AiRequest;
+import com.exobios.backend.integration.ai.AiResponse;
 import com.exobios.backend.patients.entity.Patient;
 import com.exobios.backend.patients.repository.PatientRepository;
 import com.exobios.backend.security.UserPrincipal;
@@ -49,6 +54,7 @@ public class AssessmentService {
     private final AssessmentRepository assessmentRepository;
     private final PatientRepository    patientRepository;
     private final AssessmentMapper     assessmentMapper;
+    private final AiGateway            aiGateway;
 
     // ── Create ────────────────────────────────────────────────────────────────
 
@@ -152,8 +158,41 @@ public class AssessmentService {
 
         assessment.setStatus(AssessmentStatus.SUBMITTED);
         assessment.setSubmittedAt(Instant.now());
-        log.info("Submitted assessment id={} number={}", id, assessment.getAssessmentNumber());
+
+        // Synchronous placeholder: call AI gateway, gracefully fall back to PENDING on failure.
+        AiAssessmentResult aiResult = callAiGateway(assessment);
+        aiResult.setAssessment(assessment);
+        assessment.setAiResult(aiResult);
+
+        log.info("Submitted assessment id={} number={} aiStatus={}",
+                id, assessment.getAssessmentNumber(), aiResult.getStatus());
         return assessmentMapper.toDto(assessmentRepository.save(assessment));
+    }
+
+    private AiAssessmentResult callAiGateway(Assessment assessment) {
+        AiRequest request = AiRequest.from(assessment);
+        long start = System.currentTimeMillis();
+        AiResponse response;
+        try {
+            response = aiGateway.analyzeAssessment(request);
+        } catch (Exception e) {
+            log.warn("AI gateway error for assessment {}: {}", assessment.getId(), e.getMessage());
+            response = AiResponse.placeholder();
+        }
+        long processingTimeMs = System.currentTimeMillis() - start;
+
+        AiAssessmentResult result = new AiAssessmentResult();
+        result.setStatus(response.getStatus() != null ? response.getStatus() : AiResultStatus.PENDING);
+        result.setSummary(response.getSummary());
+        result.setRiskLevel(response.getRiskLevel());
+        result.setConfidenceScore(response.getConfidenceScore());
+        result.setRedFlags(response.getRedFlags());
+        result.setRecommendations(response.getRecommendations());
+        result.setProcessingTimeMs(processingTimeMs);
+        result.setModelVersion(response.getModelVersion());
+        result.setGeneratedAt(Instant.now());
+        result.setSource(response.getSource());
+        return result;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
