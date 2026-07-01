@@ -25,6 +25,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import com.exobios.backend.audit.annotation.Auditable;
+import com.exobios.backend.audit.entity.enums.AuditAction;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,6 +42,7 @@ public class ReferralService {
 
     // ── Create ────────────────────────────────────────────────────────────────
 
+    @Auditable(action = AuditAction.REFER, entityType = "REFERRAL")
     @Transactional
     public ReferralDto createReferral(CreateReferralRequest request, UserPrincipal principal) {
         Assessment assessment = assessmentRepository.findById(request.getAssessmentId())
@@ -106,6 +109,7 @@ public class ReferralService {
 
     // ── Update ────────────────────────────────────────────────────────────────
 
+    @Auditable(action = AuditAction.UPDATE, entityType = "REFERRAL")
     @Transactional
     public ReferralDto updateReferral(UUID id, UpdateReferralRequest request,
                                       UserPrincipal principal) {
@@ -125,6 +129,7 @@ public class ReferralService {
         return referralMapper.toDto(referralRepository.save(referral));
     }
 
+    @Auditable(action = AuditAction.STATUS_CHANGE, entityType = "REFERRAL")
     @Transactional
     public ReferralDto updateStatus(UUID id, ReferralStatus newStatus, UserPrincipal principal) {
         Referral referral = findOrThrow(id);
@@ -137,6 +142,7 @@ public class ReferralService {
 
     // ── Delete ────────────────────────────────────────────────────────────────
 
+    @Auditable(action = AuditAction.DELETE, entityType = "REFERRAL", entityIdArgIndex = 0)
     @Transactional
     public void deleteReferral(UUID id, UserPrincipal principal) {
         Referral referral = findOrThrow(id);

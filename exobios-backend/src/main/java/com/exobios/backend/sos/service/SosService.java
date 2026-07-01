@@ -19,6 +19,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.exobios.backend.audit.annotation.Auditable;
+import com.exobios.backend.audit.entity.enums.AuditAction;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -31,6 +33,7 @@ public class SosService {
     private final SosRepository sosRepository;
     private final SosMapper     sosMapper;
 
+    @Auditable(action = AuditAction.CREATE, entityType = "SOS")
     @Transactional
     public SosRecordDto createSos(CreateSosRequest request, UserPrincipal principal) {
         SosRecord sos = new SosRecord();
@@ -70,6 +73,7 @@ public class SosService {
         return PageResponse.of(page.map(sosMapper::toDto));
     }
 
+    @Auditable(action = AuditAction.STATUS_CHANGE, entityType = "SOS")
     @Transactional
     public SosRecordDto updateSosStatus(UUID id, SosStatus newStatus, UserPrincipal principal) {
         SosRecord sos = findOrThrow(id);

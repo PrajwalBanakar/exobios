@@ -38,6 +38,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.exobios.backend.audit.annotation.Auditable;
+import com.exobios.backend.audit.entity.enums.AuditAction;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
@@ -58,6 +60,7 @@ public class AssessmentService {
 
     // ── Create ────────────────────────────────────────────────────────────────
 
+    @Auditable(action = AuditAction.CREATE, entityType = "ASSESSMENT")
     @Transactional
     public AssessmentDto createAssessment(CreateAssessmentRequest request, UserPrincipal principal) {
         Patient patient = patientRepository.findById(request.getPatientId())
@@ -111,6 +114,7 @@ public class AssessmentService {
 
     // ── Update ────────────────────────────────────────────────────────────────
 
+    @Auditable(action = AuditAction.UPDATE, entityType = "ASSESSMENT")
     @Transactional
     public AssessmentDto updateAssessment(UUID id, UpdateAssessmentRequest request,
                                           UserPrincipal principal) {
@@ -150,6 +154,7 @@ public class AssessmentService {
 
     // ── Submit ────────────────────────────────────────────────────────────────
 
+    @Auditable(action = AuditAction.SUBMIT, entityType = "ASSESSMENT")
     @Transactional
     public AssessmentDto submitAssessment(UUID id, UserPrincipal principal) {
         Assessment assessment = findOrThrow(id);

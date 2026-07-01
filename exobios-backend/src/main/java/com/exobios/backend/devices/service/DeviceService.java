@@ -23,6 +23,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import com.exobios.backend.audit.annotation.Auditable;
+import com.exobios.backend.audit.entity.enums.AuditAction;
 import java.util.UUID;
 
 @Slf4j
@@ -34,6 +36,7 @@ public class DeviceService {
     private final DeviceRepository deviceRepository;
     private final DeviceMapper     deviceMapper;
 
+    @Auditable(action = AuditAction.CREATE, entityType = "DEVICE")
     @Transactional
     public DeviceDto createDevice(CreateDeviceRequest request) {
         if (deviceRepository.existsByDeviceId(request.getDeviceId())) {
@@ -70,6 +73,7 @@ public class DeviceService {
         return PageResponse.of(page.map(deviceMapper::toDto));
     }
 
+    @Auditable(action = AuditAction.UPDATE, entityType = "DEVICE")
     @Transactional
     public DeviceDto updateDevice(UUID id, UpdateDeviceRequest request) {
         Device device = findOrThrow(id);
@@ -83,6 +87,7 @@ public class DeviceService {
         return deviceMapper.toDto(deviceRepository.save(device));
     }
 
+    @Auditable(action = AuditAction.STATUS_CHANGE, entityType = "DEVICE")
     @Transactional
     public DeviceDto assignDevice(UUID id, AssignDeviceRequest request) {
         Device device = findOrThrow(id);
@@ -98,6 +103,7 @@ public class DeviceService {
         return deviceMapper.toDto(deviceRepository.save(device));
     }
 
+    @Auditable(action = AuditAction.STATUS_CHANGE, entityType = "DEVICE")
     @Transactional
     public DeviceDto unassignDevice(UUID id) {
         Device device = findOrThrow(id);

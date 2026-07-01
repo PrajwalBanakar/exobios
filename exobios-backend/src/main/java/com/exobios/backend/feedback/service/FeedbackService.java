@@ -20,6 +20,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.exobios.backend.audit.annotation.Auditable;
+import com.exobios.backend.audit.entity.enums.AuditAction;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -32,6 +34,7 @@ public class FeedbackService {
     private final FeedbackRepository feedbackRepository;
     private final FeedbackMapper     feedbackMapper;
 
+    @Auditable(action = AuditAction.CREATE, entityType = "FEEDBACK")
     @Transactional
     public FeedbackDto submitFeedback(CreateFeedbackRequest request, UserPrincipal principal) {
         Feedback feedback = new Feedback();
@@ -67,6 +70,7 @@ public class FeedbackService {
         return PageResponse.of(page.map(feedbackMapper::toDto));
     }
 
+    @Auditable(action = AuditAction.UPDATE, entityType = "FEEDBACK")
     @Transactional
     public FeedbackDto respondToFeedback(UUID id, RespondFeedbackRequest request,
                                           UserPrincipal principal) {
@@ -82,6 +86,7 @@ public class FeedbackService {
         return feedbackMapper.toDto(feedbackRepository.save(feedback));
     }
 
+    @Auditable(action = AuditAction.STATUS_CHANGE, entityType = "FEEDBACK")
     @Transactional
     public FeedbackDto closeFeedback(UUID id, UserPrincipal principal) {
         Feedback feedback = findOrThrow(id);

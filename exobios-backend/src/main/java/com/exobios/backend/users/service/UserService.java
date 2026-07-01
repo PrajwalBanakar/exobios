@@ -20,6 +20,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import com.exobios.backend.audit.annotation.Auditable;
+import com.exobios.backend.audit.entity.enums.AuditAction;
 import java.util.UUID;
 
 @Slf4j
@@ -32,6 +34,7 @@ public class UserService {
     private final UserMapper      userMapper;
     private final PasswordEncoder passwordEncoder;
 
+    @Auditable(action = AuditAction.CREATE, entityType = "USER")
     @Transactional
     public UserDto createUser(CreateUserRequest request) {
         if (userRepository.existsByPhone(request.getPhone())) {
@@ -70,6 +73,7 @@ public class UserService {
         return PageResponse.of(userRepository.findAll(pageable).map(userMapper::toDto));
     }
 
+    @Auditable(action = AuditAction.UPDATE, entityType = "USER")
     @Transactional
     public UserDto updateUser(UUID id, UpdateUserRequest request) {
         User user = findOrThrow(id);
@@ -107,6 +111,7 @@ public class UserService {
         return userMapper.toDto(userRepository.save(user));
     }
 
+    @Auditable(action = AuditAction.STATUS_CHANGE, entityType = "USER")
     @Transactional
     public UserDto changeStatus(UUID id, UserStatus status) {
         User user = findOrThrow(id);

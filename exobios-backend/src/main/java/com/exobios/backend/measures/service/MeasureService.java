@@ -21,6 +21,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.exobios.backend.audit.annotation.Auditable;
+import com.exobios.backend.audit.entity.enums.AuditAction;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -37,6 +39,7 @@ public class MeasureService {
 
     // ── Create ────────────────────────────────────────────────────────────────
 
+    @Auditable(action = AuditAction.CREATE, entityType = "MEASURE")
     @Transactional
     public MeasureDto createMeasure(CreateMeasureRequest request, UserPrincipal principal) {
         Assessment assessment = assessmentRepository.findById(request.getAssessmentId())
@@ -91,6 +94,7 @@ public class MeasureService {
 
     // ── Update ────────────────────────────────────────────────────────────────
 
+    @Auditable(action = AuditAction.UPDATE, entityType = "MEASURE")
     @Transactional
     public MeasureDto updateMeasure(UUID id, UpdateMeasureRequest request, UserPrincipal principal) {
         Measure measure = findOrThrow(id);
@@ -109,6 +113,7 @@ public class MeasureService {
 
     // ── Delete ────────────────────────────────────────────────────────────────
 
+    @Auditable(action = AuditAction.DELETE, entityType = "MEASURE", entityIdArgIndex = 0)
     @Transactional
     public void deleteMeasure(UUID id, UserPrincipal principal) {
         Measure measure = findOrThrow(id);

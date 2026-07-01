@@ -23,6 +23,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import com.exobios.backend.audit.annotation.Auditable;
+import com.exobios.backend.audit.entity.enums.AuditAction;
 import java.time.Year;
 import java.util.UUID;
 
@@ -36,6 +38,7 @@ public class PatientService {
     private final PatientMapper     patientMapper;
     private final UserRepository    userRepository;
 
+    @Auditable(action = AuditAction.CREATE, entityType = "PATIENT")
     @Transactional
     public PatientDto createPatient(CreatePatientRequest request, UserPrincipal principal) {
         UUID ashaWorkerId = resolveAshaWorkerId(request, principal);
@@ -84,6 +87,7 @@ public class PatientService {
         return PageResponse.of(page.map(patientMapper::toDto));
     }
 
+    @Auditable(action = AuditAction.UPDATE, entityType = "PATIENT")
     @Transactional
     public PatientDto updatePatient(UUID id, UpdatePatientRequest request, UserPrincipal principal) {
         Patient patient = findOrThrow(id);
@@ -106,6 +110,7 @@ public class PatientService {
         return patientMapper.toDto(patientRepository.save(patient));
     }
 
+    @Auditable(action = AuditAction.STATUS_CHANGE, entityType = "PATIENT")
     @Transactional
     public PatientDto changeStatus(UUID id, PatientStatus status, UserPrincipal principal) {
         Patient patient = findOrThrow(id);
