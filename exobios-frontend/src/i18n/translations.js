@@ -2,6 +2,8 @@ const translations = {
   en: {
     'nav.dashboard':     'Dashboard',
     'nav.patients':      'Patients',
+    'nav.childHealth':   'Child Health',
+    'nav.maternalHealth':'Maternal Health',
     'nav.sos':           'SOS / Emergency',
     'nav.referrals':     'Referrals',
     'nav.teleconsult':   'Teleconsult',
@@ -566,6 +568,8 @@ const translations = {
   hi: {
     'nav.dashboard':  'डैशबोर्ड',
     'nav.patients':   'मरीज़',
+    'nav.childHealth':    'बाल स्वास्थ्य',
+    'nav.maternalHealth': 'मातृ स्वास्थ्य',
     'nav.sos':        'SOS / आपातकाल',
     'nav.reports':    'रिपोर्ट',
     'nav.users':      'उपयोगकर्ता',
@@ -1124,6 +1128,8 @@ const translations = {
   kn: {
     'nav.dashboard':  'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್',
     'nav.patients':   'ರೋಗಿಗಳು',
+    'nav.childHealth':    'ಮಕ್ಕಳ ಆರೋಗ್ಯ',
+    'nav.maternalHealth': 'ತಾಯಿಯ ಆರೋಗ್ಯ',
     'nav.sos':        'SOS / ತುರ್ತು',
     'nav.reports':    'ವರದಿಗಳು',
     'nav.users':      'ಬಳಕೆದಾರರು',

@@ -145,6 +145,18 @@ const routes = [
     meta: { requiresAuth: true, permission: 'super_admin' },
   },
   {
+    path: '/child-health',
+    name: 'ChildHealth',
+    component: () => import('@/pages/ComingSoonView.vue'),
+    meta: { requiresAuth: true, title: 'Child Health' },
+  },
+  {
+    path: '/maternal-health',
+    name: 'MaternalHealth',
+    component: () => import('@/pages/ComingSoonView.vue'),
+    meta: { requiresAuth: true, title: 'Maternal Health' },
+  },
+  {
     path: '/unauthorized',
     name: 'Unauthorized',
     component: () => import('@/pages/UnauthorizedView.vue'),

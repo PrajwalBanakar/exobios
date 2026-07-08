@@ -22,6 +22,8 @@ const nav = computed(() => {
   const items = [
     { key: 'nav.dashboard',     icon: 'grid',     to: '/dashboard' },
     { key: 'nav.patients',      icon: 'person',   to: '/patients'  },
+    { key: 'nav.childHealth',    icon: 'child',    to: '/child-health' },
+    { key: 'nav.maternalHealth', icon: 'maternal', to: '/maternal-health' },
     { key: 'nav.sos',           icon: 'sos',      to: '/sos' },
     { key: 'nav.referrals',     icon: 'referral', to: '/referrals' },
     { key: 'nav.teleconsult',   icon: 'video',    to: '/teleconsult' },
@@ -163,6 +165,8 @@ const notifDotColor = {
           <svg v-else-if="item.icon === 'shield'"    class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           <svg v-else-if="item.icon === 'cog'"       class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           <svg v-else-if="item.icon === 'bell'"      class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <svg v-else-if="item.icon === 'child'"     class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="5" r="2.5"/><path d="M12 8v6M9 11H5.5a1.5 1.5 0 0 0 0 3H9m3-3h3.5a1.5 1.5 0 0 1 0 3H12m-2 3-1 4m4-4 1 4"/></svg>
+          <svg v-else-if="item.icon === 'maternal'"  class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="4.5" r="2.5"/><path d="M9 21v-6a5 5 0 0 1 10 0M4 21c0-3 2-5 4-5"/></svg>
           <span>{{ t(item.key) }}</span>
         </router-link>
       </nav>
