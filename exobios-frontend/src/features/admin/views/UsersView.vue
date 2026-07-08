@@ -2,12 +2,17 @@
 import { ref, computed } from 'vue'
 import AppShell from '@/shared/components/AppShell.vue'
 import { useI18n } from '@/i18n'
+import { PARAMEDIC_ROLES, DOCTOR_ROLES, ADMIN_ROLES } from '@/features/auth/stores/auth'
 
 const { t } = useI18n()
 
 const search       = ref('')
 const showAddModal = ref(false)
 const addSuccess   = ref(false)
+
+// 'ASHA Worker' is the legacy alias (see auth store) — hidden from the Add User role
+// select so new field-worker records use the current role names.
+const ROLE_OPTIONS = [...PARAMEDIC_ROLES.filter(r => r !== 'ASHA Worker'), ...DOCTOR_ROLES, ...ADMIN_ROLES]
 
 const users = ref([
   { id: 1, name: 'Sunita Devi',   role: 'ASHA Worker', area: 'Rampur Block',   phone: '9876543210', status: 'Active',   patients: 32, lastActive: '2 hrs ago'  },
@@ -16,9 +21,13 @@ const users = ref([
   { id: 4, name: 'Rekha Verma',   role: 'ASHA Worker', area: 'Rampur Block',   phone: '9876543260', status: 'Inactive', patients: 18, lastActive: '5 days ago' },
 ])
 
-const roleColors = {
-  'ASHA Worker': 'bg-blue-100 text-blue-600',
-  'Super Admin': 'bg-red-100 text-red-600',
+// Color by role category rather than one color per exact role string, so newer roles
+// (ANM, CHO, LHV, Health Assistant, MBBS Doctor) aren't all uncolored.
+function roleColor(r) {
+  if (ADMIN_ROLES.includes(r)) return 'bg-red-100 text-red-600'
+  if (DOCTOR_ROLES.includes(r)) return 'bg-purple-100 text-purple-600'
+  if (PARAMEDIC_ROLES.includes(r)) return 'bg-blue-100 text-blue-600'
+  return 'bg-gray-100 text-gray-600'
 }
 
 const filtered = computed(() => {
@@ -26,12 +35,12 @@ const filtered = computed(() => {
   return users.value.filter(u => !q || u.name.toLowerCase().includes(q) || u.role.toLowerCase().includes(q) || u.area.toLowerCase().includes(q))
 })
 
-const newUser = ref({ name: '', role: 'ASHA Worker', area: '', phone: '' })
+const newUser = ref({ name: '', role: 'ASHA', area: '', phone: '' })
 
 function addUser() {
   if (!newUser.value.name || !newUser.value.phone) return
   users.value.push({ id: users.value.length + 1, ...newUser.value, status: 'Active', patients: 0, lastActive: 'Just now' })
-  newUser.value = { name: '', role: 'ASHA Worker', area: '', phone: '' }
+  newUser.value = { name: '', role: 'ASHA', area: '', phone: '' }
   showAddModal.value = false
   addSuccess.value = true
   setTimeout(() => { addSuccess.value = false }, 3000)
@@ -42,7 +51,7 @@ const statusLabel = (s) => s === 'Active' ? t('users.active') : t('users.inactiv
 
 const summaryStats = computed(() => [
   { labelKey: 'users.totalUsers',  val: users.value.length },
-  { labelKey: 'users.ashaWorkers', val: users.value.filter(u => u.role === 'ASHA Worker').length },
+  { labelKey: 'users.ashaWorkers', val: users.value.filter(u => PARAMEDIC_ROLES.includes(u.role)).length },
   { labelKey: 'users.activeUsers', val: users.value.filter(u => u.status === 'Active').length },
   { labelKey: 'users.inactiveUsers', val: users.value.filter(u => u.status !== 'Active').length },
 ])
@@ -114,7 +123,7 @@ const summaryStats = computed(() => [
                   </div>
                 </td>
                 <td class="px-4 py-3">
-                  <span :class="[roleColors[u.role] || 'bg-gray-100 text-gray-600', 'px-2.5 py-1 rounded-full text-xs font-semibold']">{{ u.role }}</span>
+                  <span :class="[roleColor(u.role), 'px-2.5 py-1 rounded-full text-xs font-semibold']">{{ u.role }}</span>
                 </td>
                 <td class="px-4 py-3 text-gray-600 text-sm">{{ u.area }}</td>
                 <td class="px-4 py-3 text-gray-600 text-sm">{{ u.phone }}</td>
@@ -149,7 +158,7 @@ const summaryStats = computed(() => [
       <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
         <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h3 class="font-semibold text-gray-800">{{ t('users.addNewUser') }}</h3>
-          <button @click="showAddModal = false" class="text-gray-400 hover:text-gray-600">
+          <button @click="showAddModal = false" class="text-gray-400 hover:text-gray-600" aria-label="Close">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
         </div>
@@ -161,7 +170,7 @@ const summaryStats = computed(() => [
           <div>
             <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ t('users.role') }}</label>
             <select v-model="newUser.role" class="w-full border border-gray-200 rounded-xl px-3.5 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option>ASHA Worker</option>
+              <option v-for="r in ROLE_OPTIONS" :key="r" :value="r">{{ r }}</option>
             </select>
           </div>
           <div>

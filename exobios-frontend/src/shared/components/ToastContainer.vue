@@ -39,7 +39,7 @@ const iconMap = {
             <path :d="iconMap[t.type] || iconMap.info"/>
           </svg>
           <span class="flex-1 leading-snug">{{ t.message }}</span>
-          <button class="text-white/70 hover:text-white ml-1" @click.stop="removeToast(t.id)">
+          <button class="text-white/70 hover:text-white ml-1" @click.stop="removeToast(t.id)" aria-label="Dismiss notification">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
         </div>

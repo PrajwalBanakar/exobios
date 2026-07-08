@@ -25,3 +25,19 @@ desktop.ini
 .env
 .env.local
 .env.*.local
+
+# Java / Maven
+**/target/
+*.class
+
+# Node
+**/node_modules/
+**/dist/
+
+*.log
+logs/
+
+**/uploads/
+
+*.tmp
+*.temp

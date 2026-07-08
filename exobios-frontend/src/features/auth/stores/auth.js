@@ -1,9 +1,28 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
+// Paramedic in the Karnataka context covers ASHA workers, ANM/MPV, CHO/MLHP, LHV/Health assistant.
+// 'ASHA Worker' is kept as a role name (rather than migrated) so existing localStorage
+// users/sessions created before this taxonomy still resolve to the correct category.
+export const PARAMEDIC_ROLES = ['ASHA Worker', 'ASHA', 'ANM', 'CHO', 'LHV', 'Health Assistant']
+export const DOCTOR_ROLES    = ['MBBS Doctor']
+export const ADMIN_ROLES     = ['Super Admin']
+
+const PARAMEDIC_PERMS = ['view_patients', 'add_patient', 'create_assessment']
+const DOCTOR_PERMS    = ['view_patients', 'add_patient', 'create_assessment', 'view_reports', 'manage_teleconsult']
+const ADMIN_PERMS     = ['view_patients', 'add_patient', 'create_assessment', 'view_reports', 'manage_teleconsult', 'manage_users', 'manage_system', 'super_admin']
+
 const ROLE_PERMISSIONS = {
-  'ASHA Worker': ['view_patients', 'add_patient', 'create_assessment'],
-  'Super Admin': ['view_patients', 'add_patient', 'create_assessment', 'view_reports', 'manage_teleconsult', 'manage_users', 'manage_system', 'super_admin'],
+  ...Object.fromEntries(PARAMEDIC_ROLES.map(r => [r, PARAMEDIC_PERMS])),
+  ...Object.fromEntries(DOCTOR_ROLES.map(r => [r, DOCTOR_PERMS])),
+  ...Object.fromEntries(ADMIN_ROLES.map(r => [r, ADMIN_PERMS])),
+}
+
+function roleCategoryOf(role) {
+  if (ADMIN_ROLES.includes(role))     return 'ADMIN'
+  if (DOCTOR_ROLES.includes(role))    return 'DOCTOR'
+  if (PARAMEDIC_ROLES.includes(role)) return 'PARAMEDIC'
+  return null
 }
 
 // 8-hour session
@@ -67,7 +86,13 @@ export const useAuthStore = defineStore('auth', () => {
 
   const user       = computed(() => session.value?.user ?? null)
   const isLoggedIn = computed(() => !!session.value && Date.now() < (session.value?.expiresAt ?? 0))
-  const isSuperAdmin   = computed(() => user.value?.role === 'Super Admin')
+
+  // roleCategory is the taxonomy consumers should branch on ('PARAMEDIC' | 'DOCTOR' | 'ADMIN' | null),
+  // rather than comparing against individual role strings like 'ASHA' vs 'ANM'.
+  const roleCategory   = computed(() => roleCategoryOf(user.value?.role))
+  const isParamedic    = computed(() => roleCategory.value === 'PARAMEDIC')
+  const isDoctor       = computed(() => roleCategory.value === 'DOCTOR')
+  const isSuperAdmin   = computed(() => roleCategory.value === 'ADMIN')
   const canManageUsers = computed(() => (ROLE_PERMISSIONS[user.value?.role] ?? []).includes('manage_users'))
 
   // Reactive session-expiry warning (true when < 5 min left)
@@ -134,7 +159,7 @@ export const useAuthStore = defineStore('auth', () => {
   scheduleExpiry()
 
   return {
-    user, isLoggedIn, isSuperAdmin, canManageUsers,
+    user, isLoggedIn, roleCategory, isParamedic, isDoctor, isSuperAdmin, canManageUsers,
     hasPermission, login, logout, extendSession,
     sessionNearExpiry, sessionExpired,
     registerUser, findUser, findUserByPhone, updateUserPassword,

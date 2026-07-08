@@ -1,8 +1,13 @@
 <script setup>
-import { ref, reactive, nextTick, watch } from 'vue'
+import { ref, reactive, nextTick, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/features/auth/stores/auth'
+import { useAuthStore, PARAMEDIC_ROLES, DOCTOR_ROLES } from '@/features/auth/stores/auth'
+import RadioGroup from '@/shared/components/forms/RadioGroup.vue'
 import { useI18n } from '@/i18n'
+
+// 'ASHA Worker' is the legacy alias kept for backward compatibility (see auth store) —
+// hidden here so new signups pick the current role names.
+const SIGNUP_ROLE_OPTIONS = [...PARAMEDIC_ROLES.filter(r => r !== 'ASHA Worker'), ...DOCTOR_ROLES]
 
 const router = useRouter()
 const auth   = useAuthStore()
@@ -135,7 +140,14 @@ function handleOtpPaste(e) {
 }
 
 // ─── Signup ───────────────────────────────────────────────────────────────────
-const signup        = reactive({ name: '', phone: '', ashaId: '', role: 'ASHA Worker', password: '', confirm: '' })
+const signup        = reactive({ name: '', phone: '', ashaId: '', role: 'ASHA', password: '', confirm: '' })
+
+// Same dynamic-label pattern as the Contact Us form's workerIdLabel — the ID field
+// should ask for the ID that matches whichever role was actually selected.
+const signupIdLabel = computed(() => {
+  if (signup.role === 'MBBS Doctor') return 'MBBS Doctor Registration ID'
+  return signup.role ? `${signup.role} ID` : 'ASHA/ANM/CHO/LHV ID or MBBS Doctor ID'
+})
 const signupShowPass = ref(false)
 const signupError   = ref('')
 const signupSuccess = ref(false)
@@ -208,9 +220,18 @@ const showTerms = ref(false)
 const termsTab  = ref('terms') // terms | privacy
 
 // ─── Contact Us ───────────────────────────────────────────────────────────────
-const contactForm    = reactive({ name: '', occupation: '', phone: '', workerId: '', other: '' })
+const CONTACT_ROLE_OPTIONS = ['ASHA', 'ANM', 'CHO', 'LHV', 'Health Assistant', 'MBBS Doctor']
+const contactForm    = reactive({ name: '', occupation: '', phone: '', role: '', workerId: '', other: '' })
 const contactSuccess = ref(false)
 const contactError   = ref('')
+
+// ID field label switches with the selected role — MBBS Doctor gets a registration-ID
+// label, paramedic roles (ASHA/ANM/CHO/LHV/Health Assistant) get "<Role> ID".
+const workerIdLabel = computed(() => {
+  if (contactForm.role === 'MBBS Doctor') return 'MBBS Doctor Registration ID'
+  if (contactForm.role) return `${contactForm.role} ID`
+  return 'ASHA/ANM/CHO/LHV ID or MBBS Doctor ID'
+})
 
 async function submitContact() {
   if (!contactForm.name || !contactForm.phone) { contactError.value = 'Name and phone number are required.'; return }
@@ -219,7 +240,7 @@ async function submitContact() {
   await new Promise(r => setTimeout(r, 700))
   loading.value = false
   contactSuccess.value = true
-  Object.assign(contactForm, { name: '', occupation: '', phone: '', workerId: '', other: '' })
+  Object.assign(contactForm, { name: '', occupation: '', phone: '', role: '', workerId: '', other: '' })
   setTimeout(() => { contactSuccess.value = false; mode.value = 'login' }, 2500)
 }
 </script>
@@ -422,16 +443,16 @@ async function submitContact() {
                 class="w-full px-3.5 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ t('login.ashaId') }} <span class="text-red-500">*</span></label>
-              <input v-model="signup.ashaId" type="text" :placeholder="t('login.ashaIdPlaceholder')"
-                class="w-full px-3.5 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-            </div>
-            <div>
               <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ t('login.role') }}</label>
               <select v-model="signup.role"
                 class="w-full px-3.5 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option>ASHA Worker</option>
+                <option v-for="r in SIGNUP_ROLE_OPTIONS" :key="r" :value="r">{{ r }}</option>
               </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ signupIdLabel }} <span class="text-red-500">*</span></label>
+              <input v-model="signup.ashaId" type="text" :placeholder="`Your ${signupIdLabel}`"
+                class="w-full px-3.5 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
             </div>
             <div>
               <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ t('login.password') }} <span class="text-red-500">*</span></label>
@@ -490,8 +511,12 @@ async function submitContact() {
                 class="w-full px-3.5 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1.5">ASHA ID / Worker ID</label>
-              <input v-model="contactForm.workerId" type="text" placeholder="Your ASHA ID or worker ID"
+              <label class="block text-xs font-medium text-gray-600 mb-1.5">Role</label>
+              <RadioGroup v-model="contactForm.role" :options="CONTACT_ROLE_OPTIONS" color="blue" columns="flex flex-wrap gap-2"/>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ workerIdLabel }}</label>
+              <input v-model="contactForm.workerId" type="text" :placeholder="`Your ${workerIdLabel}`"
                 class="w-full px-3.5 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
             </div>
             <div>
@@ -581,7 +606,7 @@ async function submitContact() {
               <button :class="['text-sm font-semibold pb-1 transition', termsTab === 'terms' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700']" @click="termsTab = 'terms'">Terms of Service</button>
               <button :class="['text-sm font-semibold pb-1 transition', termsTab === 'privacy' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700']" @click="termsTab = 'privacy'">Privacy Policy</button>
             </div>
-            <button @click="showTerms = false" class="text-gray-400 hover:text-gray-600 p-1">
+            <button @click="showTerms = false" class="text-gray-400 hover:text-gray-600 p-1" aria-label="Close">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
           </div>

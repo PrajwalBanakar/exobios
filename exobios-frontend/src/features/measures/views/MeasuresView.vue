@@ -7,6 +7,10 @@ import { usePatientsStore } from '@/features/patients/stores/patients'
 import { useReferralsStore } from '@/features/referrals/stores/referrals'
 import { useTeleconsultStore } from '@/features/teleconsult/stores/teleconsult'
 import { useAuthStore } from '@/features/auth/stores/auth'
+import { useActionPlanStore } from '@/shared/stores/actionPlan'
+import { HOSPITALS, getHospitalById } from '@/shared/constants/hospitals'
+import { DOCTOR_TIER, getDoctorsByTier, getDoctorById } from '@/shared/constants/doctors'
+import { TRANSPORT_OPTIONS } from '@/shared/constants/transport'
 import { addToQueue } from '@/shared/offline/syncQueue'
 import { isOnline } from '@/shared/offline/network'
 
@@ -16,17 +20,17 @@ const store            = usePatientsStore()
 const referralsStore   = useReferralsStore()
 const teleconsultStore = useTeleconsultStore()
 const auth             = useAuthStore()
+const actionPlan       = useActionPlanStore()
+
+// Doctor tier follows role, matching AIResultView: Paramedic sees general doctors, Doctor sees specialists.
+const teleconsultDoctors = computed(() => getDoctorsByTier(auth.isDoctor ? DOCTOR_TIER.SPECIALIST : DOCTOR_TIER.GENERAL))
 
 const patientId = computed(() => Number(route.params.id))
 const patient   = computed(() => store.getById(patientId.value) || { name: 'Unknown', id: patientId.value, age: '—', gender: '—', location: '—', risk: '—' })
 
-const aiActions = [
-  'Give Paracetamol 650mg',
-  'Ensure plenty of fluids',
-  'ORS if loose motions',
-  'Rest and monitor temperature',
-  'Monitor for red flags',
-]
+// Read from the shared actionPlan store (set by AIResultView's "Save Action Record") instead
+// of keeping an independent mock list — avoids the two screens showing different recommendations.
+const aiActions = actionPlan.getPlan(patientId.value).immediateMeasures.map(m => m.label)
 
 const implemented = reactive(Object.fromEntries(aiActions.map(a => [a, { yes: false, no: false, note: '' }])))
 
@@ -36,6 +40,7 @@ const additional = reactive({
   'Ambulance called':    false, 'Doctor contacted':    false, 'Family educated':     false,
   'Referral slip issued':false, 'Other':               false,
 })
+const otherMeasureText = ref('')
 
 const patientResponse = ref('Stable')
 const responseOptions = ['Improved', 'Stable', 'No Change', 'Deteriorating', 'Emergency']
@@ -47,8 +52,8 @@ const responseColors  = {
   Emergency:     'border-red-500 bg-red-50 text-red-500',
 }
 
-const referral    = reactive({ required: 'no', center: 'Rampur Community Health Center', time: '', transport: 'Ambulance' })
-const teleconsult = reactive({ done: 'no', doctor: 'Dr. Anjali Sharma', time: '', advice: '' })
+const referral    = reactive({ required: 'no', center: HOSPITALS[0].id, time: '', transport: 'Ambulance' })
+const teleconsult = reactive({ done: 'no', doctor: teleconsultDoctors.value[0].id, time: '', advice: '' })
 // Evidence upload
 const evidenceSlots = [
   { key: 'photo',    label: 'Patient Photo',    accept: 'image/*' },
@@ -72,6 +77,7 @@ function buildSnapshot() {
   return {
     implemented: JSON.parse(JSON.stringify(implemented)),
     additional:  JSON.parse(JSON.stringify(additional)),
+    otherMeasureText: otherMeasureText.value,
     patientResponse: patientResponse.value,
     referral:    JSON.parse(JSON.stringify(referral)),
     teleconsult: JSON.parse(JSON.stringify(teleconsult)),
@@ -84,19 +90,39 @@ function saveDraft() {
   setTimeout(() => { draftSaved.value = false }, 2200)
 }
 
+// Returns true if a saved draft was found and applied.
 function loadDraft() {
   try {
     const d = JSON.parse(localStorage.getItem(draftKey.value) || 'null')
-    if (!d) return
+    if (!d) return false
     Object.assign(implemented, d.implemented)
     Object.assign(additional,  d.additional)
+    otherMeasureText.value = d.otherMeasureText || ''
     patientResponse.value = d.patientResponse
     Object.assign(referral,    d.referral)
     Object.assign(teleconsult, d.teleconsult)
-  } catch {}
+    return true
+  } catch { return false }
 }
 
-onMounted(loadDraft)
+// Prefill the referral/teleconsult decision from the shared action plan (set in
+// AIResultView) so the ASHA worker isn't asked the same question twice with a blank form.
+function prefillFromActionPlan() {
+  const plan = actionPlan.getPlan(patientId.value)
+  if (plan.referral.status === 'yes' && plan.referral.hospitalId) {
+    referral.required = 'yes'
+    referral.center = plan.referral.hospitalId
+  }
+  if (plan.teleconsult.status === 'yes' && plan.teleconsult.doctorId) {
+    teleconsult.done = 'yes'
+    teleconsult.doctor = plan.teleconsult.doctorId
+  }
+}
+
+onMounted(() => {
+  const hadDraft = loadDraft()
+  if (!hadDraft) prefillFromActionPlan()
+})
 
 const submitting     = ref(false)
 const submitted      = ref(false)
@@ -125,20 +151,28 @@ async function submitMeasures() {
 
     // Apply locally regardless of network so referral/teleconsult stores reflect the submission
     if (referral.required === 'yes' && referral.center) {
+      const hospital = getHospitalById(referral.center)
       referralsStore.add({
         patientId: patientId.value, patientName: patient.value.name,
-        hospital: referral.center, transport: referral.transport,
+        hospital: hospital?.name || referral.center, facilityType: hospital?.type, transport: referral.transport,
         ashaWorker: workerName, notes: '',
       })
     }
     if (teleconsult.done === 'yes' && teleconsult.doctor) {
+      const doctor = getDoctorById(teleconsult.doctor)
       teleconsultStore.add({
         patientId: patientId.value, patientName: patient.value.name,
-        doctor: teleconsult.doctor, spec: 'General Physician',
+        doctor: doctor?.name || teleconsult.doctor, spec: doctor?.specialization || 'General Physician',
         ashaWorker: workerName, advice: teleconsult.advice,
         status: 'Completed', duration: teleconsult.time ? 15 : null,
       })
     }
+
+    // Sync the outcome back to the shared action plan so it stays the single source of truth.
+    actionPlan.setReferral(patientId.value, { hospitalId: referral.required === 'yes' ? referral.center : null, status: referral.required === 'yes' ? 'completed' : 'no' })
+    actionPlan.setTeleconsult(patientId.value, { doctorId: teleconsult.done === 'yes' ? teleconsult.doctor : null, status: teleconsult.done === 'yes' ? 'completed' : 'no' })
+    actionPlan.setOutcome(patientId.value, patientResponse.value)
+
     localStorage.removeItem(draftKey.value)
     submitted.value = true
     setTimeout(() => router.push('/dashboard'), 2000)
@@ -206,7 +240,7 @@ async function submitMeasures() {
               1. AI Recommended Actions
               <span class="text-xs text-blue-500 font-normal">(From Assessment)</span>
             </h3>
-            <ul class="space-y-2.5">
+            <ul v-if="aiActions.length" class="space-y-2.5">
               <li v-for="a in aiActions" :key="a" class="flex items-center gap-2">
                 <div class="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
                   <svg class="w-3 h-3 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
@@ -214,6 +248,7 @@ async function submitMeasures() {
                 <span class="text-xs text-gray-700">{{ a }}</span>
               </li>
             </ul>
+            <p v-else class="text-xs text-gray-400 italic">No AI-recommended actions recorded yet — complete the AI Result step first.</p>
           </div>
 
           <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
@@ -224,7 +259,7 @@ async function submitMeasures() {
                 <span class="text-xs text-gray-700">{{ key }}</span>
               </label>
             </div>
-            <input v-if="additional['Other']" type="text" placeholder="Please specify"
+            <input v-if="additional['Other']" v-model="otherMeasureText" type="text" placeholder="Please specify"
               class="w-full mt-2 border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"/>
           </div>
         </div>
@@ -233,7 +268,7 @@ async function submitMeasures() {
         <div class="space-y-4">
           <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
             <h3 class="font-semibold text-gray-800 text-sm mb-3">2. Actions Actually Implemented</h3>
-            <div class="space-y-3">
+            <div v-if="aiActions.length" class="space-y-3">
               <div class="grid grid-cols-[1fr_auto_auto_1fr] gap-2 text-xs font-semibold text-gray-500 border-b border-gray-100 pb-2">
                 <span>Action</span><span class="text-center col-span-2">Done?</span><span>Notes</span>
               </div>
@@ -251,12 +286,13 @@ async function submitMeasures() {
                   class="flex-1 border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"/>
               </div>
             </div>
+            <p v-else class="text-xs text-gray-400 italic">Nothing to record yet.</p>
           </div>
 
           <!-- Evidence upload -->
           <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
             <h3 class="font-semibold text-gray-800 text-sm mb-3">7. Evidence Upload</h3>
-            <div class="grid grid-cols-5 gap-2">
+            <div class="grid grid-cols-3 sm:grid-cols-5 gap-2">
               <div v-for="slot in evidenceSlots" :key="slot.key" class="text-center">
                 <input :ref="el => fileInputRefs[slot.key] = el" type="file" :accept="slot.accept" class="hidden" @change="handleFileChange(slot.key, $event)"/>
                 <div v-if="!evidenceFiles[slot.key]"
@@ -303,9 +339,7 @@ async function submitMeasures() {
                 <div>
                   <label class="block text-gray-600 mb-1">Referral Center <span class="text-red-500">*</span></label>
                   <select v-model="referral.center" class="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-blue-500">
-                    <option>Rampur Community Health Center</option>
-                    <option>Sharma Hospital</option>
-                    <option>City Care Hospital</option>
+                    <option v-for="h in HOSPITALS" :key="h.id" :value="h.id">{{ h.name }}</option>
                   </select>
                 </div>
                 <div>
@@ -315,7 +349,7 @@ async function submitMeasures() {
                 <div>
                   <label class="block text-gray-600 mb-1">Transport <span class="text-red-500">*</span></label>
                   <div class="flex gap-3 flex-wrap">
-                    <label v-for="opt in ['Ambulance','Private Vehicle','Govt. Vehicle','Walking']" :key="opt" class="flex items-center gap-1.5 cursor-pointer">
+                    <label v-for="opt in TRANSPORT_OPTIONS" :key="opt" class="flex items-center gap-1.5 cursor-pointer">
                       <input type="radio" v-model="referral.transport" :value="opt" class="text-blue-600"/>
                       <span class="text-xs">{{ opt }}</span>
                     </label>
@@ -338,9 +372,7 @@ async function submitMeasures() {
                 <div>
                   <label class="block text-gray-600 mb-1">Doctor Name</label>
                   <select v-model="teleconsult.doctor" class="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-blue-500">
-                    <option>Dr. Anjali Sharma</option>
-                    <option>Dr. Vivek Singh</option>
-                    <option>Dr. Neha Verma</option>
+                    <option v-for="d in teleconsultDoctors" :key="d.id" :value="d.id">{{ d.name }}</option>
                   </select>
                 </div>
                 <div>

@@ -505,3 +505,27 @@ export const COMPLAINT_COLOR_MAP = {
   blue:   { bg: 'bg-blue-50',   border: 'border-blue-200',   text: 'text-blue-700',   badge: 'bg-blue-100 text-blue-700',   selected: 'bg-blue-100 border-blue-400' },
   gray:   { bg: 'bg-gray-50',   border: 'border-gray-200',   text: 'text-gray-700',   badge: 'bg-gray-100 text-gray-700',   selected: 'bg-gray-100 border-gray-400' },
 }
+
+/**
+ * AI flags (duration-based + symptom-based) for a set of selected complaints.
+ * Shared by NewAssessmentView (live form state) and AIResultView (a saved assessment's
+ * complaints.selected/complaints.details) so both read the exact same flag logic instead
+ * of AIResultView re-deriving its own. Safe against older/mock assessment records whose
+ * `complaints` isn't in the {selected, details} shape — just returns no flags.
+ */
+export function computeActiveFlags(selectedIds = [], details = {}) {
+  const flags = []
+  for (const id of selectedIds) {
+    const def    = COMPLAINTS_DEF.find(c => c.id === id)
+    const detail = details[id]
+    if (!def || !detail) continue
+    const durOpt = def.durationOptions?.find(d => d.label === detail.duration)
+    if (durOpt?.flag) flags.push({ complaint: def.label, message: durOpt.flag, level: durOpt.flagLevel || 'warning' })
+    if (def.symptomFlags && detail.symptoms?.length) {
+      for (const sym of detail.symptoms) {
+        if (def.symptomFlags[sym]) flags.push({ complaint: def.label, ...def.symptomFlags[sym] })
+      }
+    }
+  }
+  return flags
+}

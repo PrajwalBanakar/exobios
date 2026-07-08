@@ -127,7 +127,7 @@ const avgRating   = computed(() => !feedbackList.value.length ? 0 : (feedbackLis
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
           <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
             <h3 class="font-semibold text-gray-900 text-lg">{{ t('feedback.giveFeedback') }}</h3>
-            <button @click="showModal=false" class="text-gray-400 hover:text-gray-600 p-1">
+            <button @click="showModal=false" class="text-gray-400 hover:text-gray-600 p-1" aria-label="Close">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
           </div>

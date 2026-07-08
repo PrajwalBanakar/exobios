@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/features/auth/stores/auth'
 
 /**
  * All route definitions.
@@ -81,13 +82,13 @@ const routes = [
     path: '/reports',
     name: 'Reports',
     component: () => import('@/features/reports/views/ReportsView.vue'),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, permission: 'view_reports' },
   },
   {
     path: '/users',
     name: 'Users',
     component: () => import('@/features/admin/views/UsersView.vue'),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, permission: 'manage_users' },
   },
   {
     path: '/settings',
@@ -141,7 +142,7 @@ const routes = [
     path: '/admin',
     name: 'SuperAdmin',
     component: () => import('@/features/admin/views/SuperAdminView.vue'),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, permission: 'super_admin' },
   },
   {
     path: '/unauthorized',
@@ -177,6 +178,14 @@ router.beforeEach((to) => {
   const isLoggedIn = !!session
   if (to.meta.requiresAuth && !isLoggedIn) return { name: 'Login' }
   if (to.name === 'Login' && isLoggedIn) return { name: 'Dashboard' }
+
+  // Route-level permission gate — the sidebar already hides these links from users
+  // without the permission, but the route itself must enforce it too (otherwise a
+  // Paramedic/Doctor could reach /admin or /users by typing the URL directly).
+  if (to.meta.permission && isLoggedIn) {
+    const auth = useAuthStore()
+    if (!auth.hasPermission(to.meta.permission)) return { name: 'Unauthorized' }
+  }
 })
 
 export default router

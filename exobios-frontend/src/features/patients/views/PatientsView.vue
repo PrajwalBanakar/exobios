@@ -232,13 +232,14 @@ const sortArrows = (key) => ({
             {{ t('patients.showing') }} {{ Math.min((currentPage-1)*perPage+1, filtered.length) }}–{{ Math.min(currentPage*perPage, filtered.length) }} {{ t('patients.of') }} {{ filtered.length }} {{ t('patients.patients') }}
           </span>
           <div class="flex items-center gap-1">
-            <button :disabled="currentPage === 1" @click="goToPage(currentPage - 1)" class="w-7 h-7 flex items-center justify-center text-gray-400 hover:bg-gray-100 rounded disabled:opacity-40">
+            <button :disabled="currentPage === 1" @click="goToPage(currentPage - 1)" aria-label="Previous page" class="w-7 h-7 flex items-center justify-center text-gray-400 hover:bg-gray-100 rounded disabled:opacity-40">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
             </button>
             <button v-for="pg in Math.min(totalPages, 5)" :key="pg"
               :class="['w-7 h-7 flex items-center justify-center text-xs rounded transition', currentPage === pg ? 'bg-blue-600 text-white font-semibold' : 'text-gray-600 hover:bg-gray-100']"
+              :aria-label="`Page ${pg}`" :aria-current="currentPage === pg ? 'page' : undefined"
               @click="goToPage(pg)">{{ pg }}</button>
-            <button :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)" class="w-7 h-7 flex items-center justify-center text-gray-400 hover:bg-gray-100 rounded disabled:opacity-40">
+            <button :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)" aria-label="Next page" class="w-7 h-7 flex items-center justify-center text-gray-400 hover:bg-gray-100 rounded disabled:opacity-40">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
             </button>
           </div>

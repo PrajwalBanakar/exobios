@@ -3,12 +3,20 @@ import { ref, computed, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppShell from '@/shared/components/AppShell.vue'
 import { usePatientsStore } from '@/features/patients/stores/patients'
+import { useAuthStore } from '@/features/auth/stores/auth'
+import { useActionPlanStore } from '@/shared/stores/actionPlan'
+import { HOSPITALS, sortByDistance } from '@/shared/constants/hospitals'
+import { DOCTOR_TIER, getDoctorsByTier } from '@/shared/constants/doctors'
+import { computeActiveFlags } from '@/features/assessments/constants/complaintsDef'
+import { MOCK_DIFFERENTIAL_DIAGNOSIS } from '@/features/assessments/constants/mockDiagnosis'
 import { useI18n } from '@/i18n'
 
-const router    = useRouter()
-const route     = useRoute()
-const store     = usePatientsStore()
-const { t }     = useI18n()
+const router     = useRouter()
+const route      = useRoute()
+const store      = usePatientsStore()
+const auth       = useAuthStore()
+const actionPlan = useActionPlanStore()
+const { t }      = useI18n()
 const patientId   = computed(() => Number(route.params.id))
 const historyIdx  = computed(() => route.query.historyIdx !== undefined ? Number(route.query.historyIdx) : 0)
 const patient     = computed(() => store.getById(patientId.value) || {
@@ -20,42 +28,41 @@ const assessment  = computed(() => {
   return history[historyIdx.value] || null
 })
 
-// ── Differential Diagnosis ─────────────────────────────────────────────────
-const conditions = [
-  { name: 'Dengue Fever',  pct: 72, color: 'bg-red-500' },
-  { name: 'Viral Fever',   pct: 18, color: 'bg-orange-400' },
-  { name: 'Malaria',       pct: 6,  color: 'bg-yellow-400' },
-  { name: 'Typhoid',       pct: 3,  color: 'bg-blue-400' },
-  { name: 'Chikungunya',   pct: 1,  color: 'bg-gray-400' },
-]
+// ── Differential Diagnosis — shared with FullAnalysisView so the two screens agree ──
+const conditions = MOCK_DIFFERENTIAL_DIAGNOSIS
 
 const aiSummary = 'Based on the symptoms, examination findings, and vital parameters, the presentation is most consistent with Dengue Fever (72%). The combination of high fever, severe body pain, and thrombocytopenia is characteristic. Malaria should be ruled out with a rapid test.'
 
-// ── Plan of Action — Immediate Measures ───────────────────────────────────
-const immediateMeasures = [
+// ── Warning Signs — derived from the same AI flags NewAssessmentView computes,
+// re-applied here to the saved assessment's complaints (no new flag logic). ───────
+const activeFlags = computed(() => computeActiveFlags(assessment.value?.complaints?.selected, assessment.value?.complaints?.details))
+
+// ── Plan of Action — Immediate Measures (role-based) ──────────────────────
+const PARAMEDIC_IMMEDIATE_MEASURES = [
   'Administer Paracetamol 650mg for fever relief',
   'Ensure adequate oral hydration (ORS / fluids)',
   'Monitor temperature and platelet count',
   'Rest and avoid NSAIDs / Aspirin',
   'Advise patient on warning signs requiring immediate referral',
 ]
+const DOCTOR_IMMEDIATE_MEASURES = [
+  'Assess hydration/perfusion status and start IV fluids if indicated',
+  'Order confirmatory investigations (e.g. NS1/CBC/platelet count)',
+  'Initiate symptomatic and supportive treatment per clinical protocol',
+  'Closely monitor vitals and evolving warning signs',
+  'Document clinical findings, working diagnosis, and management plan',
+]
+const immediateMeasures = computed(() => auth.isDoctor ? DOCTOR_IMMEDIATE_MEASURES : PARAMEDIC_IMMEDIATE_MEASURES)
 
-// Referral decision: 'undecided' | 'yes' | 'no' | 'refused'
+// Referral decision: 'undecided' | 'yes' | 'no'
 const referralDecision = ref('undecided')
 
-// Hospitals ordered by distance — Government hospitals listed first / highlighted
-const hospitals = [
-  { name: 'Community Health Center, Rampur', type: 'Government', dist: '2.3 km', phone: '05952-234567', address: 'CHC Rampur, Uttar Pradesh', govt: true },
-  { name: 'District Hospital, Pilibhit',     type: 'Government', dist: '14 km',  phone: '05882-223344', address: 'District Hospital Pilibhit, UP', govt: true },
-  { name: 'Sharma Multi-Specialty Hospital', type: 'Private',    dist: '4.6 km', phone: '05952-345678', address: 'Sharma Hospital, Rampur, UP', govt: false },
-  { name: 'City Care Hospital',              type: 'Private',    dist: '6.1 km', phone: '05952-456789', address: 'City Care Hospital, Rampur, UP', govt: false },
-]
+// Nearby hospitals — sourced from the shared hospitals directory, closest first
+// (Government hospitals are highlighted in the template, not hardcoded here).
+const hospitals = sortByDistance(HOSPITALS).slice(0, 4)
 
-const doctors = [
-  { name: 'Dr. Anjali Sharma', spec: 'General Physician',  available: true,  phone: '9876500001' },
-  { name: 'Dr. Vivek Singh',   spec: 'Internal Medicine',  available: true,  phone: '9876500002' },
-  { name: 'Dr. Neha Verma',    spec: 'Pediatrician',       available: false, phone: '9876500003' },
-]
+// Teleconsult doctor tier follows role: Paramedic sees general doctors, Doctor sees specialists.
+const doctors = computed(() => getDoctorsByTier(auth.isDoctor ? DOCTOR_TIER.SPECIALIST : DOCTOR_TIER.GENERAL))
 
 function callAmbulance() { window.location.href = 'tel:108' }
 function callNumber(n)   { window.location.href = `tel:${n}` }
@@ -84,7 +91,7 @@ function sendChat() {
 
 // ── Action Taken ───────────────────────────────────────────────────────────
 const actionTaken = reactive({
-  measures: immediateMeasures.map(() => false),
+  measures: immediateMeasures.value.map(() => false),
   referralHospital: '',
   ambulanceCalled: false,
   teleconsultDoctor: '',
@@ -95,6 +102,20 @@ const actionTaken = reactive({
 const actionSubmitted = ref(false)
 function submitAction() {
   actionSubmitted.value = true
+
+  // Write the plan of action to the shared store so MeasuresView (and eventually
+  // ReferralsView) read the same decision instead of re-capturing it independently.
+  actionPlan.setImmediateMeasures(patientId.value, immediateMeasures.value.map((label, i) => ({ label, done: actionTaken.measures[i] })))
+  actionPlan.setReferral(patientId.value, {
+    hospitalId: actionTaken.referralHospital || null,
+    status: referralDecision.value === 'undecided' ? '' : referralDecision.value,
+  })
+  actionPlan.setTeleconsult(patientId.value, {
+    doctorId: actionTaken.teleconsultDoctor || null,
+    status: actionTaken.teleconsultDoctor ? 'yes' : '',
+  })
+  actionPlan.setNotes(patientId.value, actionTaken.additionalNotes)
+
   setTimeout(() => { actionSubmitted.value = false }, 3000)
 }
 
@@ -271,6 +292,9 @@ function printResult() { window.print() }
         <h2 class="font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <svg class="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
           Plan of Action
+          <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-teal-50 text-teal-600 border border-teal-200">
+            {{ auth.isDoctor ? 'Doctor Module' : 'Paramedic Module' }}
+          </span>
         </h2>
 
         <!-- Immediate Measures -->
@@ -286,17 +310,20 @@ function printResult() { window.print() }
           </ul>
         </div>
 
-        <!-- Warning Signs -->
-        <div class="bg-red-50/60 border border-red-100 rounded-xl p-4 mb-5">
-          <h3 class="text-sm font-semibold text-red-700 mb-2 flex items-center gap-2">
+        <!-- Warning Signs — derived from the assessment's own AI flags (TB, cardiac, snakebite, meningitis, etc.) -->
+        <div :class="['border rounded-xl p-4 mb-5', activeFlags.length ? 'bg-red-50/60 border-red-100' : 'bg-green-50/60 border-green-100']">
+          <h3 :class="['text-sm font-semibold mb-2 flex items-center gap-2', activeFlags.length ? 'text-red-700' : 'text-green-700']">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            Warning Signs — Seek Immediate Help If:
+            Warning Signs
           </h3>
-          <ul class="space-y-1.5">
-            <li v-for="r in ['Fever above 104°F not settling', 'Severe abdominal pain or vomiting blood', 'Signs of bleeding — gums, nose, urine', 'Sudden drop in BP / altered consciousness']" :key="r" class="flex items-center gap-2 text-sm text-red-700">
-              <span class="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"/>{{ r }}
+          <ul v-if="activeFlags.length" class="space-y-1.5">
+            <li v-for="(flag, i) in activeFlags" :key="i"
+              class="flex items-start gap-2 text-sm" :class="flag.level === 'critical' ? 'text-red-700' : 'text-orange-700'">
+              <span :class="['w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0', flag.level === 'critical' ? 'bg-red-500' : 'bg-orange-500']"/>
+              <span><span class="font-semibold">{{ flag.complaint }}:</span> {{ flag.message }}</span>
             </li>
           </ul>
+          <p v-else class="text-sm text-green-700">No immediate warning signs detected</p>
         </div>
 
         <!-- Referral Required Decision -->
@@ -306,7 +333,6 @@ function printResult() { window.print() }
             <button v-for="opt in [
               { val: 'yes',     label: 'Yes — Refer',          cls: 'border-red-400 bg-red-50 text-red-700' },
               { val: 'no',      label: 'No — Manage Here',     cls: 'border-green-400 bg-green-50 text-green-700' },
-              { val: 'refused', label: 'Patient Refuses',      cls: 'border-orange-400 bg-orange-50 text-orange-700' },
             ]" :key="opt.val"
               :class="['px-5 py-2.5 rounded-xl border-2 text-sm font-semibold transition', referralDecision === opt.val ? opt.cls + ' ring-2 ring-offset-1 ring-blue-400' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300']"
               @click="referralDecision = opt.val">
@@ -333,7 +359,7 @@ function printResult() { window.print() }
                 </button>
               </div>
               <div class="space-y-2.5">
-                <div v-for="(h, i) in hospitals" :key="h.name"
+                <div v-for="(h, i) in hospitals" :key="h.id"
                   :class="['flex items-center gap-3 rounded-xl border p-3', h.govt ? 'border-green-200 bg-green-50/50' : 'border-gray-100 bg-white']">
                   <div :class="['w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-white text-xs font-bold', h.govt ? 'bg-green-600' : 'bg-gray-600']">
                     {{ i + 1 }}
@@ -346,8 +372,8 @@ function printResult() { window.print() }
                     </div>
                   </div>
                   <div class="flex items-center gap-2 flex-shrink-0">
-                    <span class="text-xs text-gray-500 font-medium">{{ h.dist }}</span>
-                    <button @click="openMap(h.address)" class="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center hover:bg-blue-100 transition" title="View on map">
+                    <span class="text-xs text-gray-500 font-medium">{{ h.distance }}</span>
+                    <button @click="openMap(h.location)" class="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center hover:bg-blue-100 transition" title="View on map">
                       <svg class="w-3.5 h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                     </button>
                     <button @click="callNumber(h.phone)" class="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center hover:bg-green-200 transition" title="Call hospital">
@@ -359,21 +385,18 @@ function printResult() { window.print() }
             </div>
           </div>
 
-          <!-- REFERRAL = NO or REFUSED: Teleconsultation -->
-          <div v-else-if="referralDecision === 'no' || referralDecision === 'refused'" class="mt-4">
-            <div v-if="referralDecision === 'refused'" class="mb-3 px-4 py-2.5 bg-orange-50 border border-orange-100 rounded-xl text-sm text-orange-700">
-              Patient has refused referral. Initiate teleconsultation with an available doctor for further advice.
-            </div>
-            <h4 class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Available Doctors</h4>
+          <!-- REFERRAL = NO: Teleconsultation -->
+          <div v-else-if="referralDecision === 'no'" class="mt-4">
+            <h4 class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">{{ auth.isDoctor ? 'Available Specialist Doctors' : 'Available Doctors' }}</h4>
             <div class="space-y-2.5">
-              <div v-for="d in doctors" :key="d.name"
+              <div v-for="d in doctors" :key="d.id"
                 :class="['border rounded-xl p-3 flex items-center gap-3', d.available ? 'border-gray-100' : 'border-gray-100 opacity-60']">
                 <div class="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
                   <svg class="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </div>
                 <div class="flex-1 min-w-0">
                   <div class="text-sm font-semibold text-gray-800">{{ d.name }}</div>
-                  <div class="text-xs text-gray-500">{{ d.spec }}</div>
+                  <div class="text-xs text-gray-500">{{ d.specialization }}</div>
                   <div class="flex items-center gap-1 mt-0.5">
                     <span :class="['w-1.5 h-1.5 rounded-full', d.available ? 'bg-green-500' : 'bg-gray-300']"/>
                     <span :class="['text-xs font-medium', d.available ? 'text-green-600' : 'text-gray-400']">{{ d.available ? 'Available' : 'Busy' }}</span>
@@ -430,7 +453,7 @@ function printResult() { window.print() }
               <select v-model="actionTaken.referralHospital"
                 class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">— Select —</option>
-                <option v-for="h in hospitals" :key="h.name" :value="h.name">{{ h.name }}</option>
+                <option v-for="h in hospitals" :key="h.id" :value="h.id">{{ h.name }}</option>
               </select>
             </div>
             <div class="flex items-end">
@@ -442,15 +465,15 @@ function printResult() { window.print() }
           </div>
         </div>
 
-        <!-- Teleconsult action details (if no / refused) -->
-        <div v-if="referralDecision === 'no' || referralDecision === 'refused'" class="mb-5 p-4 bg-blue-50/40 border border-blue-100 rounded-xl space-y-3">
+        <!-- Teleconsult action details (if no) -->
+        <div v-if="referralDecision === 'no'" class="mb-5 p-4 bg-blue-50/40 border border-blue-100 rounded-xl space-y-3">
           <h3 class="text-sm font-semibold text-blue-700">Teleconsultation Details</h3>
           <div>
             <label class="block text-xs font-medium text-gray-600 mb-1.5">Doctor Consulted</label>
             <select v-model="actionTaken.teleconsultDoctor"
               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">— Select —</option>
-              <option v-for="d in doctors.filter(d => d.available)" :key="d.name" :value="d.name">{{ d.name }}</option>
+              <option v-for="d in doctors.filter(d => d.available)" :key="d.id" :value="d.id">{{ d.name }}</option>
             </select>
           </div>
           <div>

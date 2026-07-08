@@ -2,13 +2,15 @@
 import { ref, computed, reactive } from 'vue'
 import AppShell from '@/shared/components/AppShell.vue'
 import { useI18n } from '@/i18n'
-import { useAuthStore } from '@/features/auth/stores/auth'
+import { useAuthStore, PARAMEDIC_ROLES, DOCTOR_ROLES, ADMIN_ROLES } from '@/features/auth/stores/auth'
 
 const { t } = useI18n()
 const auth  = useAuthStore()
 
 const USERS_KEY      = 'exobios_admin_users'
-const ROLES          = ['ASHA Worker', 'Super Admin']
+// 'ASHA Worker' is the legacy alias (see auth store) — hidden here so the admin panel
+// only offers the current role names for new/edited users.
+const ROLES          = [...PARAMEDIC_ROLES.filter(r => r !== 'ASHA Worker'), ...DOCTOR_ROLES, ...ADMIN_ROLES]
 const STATUS_OPTIONS = ['Active', 'Inactive', 'Suspended']
 
 function seedUsers() {
@@ -17,7 +19,8 @@ function seedUsers() {
     { id: 2, name: 'Kavita Sharma', email: 'kavita@asha.in',  phone: '9876543211', role: 'ASHA Worker', status: 'Active',   lastLogin: '7 Jun 2025' },
     { id: 3, name: 'Geeta Bai',     email: 'geeta@asha.in',   phone: '9876543212', role: 'ASHA Worker', status: 'Active',   lastLogin: '6 Jun 2025' },
     { id: 4, name: 'Rekha Devi',    email: 'rekha@asha.in',   phone: '9876543213', role: 'ASHA Worker', status: 'Inactive', lastLogin: '1 Jun 2025' },
-    { id: 5, name: 'Rajesh Gupta',  email: 'rajesh@admin.in', phone: '9876543214', role: 'Super Admin', status: 'Active',   lastLogin: '8 Jun 2025' },
+    { id: 5, name: 'Dr. Rajesh Gupta', email: 'rajesh@doctor.in', phone: '9876543214', role: 'MBBS Doctor', status: 'Active', lastLogin: '8 Jun 2025' },
+    { id: 6, name: 'Admin User',    email: 'admin@exobios.in', phone: '9876543215', role: 'Super Admin', status: 'Active',   lastLogin: '8 Jun 2025' },
   ]
 }
 
@@ -34,7 +37,7 @@ const toast       = ref('')
 const sortKey     = ref('name')
 const sortDir     = ref('asc')
 
-const form = reactive({ id: null, name: '', email: '', phone: '', role: 'ASHA Worker', status: 'Active' })
+const form = reactive({ id: null, name: '', email: '', phone: '', role: 'ASHA', status: 'Active' })
 
 function toggleSort(key) {
   if (sortKey.value === key) sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
@@ -56,7 +59,7 @@ const filtered = computed(() => {
 
 const roleCount = computed(() => Object.fromEntries(ROLES.map(r => [r, users.value.filter(u => u.role === r).length])))
 
-function openAdd()       { isEditing.value = false; Object.assign(form, { id: null, name: '', email: '', phone: '', role: 'ASHA Worker', status: 'Active' }); showModal.value = true }
+function openAdd()       { isEditing.value = false; Object.assign(form, { id: null, name: '', email: '', phone: '', role: 'ASHA', status: 'Active' }); showModal.value = true }
 function openEdit(user)  { isEditing.value = true;  Object.assign(form, { ...user }); showModal.value = true }
 
 function saveUser() {
@@ -84,7 +87,14 @@ function deleteUser() {
 function showToast(msg) { toast.value = msg; setTimeout(() => { toast.value = '' }, 2500) }
 
 const statusColor = (s) => s === 'Active' ? 'bg-green-100 text-green-700' : s === 'Inactive' ? 'bg-gray-100 text-gray-500' : 'bg-red-100 text-red-600'
-const roleColor   = (r) => ({ 'ASHA Worker': 'bg-blue-100 text-blue-700', 'Super Admin': 'bg-red-100 text-red-700' }[r] || 'bg-gray-100 text-gray-600')
+// Color by role category (Paramedic/Doctor/Admin) rather than one color per exact role
+// string, so newer roles (ANM, CHO, LHV, Health Assistant, MBBS Doctor) aren't all gray.
+const roleColor = (r) => {
+  if (ADMIN_ROLES.includes(r)) return 'bg-red-100 text-red-700'
+  if (DOCTOR_ROLES.includes(r)) return 'bg-purple-100 text-purple-700'
+  if (PARAMEDIC_ROLES.includes(r)) return 'bg-blue-100 text-blue-700'
+  return 'bg-gray-100 text-gray-600'
+}
 const sortIcon    = (key) => sortKey.value === key ? (sortDir.value === 'asc' ? '↑' : '↓') : '↕'
 </script>
 
@@ -226,7 +236,7 @@ const sortIcon    = (key) => sortKey.value === key ? (sortDir.value === 'asc' ? 
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
           <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
             <h3 class="font-semibold text-gray-900 text-lg">{{ isEditing ? t('admin.editUser') : t('admin.addUser') }}</h3>
-            <button @click="showModal=false" class="text-gray-400 hover:text-gray-600 p-1">
+            <button @click="showModal=false" class="text-gray-400 hover:text-gray-600 p-1" aria-label="Close">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
           </div>

@@ -2,7 +2,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppShell from '@/shared/components/AppShell.vue'
-import { useAuthStore } from '@/features/auth/stores/auth'
+import { useAuthStore, PARAMEDIC_ROLES, DOCTOR_ROLES, ADMIN_ROLES } from '@/features/auth/stores/auth'
 import { useI18n } from '@/i18n'
 
 const router = useRouter()
@@ -15,7 +15,14 @@ const saved         = ref(false)
 
 const form = reactive({ name: '', role: '', phone: '', ashaId: '', area: '', email: '' })
 
-const roleOptions = ['ASHA Worker', 'Super Admin']
+// Full role list (legacy 'ASHA Worker' alias included) so an existing user's current
+// role always matches one of the <option>s, whichever role they were signed up under.
+const roleOptions = [...PARAMEDIC_ROLES, ...DOCTOR_ROLES, ...ADMIN_ROLES]
+
+// Photo/profile-data localStorage keys are scoped per logged-in user (by phone/loginId)
+// so switching accounts on the same device doesn't leak the previous user's photo/data.
+const photoKey   = computed(() => `exobios_profile_photo_${auth.user?.loginId || 'guest'}`)
+const profileKey = computed(() => `exobios_profile_data_${auth.user?.loginId || 'guest'}`)
 
 onMounted(() => {
   form.name   = auth.user?.name || 'Sunita Devi'
@@ -24,7 +31,7 @@ onMounted(() => {
   form.ashaId = 'ASHA-2023-00890'
   form.area   = 'Rampur Block, Uttar Pradesh'
   form.email  = 'sunita.devi@asha.gov.in'
-  const savedPhoto = localStorage.getItem('exobios_profile_photo')
+  const savedPhoto = localStorage.getItem(photoKey.value)
   if (savedPhoto) profilePhoto.value = savedPhoto
 })
 
@@ -41,19 +48,19 @@ function handlePhotoChange(e) {
   const reader = new FileReader()
   reader.onload = (ev) => {
     profilePhoto.value = ev.target.result
-    localStorage.setItem('exobios_profile_photo', ev.target.result)
+    localStorage.setItem(photoKey.value, ev.target.result)
   }
   reader.readAsDataURL(file)
 }
 
 function removePhoto() {
   profilePhoto.value = ''
-  localStorage.removeItem('exobios_profile_photo')
+  localStorage.removeItem(photoKey.value)
   if (photoInputRef.value) photoInputRef.value.value = ''
 }
 
 function saveProfile() {
-  localStorage.setItem('exobios_profile_data', JSON.stringify({ ...form }))
+  localStorage.setItem(profileKey.value, JSON.stringify({ ...form }))
   saved.value = true
   setTimeout(() => { saved.value = false }, 2500)
 }

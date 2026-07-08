@@ -18,13 +18,14 @@ const patientId = computed(() => isEdit.value ? Number(route.params.id) : null)
 const existing  = computed(() => isEdit.value ? store.getById(patientId.value) : null)
 
 const form = reactive({
-  name: '', dob: '', gender: '', phone: '', education: '', occupation: '', abhaId: '', abArkId: '', fatherSpouseName: '',
+  name: '', dob: '', gender: '', phone: '', education: '', occupation: '', occupationOther: '', abhaId: '', abArkId: '', fatherSpouseName: '',
   address: { houseNo: '', streetArea: '', village: '', pincode: '', taluk: '', district: '', state: '' },
   family: {
     maritalStatus: '',
     spouses: [], widows: [],
     children: [], householdMembers: [],
     fatherName: '', fatherAge: '', motherName: '', motherAge: '',
+    divorceYear: '',
   },
   photo: '',
 })
@@ -48,6 +49,7 @@ if (isEdit.value && existing.value) {
   const p = existing.value
   form.name = p.name || ''; form.dob = p.dob || ''; form.gender = p.gender || ''
   form.phone = p.phone || ''; form.education = p.education || ''; form.occupation = p.occupation || ''
+  form.occupationOther = p.occupationOther || ''
   form.abhaId = p.abhaId || ''; form.abArkId = p.abArkId || ''; form.fatherSpouseName = p.fatherSpouseName || ''; form.photo = p.photo || ''
   if (p.address) Object.assign(form.address, p.address)
   if (p.family) {
@@ -130,7 +132,8 @@ async function savePatient() {
   const now      = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
   const data     = {
     name: form.name.trim(), dob: form.dob, gender: form.gender, phone: form.phone,
-    education: form.education, occupation: form.occupation, abhaId: form.abhaId, abArkId: form.abArkId,
+    education: form.education, occupation: form.occupation, occupationOther: form.occupation === 'Others' ? form.occupationOther : '',
+    abhaId: form.abhaId, abArkId: form.abArkId,
     fatherSpouseName: form.fatherSpouseName, photo: form.photo,
     address: { ...form.address },
     family: { ...form.family, spouses: [...form.family.spouses], widows: [...form.family.widows], children: [...form.family.children], householdMembers: [...form.family.householdMembers] },
@@ -204,7 +207,7 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
               <div class="flex-shrink-0 text-center">
                 <label class="cursor-pointer group" title="Tap to capture or upload photo">
                   <div class="w-20 h-20 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 group-hover:border-blue-400 flex items-center justify-center overflow-hidden transition">
-                    <img v-if="form.photo" :src="form.photo" class="w-full h-full object-cover rounded-full"/>
+                    <img v-if="form.photo" :src="form.photo" class="w-full h-full object-cover rounded-full" alt="Patient photo"/>
                     <div v-else class="text-center p-2">
                       <svg class="w-6 h-6 text-gray-300 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M3 20c0-4 3.582-7 8-7h2c4.418 0 8 3 8 7"/></svg>
                       <span class="text-[9px] text-gray-400 mt-1 block leading-tight">Tap to<br>add photo</span>
@@ -216,19 +219,19 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
               <div class="flex-1 space-y-3">
                 <div>
                   <label :class="LC">Full Name <span class="text-red-500">*</span></label>
-                  <input v-model="form.name" type="text" placeholder="Patient's full name" :class="IC + (errors.name ? ' border-red-300 ring-1 ring-red-300' : '')"/>
+                  <input v-model="form.name" type="text" required :aria-invalid="!!errors.name" placeholder="Patient's full name" :class="IC + (errors.name ? ' border-red-300 ring-1 ring-red-300' : '')"/>
                   <p v-if="errors.name" class="text-red-500 text-xs mt-1">{{ errors.name }}</p>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                   <div>
                     <label :class="LC">Date of Birth <span class="text-red-500">*</span></label>
-                    <input v-model="form.dob" type="date" :class="IC + (errors.dob ? ' border-red-300' : '')"/>
+                    <input v-model="form.dob" type="date" required :aria-invalid="!!errors.dob" :class="IC + (errors.dob ? ' border-red-300' : '')"/>
                     <p v-if="calculatedAge !== null" class="text-xs text-blue-600 mt-1 font-medium">Age: {{ calculatedAge }} years</p>
                     <p v-if="errors.dob" class="text-red-500 text-xs mt-1">{{ errors.dob }}</p>
                   </div>
                   <div>
                     <label :class="LC">Sex <span class="text-red-500">*</span></label>
-                    <select v-model="form.gender" :class="IC + ' bg-white' + (errors.gender ? ' border-red-300' : '')">
+                    <select v-model="form.gender" required :aria-invalid="!!errors.gender" :class="IC + ' bg-white' + (errors.gender ? ' border-red-300' : '')">
                       <option value="">— Select —</option>
                       <option value="Male">Male</option>
                       <option value="Female">Female</option>
@@ -243,7 +246,7 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label :class="LC">Phone Number <span class="text-red-500">*</span></label>
-                <input v-model="form.phone" type="tel" maxlength="10" placeholder="10-digit number" :class="IC + (errors.phone ? ' border-red-300' : '')"/>
+                <input v-model="form.phone" type="tel" maxlength="10" required :aria-invalid="!!errors.phone" placeholder="10-digit number" :class="IC + (errors.phone ? ' border-red-300' : '')"/>
                 <p v-if="errors.phone" class="text-red-500 text-xs mt-1">{{ errors.phone }}</p>
               </div>
               <div>
@@ -267,6 +270,8 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
                   <option>Private employee</option>
                   <option>Others</option>
                 </select>
+                <input v-if="form.occupation === 'Others'" v-model="form.occupationOther" type="text" placeholder="Specify occupation"
+                  :class="IC + ' mt-2'"/>
               </div>
               <div>
                 <label :class="LC">{{ guardianLabel }}</label>
@@ -366,7 +371,7 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
                     <span class="text-xs text-gray-500 font-semibold w-5">{{ i + 1 }}.</span>
                     <span class="flex-1 text-gray-700">{{ s.name }}</span>
                     <span class="text-gray-400 text-xs">{{ s.age }} yrs</span>
-                    <button type="button" @click="removeSpouse(i)" class="ml-2 text-red-400 hover:text-red-600">
+                    <button type="button" @click="removeSpouse(i)" class="ml-2 text-red-400 hover:text-red-600" :aria-label="`Remove ${s.name}`">
                       <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
                     </button>
                   </div>
@@ -387,7 +392,7 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
                     <span class="text-xs text-gray-500 font-semibold w-5">{{ i + 1 }}.</span>
                     <span class="flex-1 text-gray-700">{{ c.name }}</span>
                     <span class="text-gray-400 text-xs">{{ c.age }} yrs</span>
-                    <button type="button" @click="removeChild(i)" class="ml-2 text-red-400 hover:text-red-600">
+                    <button type="button" @click="removeChild(i)" class="ml-2 text-red-400 hover:text-red-600" :aria-label="`Remove ${c.name}`">
                       <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
                     </button>
                   </div>
@@ -410,7 +415,7 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
                     <span class="text-xs text-gray-500 font-semibold w-5">{{ i + 1 }}.</span>
                     <span class="flex-1 text-gray-700">{{ w.name }}</span>
                     <span class="text-gray-400 text-xs">{{ w.age }} yrs</span>
-                    <button type="button" @click="removeWidow(i)" class="ml-2 text-red-400 hover:text-red-600">
+                    <button type="button" @click="removeWidow(i)" class="ml-2 text-red-400 hover:text-red-600" :aria-label="`Remove ${w.name}`">
                       <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
                     </button>
                   </div>
@@ -431,7 +436,36 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
                     <span class="text-xs text-gray-500 font-semibold w-5">{{ i + 1 }}.</span>
                     <span class="flex-1 text-gray-700">{{ c.name }}</span>
                     <span class="text-gray-400 text-xs">{{ c.age }} yrs</span>
-                    <button type="button" @click="removeChild(i)" class="ml-2 text-red-400 hover:text-red-600">
+                    <button type="button" @click="removeChild(i)" class="ml-2 text-red-400 hover:text-red-600" :aria-label="`Remove ${c.name}`">
+                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="flex gap-2">
+                  <input v-model="newChild.name" type="text" placeholder="Child's name" :class="IC"/>
+                  <input v-model="newChild.age" type="number" min="0" max="30" placeholder="Age" class="w-20 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                  <button type="button" @click="addChild" class="px-3 py-2 bg-blue-50 text-blue-600 text-sm rounded-lg hover:bg-blue-100 transition flex-shrink-0 font-medium">+ Add</button>
+                </div>
+              </div>
+            </template>
+
+            <!-- Divorced fields: Year of divorce + Children (reuses the same children list as Married/Widowed) -->
+            <template v-if="form.family.maritalStatus === 'Divorced'">
+              <div class="p-4 bg-orange-50/40 rounded-xl border border-orange-100">
+                <label :class="LC">Year of Divorce</label>
+                <input v-model="form.family.divorceYear" type="number" min="1950" :max="new Date().getFullYear()" placeholder="e.g. 2020" class="w-40 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+              </div>
+
+              <!-- Children -->
+              <div>
+                <label :class="LC">Children</label>
+                <div class="space-y-2 mb-2">
+                  <div v-for="(c, i) in form.family.children" :key="i"
+                    class="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 text-sm">
+                    <span class="text-xs text-gray-500 font-semibold w-5">{{ i + 1 }}.</span>
+                    <span class="flex-1 text-gray-700">{{ c.name }}</span>
+                    <span class="text-gray-400 text-xs">{{ c.age }} yrs</span>
+                    <button type="button" @click="removeChild(i)" class="ml-2 text-red-400 hover:text-red-600" :aria-label="`Remove ${c.name}`">
                       <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
                     </button>
                   </div>
@@ -473,7 +507,7 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
                 <div v-for="(m, i) in form.family.householdMembers" :key="i"
                   class="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 text-sm">
                   <span class="flex-1 text-gray-700">{{ m.name }} <span class="text-gray-400">({{ m.relation }}, {{ m.age }} yrs)</span></span>
-                  <button type="button" @click="removeMember(i)" class="text-red-400 hover:text-red-600">
+                  <button type="button" @click="removeMember(i)" class="text-red-400 hover:text-red-600" :aria-label="`Remove ${m.name}`">
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
                   </button>
                 </div>
@@ -486,7 +520,7 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
                   {{ rel }}
                 </button>
               </div>
-              <div class="grid grid-cols-3 gap-2">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <input v-model="newMember.name" type="text" placeholder="Name" :class="IC"/>
                 <input v-model="newMember.relation" type="text" placeholder="Relation (e.g. Uncle)" :class="IC"/>
                 <div class="flex gap-2">

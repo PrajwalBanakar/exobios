@@ -63,7 +63,9 @@ const userInitials = computed(() => {
   return auth.user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
 })
 
-const profilePhoto = computed(() => localStorage.getItem('exobios_profile_photo') || '')
+// Scoped per logged-in user (by loginId) so switching accounts on the same device
+// doesn't show the previous user's photo — matches the key used in ProfileView.vue.
+const profilePhoto = computed(() => localStorage.getItem(`exobios_profile_photo_${auth.user?.loginId || 'guest'}`) || '')
 
 function updateSyncTime() {
   const now = new Date()
@@ -131,7 +133,7 @@ const notifDotColor = {
           <span class="text-white font-bold text-lg tracking-tight">Exobios</span>
         </button>
         <!-- Close button visible only on mobile -->
-        <button class="lg:hidden text-slate-400 hover:text-white p-1" @click="closeSidebar">
+        <button class="lg:hidden text-slate-400 hover:text-white p-1" @click="closeSidebar" aria-label="Close menu">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
@@ -189,6 +191,7 @@ const notifDotColor = {
             data-hamburger
             class="lg:hidden flex-shrink-0 text-gray-500 hover:text-gray-700 p-1 rounded-lg hover:bg-gray-100 transition"
             @click.stop="sidebarOpen = !sidebarOpen"
+            aria-label="Toggle navigation menu"
           >
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
@@ -249,6 +252,7 @@ const notifDotColor = {
             <button
               class="relative text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition"
               @click.stop="showNotifications = !showNotifications; showProfileMenu = false; showLangMenu = false"
+              :aria-label="`Notifications${notifStore.unreadCount > 0 ? ` (${notifStore.unreadCount} unread)` : ''}`"
             >
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
               <span v-if="notifStore.unreadCount > 0"
@@ -298,7 +302,7 @@ const notifDotColor = {
               @click.stop="showProfileMenu = !showProfileMenu; showNotifications = false; showLangMenu = false"
             >
               <div class="w-8 h-8 rounded-full bg-amber-200 flex items-center justify-center overflow-hidden flex-shrink-0">
-                <img v-if="profilePhoto" :src="profilePhoto" class="w-full h-full object-cover" alt=""/>
+                <img v-if="profilePhoto" :src="profilePhoto" class="w-full h-full object-cover" alt="Profile photo"/>
                 <span v-else class="text-xs font-semibold text-amber-700">{{ userInitials }}</span>
               </div>
               <div class="hidden sm:block text-right">

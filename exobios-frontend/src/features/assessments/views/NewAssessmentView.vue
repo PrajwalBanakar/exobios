@@ -6,7 +6,13 @@ import SyncStatusBadge from '@/shared/components/SyncStatusBadge.vue'
 import { usePatientsStore } from '@/features/patients/stores/patients'
 import { useAuthStore } from '@/features/auth/stores/auth'
 import { useI18n } from '@/i18n'
-import { COMPLAINTS_DEF, COMPLAINT_COLOR_MAP } from '@/features/assessments/constants/complaintsDef'
+import { COMPLAINTS_DEF, COMPLAINT_COLOR_MAP, computeActiveFlags } from '@/features/assessments/constants/complaintsDef'
+import ParamedicGeneralExam from '@/features/assessments/components/examination/ParamedicGeneralExam.vue'
+import DoctorGeneralExam from '@/features/assessments/components/examination/DoctorGeneralExam.vue'
+import RespiratoryExam from '@/features/assessments/components/examination/systemic/RespiratoryExam.vue'
+import CVSExam from '@/features/assessments/components/examination/systemic/CVSExam.vue'
+import GIExam from '@/features/assessments/components/examination/systemic/GIExam.vue'
+import CNSExam from '@/features/assessments/components/examination/systemic/CNSExam.vue'
 import { addToQueue } from '@/shared/offline/syncQueue'
 import { isOnline } from '@/shared/offline/network'
 
@@ -15,6 +21,10 @@ const route  = useRoute()
 const store  = usePatientsStore()
 const auth   = useAuthStore()
 const { t }  = useI18n()
+
+// Which general-exam module to render — falls back to neither (generic checklist) for
+// roles outside Paramedic/Doctor (e.g. Super Admin previewing the form).
+const examRole = computed(() => auth.isDoctor ? 'DOCTOR' : auth.isParamedic ? 'PARAMEDIC' : null)
 
 const isEdit    = computed(() => route.name === 'EditAssessment')
 const patientId = computed(() => isEdit.value ? Number(route.params.id) : null)
@@ -58,22 +68,7 @@ function toggleComplaint(id) {
 function getComplaintDef(id) { return COMPLAINTS_DEF.find(c => c.id === id) }
 
 // Active AI flags from duration + symptom selections
-const activeFlags = computed(() => {
-  const flags = []
-  for (const id of selectedComplaintIds.value) {
-    const def    = getComplaintDef(id)
-    const detail = complaintDetails[id]
-    if (!def || !detail) continue
-    const durOpt = def.durationOptions?.find(d => d.label === detail.duration)
-    if (durOpt?.flag) flags.push({ complaint: def.label, message: durOpt.flag, level: durOpt.flagLevel || 'warning' })
-    if (def.symptomFlags && detail.symptoms?.length) {
-      for (const sym of detail.symptoms) {
-        if (def.symptomFlags[sym]) flags.push({ complaint: def.label, ...def.symptomFlags[sym] })
-      }
-    }
-  }
-  return flags
-})
+const activeFlags = computed(() => computeActiveFlags(selectedComplaintIds.value, complaintDetails))
 
 // ── Past History ──────────────────────────────────────────────────────────────
 const pastHistory = reactive({
@@ -156,15 +151,52 @@ function handleDocAttach(e) {
 function removeDoc(i) { attachedDocs.value.splice(i, 1) }
 
 // ── Examination ───────────────────────────────────────────────────────────────
+// generalExam is additive — existing fields above are untouched so previously saved
+// assessments (with no generalExam key) still load fine; new sub-objects just stay blank.
 const examForm = reactive({
   height: '', weight: '',
-  temperature: '',
   eyeDiscolouration: false, rashes: false, swelling: false, dehydration: false,
   generalOther: '',
   examPhoto: '',
-  specificFindings: '',
-  systemicExam: '',
-  clinicalNotes: '',
+  generalExam: {
+    role: '', // 'PARAMEDIC' | 'DOCTOR' — snapshot of which module was filled, set on submit
+    paramedicExam: {
+      generalAppearance: [], eyes: [], skinMucosa: [], extremities: [],
+      visibleInjuries: { present: false, description: '' },
+    },
+    doctorGeneralExam: {
+      consciousness: { level: '', gcs: { eye: '', verbal: '', motor: '' } },
+      generalSigns: { pallor: '', icterus: '', cyanosis: '', clubbing: '' },
+      lymphadenopathy: { present: false, site: '', character: '' },
+      edema: { present: false, site: '', grade: '' },
+      skinLesions: { present: false, description: '' },
+    },
+    systemicExam: {
+      respiratory: {
+        inspection: { chestMovement: '', respiratoryEffort: '', symmetry: '' },
+        palpation: { trachealPosition: '', chestExpansion: '' },
+        percussion: { finding: '' },
+        auscultation: { findings: [] },
+      },
+      cvs: {
+        inspection: { precordialBulge: '', visiblePulsations: '' },
+        palpation: { apexBeat: '', thrills: '' },
+        auscultation: { findings: [] },
+      },
+      gi: {
+        inspection: { distension: '', scars: '', visibleVeins: '' },
+        palpation: { tenderness: '', organEnlargement: '' },
+        percussion: { finding: '' },
+        auscultation: { bowelSounds: '' },
+      },
+      cns: {
+        mentalStatus: '',
+        motor: { power: '', tone: '' },
+        sensory: '',
+        reflexes: '',
+      },
+    },
+  },
 })
 
 function handleExamPhoto(e) {
@@ -192,8 +224,38 @@ function buildSnapshot() {
     complaints: { selected: [...selectedComplaintIds.value], details: JSON.parse(JSON.stringify(complaintDetails)) },
     pastHistory: JSON.parse(JSON.stringify(pastHistory)),
     familyHistory: JSON.parse(JSON.stringify(familyHistory)),
-    examForm: { ...examForm }, vitals: { ...vitals },
+    examForm: JSON.parse(JSON.stringify(examForm)), vitals: { ...vitals },
   }
+}
+
+// Fills in any generalExam sub-object missing from an older saved assessment/draft
+// (e.g. a Phase 2A record whose systemicExam was still `{}`) so the exam components
+// always receive the shape they expect, however far back the record was saved from.
+function normalizeExamForm() {
+  if (!examForm.generalExam) examForm.generalExam = { role: '', paramedicExam: {}, doctorGeneralExam: {}, systemicExam: {} }
+  const ge = examForm.generalExam
+
+  if (!ge.paramedicExam) ge.paramedicExam = {}
+  if (!ge.paramedicExam.generalAppearance) ge.paramedicExam.generalAppearance = []
+  if (!ge.paramedicExam.eyes) ge.paramedicExam.eyes = []
+  if (!ge.paramedicExam.skinMucosa) ge.paramedicExam.skinMucosa = []
+  if (!ge.paramedicExam.extremities) ge.paramedicExam.extremities = []
+  if (!ge.paramedicExam.visibleInjuries) ge.paramedicExam.visibleInjuries = { present: false, description: '' }
+
+  if (!ge.doctorGeneralExam) ge.doctorGeneralExam = {}
+  if (!ge.doctorGeneralExam.consciousness) ge.doctorGeneralExam.consciousness = { level: '', gcs: { eye: '', verbal: '', motor: '' } }
+  if (!ge.doctorGeneralExam.consciousness.gcs) ge.doctorGeneralExam.consciousness.gcs = { eye: '', verbal: '', motor: '' }
+  if (!ge.doctorGeneralExam.generalSigns) ge.doctorGeneralExam.generalSigns = { pallor: '', icterus: '', cyanosis: '', clubbing: '' }
+  if (!ge.doctorGeneralExam.lymphadenopathy) ge.doctorGeneralExam.lymphadenopathy = { present: false, site: '', character: '' }
+  if (!ge.doctorGeneralExam.edema) ge.doctorGeneralExam.edema = { present: false, site: '', grade: '' }
+  if (!ge.doctorGeneralExam.skinLesions) ge.doctorGeneralExam.skinLesions = { present: false, description: '' }
+
+  if (!ge.systemicExam) ge.systemicExam = {}
+  const se = ge.systemicExam
+  if (!se.respiratory) se.respiratory = { inspection: { chestMovement: '', respiratoryEffort: '', symmetry: '' }, palpation: { trachealPosition: '', chestExpansion: '' }, percussion: { finding: '' }, auscultation: { findings: [] } }
+  if (!se.cvs) se.cvs = { inspection: { precordialBulge: '', visiblePulsations: '' }, palpation: { apexBeat: '', thrills: '' }, auscultation: { findings: [] } }
+  if (!se.gi) se.gi = { inspection: { distension: '', scars: '', visibleVeins: '' }, palpation: { tenderness: '', organEnlargement: '' }, percussion: { finding: '' }, auscultation: { bowelSounds: '' } }
+  if (!se.cns) se.cns = { mentalStatus: '', motor: { power: '', tone: '' }, sensory: '', reflexes: '' }
 }
 
 function applySnapshot(d) {
@@ -206,6 +268,7 @@ function applySnapshot(d) {
   if (d.familyHistory) Object.assign(familyHistory, d.familyHistory)
   if (d.examForm)      Object.assign(examForm, d.examForm)
   if (d.vitals)        Object.assign(vitals, d.vitals)
+  normalizeExamForm()
 }
 
 onMounted(() => {
@@ -223,6 +286,7 @@ onMounted(() => {
       if (last.familyHistory) Object.assign(familyHistory, last.familyHistory)
       if (last.examForm)      Object.assign(examForm, last.examForm)
       if (last.vitals)        Object.assign(vitals, last.vitals)
+      normalizeExamForm()
     }
   } else if (linkedPatient.value) {
     const p = linkedPatient.value
@@ -256,13 +320,32 @@ function saveVersion(id) {
 
 const analyzedOffline = ref(false)
 
+// Basic Info is the only section with fields the rest of the record actually depends on
+// (name/age/gender) — validated here rather than silently saving a blank-name record.
+const errors = ref({})
+function validateBasics() {
+  errors.value = {}
+  if (!form.fullName.trim()) errors.value.fullName = 'Full name is required'
+  if (!form.age)              errors.value.age = 'Age is required'
+  if (!form.gender)           errors.value.gender = 'Sex is required'
+  return Object.keys(errors.value).length === 0
+}
+
 async function analyze() {
+  if (!validateBasics()) {
+    sections.value.basic = true
+    return
+  }
   const now = new Date()
   const assessmentTime = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) +
     ', ' + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
   const primaryComplaint = selectedComplaintIds.value
     .map(id => COMPLAINTS_DEF.find(c => c.id === id)?.label)
     .filter(Boolean)[0] || 'General Assessment'
+
+  // Snapshot which exam module was actually filled, so the record is unambiguous
+  // even if the same assessment is later reopened under a different role.
+  examForm.generalExam.role = examRole.value || ''
 
   const fullData = {
     name: form.fullName, age: Number(form.age), gender: form.gender,
@@ -271,7 +354,7 @@ async function analyze() {
     complaints: { selected: [...selectedComplaintIds.value], details: JSON.parse(JSON.stringify(complaintDetails)) },
     pastHistory: JSON.parse(JSON.stringify(pastHistory)),
     familyHistory: JSON.parse(JSON.stringify(familyHistory)),
-    examForm: { ...examForm }, vitals: { ...vitals },
+    examForm: JSON.parse(JSON.stringify(examForm)), vitals: { ...vitals },
   }
 
   if (isEdit.value) {
@@ -396,20 +479,23 @@ const SEL = ' bg-white'
               <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="col-span-2 lg:col-span-1">
                   <label :class="LC">{{ t('assessment.fullName') }} <span class="text-red-500">*</span></label>
-                  <input v-model="form.fullName" type="text" :placeholder="t('assessment.fullName')" :class="IC" lang="auto"/>
+                  <input v-model="form.fullName" type="text" :placeholder="t('assessment.fullName')" :class="IC + (errors.fullName ? ' border-red-300 ring-1 ring-red-300' : '')" lang="auto"/>
+                  <p v-if="errors.fullName" class="text-red-500 text-xs mt-1">{{ errors.fullName }}</p>
                 </div>
                 <div>
                   <label :class="LC">{{ t('assessment.age') }} <span class="text-red-500">*</span></label>
-                  <input v-model="form.age" type="number" min="0" max="120" placeholder="Years" :class="IC"/>
+                  <input v-model="form.age" type="number" min="0" max="120" placeholder="Years" :class="IC + (errors.age ? ' border-red-300 ring-1 ring-red-300' : '')"/>
+                  <p v-if="errors.age" class="text-red-500 text-xs mt-1">{{ errors.age }}</p>
                 </div>
                 <div>
                   <label :class="LC">{{ t('assessment.gender') }} <span class="text-red-500">*</span></label>
-                  <select v-model="form.gender" :class="IC + SEL">
+                  <select v-model="form.gender" :class="IC + SEL + (errors.gender ? ' border-red-300 ring-1 ring-red-300' : '')">
                     <option value="">—</option>
                     <option value="Male">{{ t('assessment.genderMale') }}</option>
                     <option value="Female">{{ t('assessment.genderFemale') }}</option>
                     <option value="Other">{{ t('assessment.genderOther') }}</option>
                   </select>
+                  <p v-if="errors.gender" class="text-red-500 text-xs mt-1">{{ errors.gender }}</p>
                 </div>
                 <div>
                   <label :class="LC">{{ t('assessment.phone') }}</label>
@@ -608,7 +694,7 @@ const SEL = ' bg-white'
                   <input v-model="pastHistory.alcohol.present" type="checkbox" class="w-4 h-4 rounded border-gray-300 text-blue-600 accent-blue-600"/>
                   <span class="text-sm font-medium text-gray-700 flex-1">History of Alcohol consumption</span>
                 </label>
-                <div v-if="pastHistory.alcohol.present" class="px-4 pb-4 pt-0 grid grid-cols-3 gap-3">
+                <div v-if="pastHistory.alcohol.present" class="px-4 pb-4 pt-0 grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label :class="LC">Duration</label>
                     <select v-model="pastHistory.alcohol.duration" :class="IC + SEL">
@@ -640,7 +726,7 @@ const SEL = ' bg-white'
                   <input v-model="pastHistory.tobacco.present" type="checkbox" class="w-4 h-4 rounded border-gray-300 text-blue-600 accent-blue-600"/>
                   <span class="text-sm font-medium text-gray-700 flex-1">History of Tobacco consumption</span>
                 </label>
-                <div v-if="pastHistory.tobacco.present" class="px-4 pb-4 pt-0 grid grid-cols-3 gap-3">
+                <div v-if="pastHistory.tobacco.present" class="px-4 pb-4 pt-0 grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label :class="LC">Duration</label>
                     <select v-model="pastHistory.tobacco.duration" :class="IC + SEL">
@@ -736,7 +822,7 @@ const SEL = ' bg-white'
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
                           </button>
                         </div>
-                        <div class="grid grid-cols-3 gap-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                           <div>
                             <label :class="LC">Duration of diagnosis</label>
                             <select v-model="d.diagDuration" :class="IC + SEL">
@@ -916,10 +1002,18 @@ const SEL = ' bg-white'
                 </div>
               </div>
 
-              <!-- General Examination -->
+              <!-- General Examination (role-based: Paramedic vs Doctor module) -->
               <div>
-                <h4 class="text-sm font-semibold text-gray-700 mb-3">General Examination</h4>
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <span>{{ examRole === 'DOCTOR' ? 'Doctor General Physical Examination' : examRole === 'PARAMEDIC' ? 'Paramedic General Examination' : 'General Examination' }}</span>
+                  <span v-if="examRole" class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-teal-50 text-teal-600 border border-teal-200">
+                    {{ examRole === 'DOCTOR' ? 'Doctor Module' : 'Paramedic Module' }}
+                  </span>
+                </h4>
+
+                <ParamedicGeneralExam v-if="examRole === 'PARAMEDIC'" :exam="examForm.generalExam.paramedicExam"/>
+                <DoctorGeneralExam v-else-if="examRole === 'DOCTOR'" :exam="examForm.generalExam.doctorGeneralExam"/>
+                <div v-else class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <label v-for="field in [
                     { key: 'eyeDiscolouration', label: 'Eye Discolouration' },
                     { key: 'rashes',            label: 'Skin Rashes' },
@@ -932,9 +1026,33 @@ const SEL = ' bg-white'
                     <span class="text-gray-700 text-xs">{{ field.label }}</span>
                   </label>
                 </div>
-                <div>
+
+                <div class="mt-3">
                   <label :class="LC">Other General Findings</label>
-                  <textarea v-model="examForm.generalOther" rows="2" placeholder="Pallor, icterus, cyanosis, other observations..." :class="TC" lang="auto"/>
+                  <textarea v-model="examForm.generalOther" rows="2" placeholder="Additional observations..." :class="TC" lang="auto"/>
+                </div>
+              </div>
+
+              <!-- Systemic Examination (Doctor module only) -->
+              <div v-if="examRole === 'DOCTOR'">
+                <h4 class="text-sm font-semibold text-gray-700 mb-3">Systemic Examination</h4>
+                <div class="space-y-4">
+                  <div class="border border-gray-100 rounded-xl p-4">
+                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Respiratory System</div>
+                    <RespiratoryExam :exam="examForm.generalExam.systemicExam.respiratory"/>
+                  </div>
+                  <div class="border border-gray-100 rounded-xl p-4">
+                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Cardiovascular System</div>
+                    <CVSExam :exam="examForm.generalExam.systemicExam.cvs"/>
+                  </div>
+                  <div class="border border-gray-100 rounded-xl p-4">
+                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Gastrointestinal System</div>
+                    <GIExam :exam="examForm.generalExam.systemicExam.gi"/>
+                  </div>
+                  <div class="border border-gray-100 rounded-xl p-4">
+                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Central Nervous System</div>
+                    <CNSExam :exam="examForm.generalExam.systemicExam.cns"/>
+                  </div>
                 </div>
               </div>
 
@@ -944,7 +1062,7 @@ const SEL = ' bg-white'
                 <div class="flex items-center gap-4">
                   <label class="cursor-pointer">
                     <div class="w-20 h-20 rounded-xl bg-gray-50 border-2 border-dashed border-gray-200 hover:border-teal-400 flex items-center justify-center overflow-hidden transition">
-                      <img v-if="examForm.examPhoto" :src="examForm.examPhoto" class="w-full h-full object-cover rounded-xl"/>
+                      <img v-if="examForm.examPhoto" :src="examForm.examPhoto" class="w-full h-full object-cover rounded-xl" alt="Examination photo"/>
                       <svg v-else class="w-6 h-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                     </div>
                     <input type="file" accept="image/*" capture="environment" class="hidden" @change="handleExamPhoto"/>

@@ -2,30 +2,24 @@
 import { ref, computed, reactive } from 'vue'
 import AppShell from '@/shared/components/AppShell.vue'
 import { useReferralsStore } from '@/features/referrals/stores/referrals'
+import { useActionPlanStore } from '@/shared/stores/actionPlan'
+import { usePatientsStore } from '@/features/patients/stores/patients'
+import { HOSPITALS, HOSPITAL_TYPE, getHospitalById } from '@/shared/constants/hospitals'
+import { TRANSPORT_OPTIONS } from '@/shared/constants/transport'
 import { useI18n } from '@/i18n'
 
-const { t } = useI18n()
-const store = useReferralsStore()
+const { t }          = useI18n()
+const store          = useReferralsStore()
+const actionPlan     = useActionPlanStore()
+const patientsStore  = usePatientsStore()
 
 const search     = ref('')
 const showModal  = ref(false)
 const addSuccess = ref(false)
 
-const GOVERNMENT_FACILITIES = [
-  'Rampur Community Health Center', 'District Hospital – Rampur', 'PHC Shahabad',
-  'CHC Bhelwa', 'Sub-District Hospital – Bareilly', 'AIIMS Bareilly (Govt.)',
-]
+const form = reactive({ patientName: '', facilityType: HOSPITAL_TYPE.GOVERNMENT, facility: '', transport: '', reason: '', ashaWorker: 'Sunita Devi' })
 
-const PRIVATE_FACILITIES = [
-  'Sharma Hospital & Clinic', 'City Care Hospital', 'Apollo Clinic – Rampur',
-  'Medanta Clinic', 'Sunrise Private Hospital', "Dr. Gupta's Polyclinic",
-]
-
-const TRANSPORT_OPTIONS = ['Ambulance', 'Private Vehicle', 'Govt. Vehicle', 'Auto-rickshaw', 'On foot']
-
-const form = reactive({ patientName: '', facilityType: 'Government', facility: '', transport: '', reason: '', ashaWorker: 'Sunita Devi' })
-
-const filteredFacilities = computed(() => form.facilityType === 'Government' ? GOVERNMENT_FACILITIES : PRIVATE_FACILITIES)
+const filteredFacilities = computed(() => HOSPITALS.filter(h => h.type === form.facilityType))
 
 const filtered = computed(() => {
   if (!search.value.trim()) return store.items
@@ -35,14 +29,32 @@ const filtered = computed(() => {
   )
 })
 
+// Referrals flagged during an assessment's plan of action but not yet turned into a
+// referral record here — reads the same store AIResultView/MeasuresView write to.
+const pendingFromAssessments = computed(() => actionPlan.pendingReferrals.map(p => ({
+  patientId: p.patientId,
+  patientName: patientsStore.getById(p.patientId)?.name || `Patient #${p.patientId}`,
+  hospital: getHospitalById(p.hospitalId),
+})))
+
 function openModal() {
-  form.patientName = ''; form.facilityType = 'Government'; form.facility = ''; form.transport = ''; form.reason = ''
+  form.patientName = ''; form.facilityType = HOSPITAL_TYPE.GOVERNMENT; form.facility = ''; form.transport = ''; form.reason = ''
+  showModal.value = true
+}
+
+function openModalFromPlan(p) {
+  form.patientName = p.patientName
+  form.facilityType = p.hospital?.type || HOSPITAL_TYPE.GOVERNMENT
+  form.facility = p.hospital?.id || ''
+  form.transport = ''
+  form.reason = ''
   showModal.value = true
 }
 
 function submitReferral() {
   if (!form.patientName.trim() || !form.facility) return
-  store.add({ patientName: form.patientName, hospital: form.facility, facilityType: form.facilityType, transport: form.transport || 'Private Vehicle', ashaWorker: form.ashaWorker, notes: form.reason })
+  const hospital = getHospitalById(form.facility)
+  store.add({ patientName: form.patientName, hospital: hospital?.name || form.facility, facilityType: form.facilityType, transport: form.transport || 'Private Vehicle', ashaWorker: form.ashaWorker, notes: form.reason })
   showModal.value = false
   addSuccess.value = true
   setTimeout(() => { addSuccess.value = false }, 2500)
@@ -77,6 +89,15 @@ function sendWhatsApp(r) {
           {{ t('referrals.addSuccess') }}
         </div>
       </transition>
+
+      <!-- Referrals flagged during an assessment's plan of action, not yet recorded here -->
+      <div v-if="pendingFromAssessments.length" class="bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 space-y-2">
+        <h3 class="text-sm font-semibold text-amber-800">Pending Referrals From Assessments</h3>
+        <div v-for="p in pendingFromAssessments" :key="p.patientId" class="flex items-center justify-between gap-3 text-sm">
+          <span class="text-amber-700">{{ p.patientName }} → {{ p.hospital?.name || 'Hospital not selected' }}</span>
+          <button @click="openModalFromPlan(p)" class="text-xs text-blue-600 hover:underline font-semibold flex-shrink-0">Create Referral Record</button>
+        </div>
+      </div>
 
       <div class="bg-white rounded-xl border border-gray-100 shadow-sm">
         <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 gap-3 flex-wrap">
@@ -155,7 +176,7 @@ function sendWhatsApp(r) {
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
           <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
             <h3 class="font-semibold text-gray-900 text-lg">{{ t('referrals.newReferral') }}</h3>
-            <button @click="showModal=false" class="text-gray-400 hover:text-gray-600 p-1">
+            <button @click="showModal=false" class="text-gray-400 hover:text-gray-600 p-1" aria-label="Close">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
           </div>
@@ -167,10 +188,10 @@ function sendWhatsApp(r) {
             <div>
               <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ t('referrals.facilityType') }}</label>
               <div class="flex gap-2">
-                <button v-for="type in ['Government', 'Private']" :key="type"
+                <button v-for="type in [HOSPITAL_TYPE.GOVERNMENT, HOSPITAL_TYPE.PRIVATE]" :key="type"
                   :class="['flex-1 py-2 rounded-lg text-sm font-medium border transition', form.facilityType === type ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-600 hover:border-blue-300']"
                   @click="form.facilityType = type; form.facility = ''">
-                  {{ type === 'Government' ? t('referrals.government') : t('referrals.private') }}
+                  {{ type === HOSPITAL_TYPE.GOVERNMENT ? t('referrals.government') : t('referrals.private') }}
                 </button>
               </div>
             </div>
@@ -178,7 +199,7 @@ function sendWhatsApp(r) {
               <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ t('referrals.facility') }} <span class="text-red-500">*</span></label>
               <select v-model="form.facility" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                 <option value="">{{ t('referrals.selectFacility') }}</option>
-                <option v-for="f in filteredFacilities" :key="f" :value="f">{{ f }}</option>
+                <option v-for="f in filteredFacilities" :key="f.id" :value="f.id">{{ f.name }}</option>
               </select>
             </div>
             <div>

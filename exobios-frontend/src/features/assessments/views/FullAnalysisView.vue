@@ -3,34 +3,38 @@ import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppShell from '@/shared/components/AppShell.vue'
 import { usePatientsStore } from '@/features/patients/stores/patients'
+import { MOCK_DIFFERENTIAL_DIAGNOSIS } from '@/features/assessments/constants/mockDiagnosis'
 import { useI18n } from '@/i18n'
 
 const router    = useRouter()
 const route     = useRoute()
 const store     = usePatientsStore()
 const { t }     = useI18n()
-const patientId = computed(() => Number(route.params.id))
-const patient   = computed(() => store.getById(patientId.value) || { name: 'Unknown', age: '—', gender: '—', location: '—' })
+const patientId  = computed(() => Number(route.params.id))
+const historyIdx = computed(() => route.query.historyIdx !== undefined ? Number(route.query.historyIdx) : 0)
+const patient    = computed(() => store.getById(patientId.value) || { name: 'Unknown', age: '—', gender: '—', location: '—' })
+// The specific assessment being viewed (defaults to latest) — same lookup AIResultView uses.
+const assessment = computed(() => {
+  const history = patient.value?.assessmentHistory || []
+  return history[historyIdx.value] || null
+})
 
-const conditions = [
-  { name: 'Dengue Fever', pct: 72, confidence: 'High',   icd: 'A90',
-    evidence: ['High fever (101.2°F)', 'Body aches and joint pain', 'Platelet count concern', 'Rash pattern consistent'], risk: 'High' },
-  { name: 'Viral Fever',  pct: 18, confidence: 'Medium', icd: 'B34.9',
-    evidence: ['Elevated temperature', 'Fatigue and weakness', 'Upper respiratory symptoms'], risk: 'Moderate' },
-  { name: 'Malaria',      pct: 6,  confidence: 'Low',    icd: 'B54',
-    evidence: ['Geographic risk area', 'Periodic fever pattern absent', 'Blood smear needed'], risk: 'High' },
-  { name: 'Typhoid',      pct: 4,  confidence: 'Low',    icd: 'A01.0',
-    evidence: ['Rose spots not observed', 'Abdominal tenderness mild', 'Widal test needed'], risk: 'Moderate' },
-]
+// ── Differential Diagnosis — shared with AIResultView so the two screens agree ──
+const conditions = MOCK_DIFFERENTIAL_DIAGNOSIS
 
-const vitalsAnalysis = [
-  { label: 'Temperature',      value: '101.2°F',    status: 'Abnormal',   color: 'text-red-600',    bg: 'bg-red-50',    interpretation: 'High-grade fever — consistent with acute infection' },
-  { label: 'Blood Pressure',   value: '120/80 mmHg',status: 'Normal',     color: 'text-green-600',  bg: 'bg-green-50',  interpretation: 'Within normal range' },
-  { label: 'SpO₂',            value: '98%',         status: 'Normal',     color: 'text-green-600',  bg: 'bg-green-50',  interpretation: 'Adequate oxygen saturation' },
-  { label: 'Pulse',            value: '88 BPM',      status: 'Borderline', color: 'text-orange-500', bg: 'bg-orange-50', interpretation: 'Mildly elevated — may be due to fever' },
-  { label: 'Respiratory Rate', value: '20/min',      status: 'Normal',     color: 'text-green-600',  bg: 'bg-green-50',  interpretation: 'Normal respiratory rate' },
-  { label: 'Blood Sugar',      value: '110 mg/dL',   status: 'Borderline', color: 'text-orange-500', bg: 'bg-orange-50', interpretation: 'Slightly elevated — monitor' },
-]
+// ── Vitals — the actual vitals recorded during the assessment, not hardcoded mock values ──
+const vitalsDisplay = computed(() => {
+  const v = assessment.value?.vitals
+  if (!v) return []
+  return [
+    { label: 'Blood Pressure',   value: (v.bpSystolic && v.bpDiastolic) ? `${v.bpSystolic}/${v.bpDiastolic} mmHg` : null },
+    { label: 'Heart Rate',       value: v.heartRate       ? `${v.heartRate} BPM`       : null },
+    { label: 'Respiratory Rate', value: v.respiratoryRate ? `${v.respiratoryRate} /min` : null },
+    { label: 'Temperature',      value: v.temperature     ? `${v.temperature} °F`      : null },
+    { label: 'SpO₂',             value: v.spo2            ? `${v.spo2}%`               : null },
+    { label: 'Blood Glucose (RBS)', value: v.rbs          ? `${v.rbs} mg/dL`           : null },
+  ].filter(item => item.value)
+})
 
 const investigations = [
   { name: 'Complete Blood Count (CBC)', priority: 'Urgent', reason: 'Check platelet count and WBC for dengue confirmation' },
@@ -62,7 +66,6 @@ const warnings = [
 const priorityColors  = { Urgent: 'bg-red-100 text-red-600', High: 'bg-orange-100 text-orange-600', Medium: 'bg-yellow-100 text-yellow-600' }
 const urgencyColors   = { Critical: 'bg-red-100 text-red-600 border-red-200', High: 'bg-orange-100 text-orange-600 border-orange-200' }
 const confidenceColors = { High: 'text-red-600', Medium: 'text-orange-500', Low: 'text-green-600' }
-const barColors = ['bg-red-500', 'bg-orange-400', 'bg-yellow-400', 'bg-gray-400']
 </script>
 
 <template>
@@ -75,6 +78,7 @@ const barColors = ['bg-red-500', 'bg-orange-400', 'bg-yellow-400', 'bg-gray-400'
       <div class="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 flex items-center justify-between flex-wrap gap-4">
         <div class="flex items-center gap-6 flex-wrap text-sm">
           <div><span class="text-gray-500 text-xs">{{ t('result.patientName') }}: </span><span class="font-semibold text-gray-800">{{ patient.name }}</span></div>
+          <div><span class="text-gray-500 text-xs">Patient ID: </span><span class="font-semibold text-gray-800">PT-2025-{{ String(patientId).padStart(6,'0') }}</span></div>
           <div><span class="text-gray-500 text-xs">{{ t('result.ageGender') }}: </span><span class="font-semibold text-gray-800">{{ patient.age }} / {{ patient.gender }}</span></div>
           <div><span class="text-gray-500 text-xs">{{ t('result.location') }}: </span><span class="font-semibold text-gray-800">{{ patient.location }}</span></div>
         </div>
@@ -117,7 +121,7 @@ const barColors = ['bg-red-500', 'bg-orange-400', 'bg-yellow-400', 'bg-gray-400'
                 </div>
               </div>
               <div class="h-2 bg-gray-100 rounded-full overflow-hidden mb-3">
-                <div :class="[barColors[i], 'h-full rounded-full']" :style="`width:${c.pct}%`"/>
+                <div :class="[c.color, 'h-full rounded-full']" :style="`width:${c.pct}%`"/>
               </div>
               <div class="flex items-start gap-2 flex-wrap">
                 <span class="text-xs text-gray-500 font-medium">Supporting evidence:</span>
@@ -127,21 +131,16 @@ const barColors = ['bg-red-500', 'bg-orange-400', 'bg-yellow-400', 'bg-gray-400'
           </div>
         </div>
 
-        <!-- Vitals analysis -->
+        <!-- Vitals — the actual vitals recorded for this assessment -->
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          <h3 class="font-semibold text-gray-800 mb-4">Vitals Analysis</h3>
-          <div class="space-y-2.5">
-            <div v-for="v in vitalsAnalysis" :key="v.label" :class="[v.bg, 'rounded-lg p-3 flex items-start gap-3']">
-              <div class="flex-shrink-0">
-                <div class="text-xs text-gray-500">{{ v.label }}</div>
-                <div :class="[v.color, 'font-bold text-sm']">{{ v.value }}</div>
-              </div>
-              <div class="flex-1 min-w-0">
-                <span :class="[v.color, 'text-[10px] font-semibold uppercase tracking-wide']">{{ v.status }}</span>
-                <div class="text-xs text-gray-600 mt-0.5">{{ v.interpretation }}</div>
-              </div>
+          <h3 class="font-semibold text-gray-800 mb-4">Vitals</h3>
+          <div v-if="vitalsDisplay.length" class="space-y-2.5">
+            <div v-for="v in vitalsDisplay" :key="v.label" class="rounded-lg p-3 bg-gray-50 flex items-center justify-between">
+              <span class="text-xs text-gray-500">{{ v.label }}</span>
+              <span class="font-bold text-sm text-gray-800">{{ v.value }}</span>
             </div>
           </div>
+          <p v-else class="text-sm text-gray-400 italic">No vitals recorded</p>
         </div>
 
         <!-- Investigations + Treatment -->
