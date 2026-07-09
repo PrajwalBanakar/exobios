@@ -173,21 +173,13 @@ const router = createRouter({
   routes,
 })
 
-// Auth guard: redirect unauthenticated or expired sessions to login
+// Auth guard: redirect unauthenticated or expired sessions to login.
+// Reads the same auth store the rest of the app uses (single source of truth for
+// session validity) rather than re-parsing localStorage independently here.
 router.beforeEach((to) => {
-  let session = null
-  try {
-    const raw = localStorage.getItem('exobios_auth')
-    if (raw) {
-      session = JSON.parse(raw)
-      if (Date.now() > (session?.expiresAt ?? 0)) {
-        localStorage.removeItem('exobios_auth')
-        session = null
-      }
-    }
-  } catch { session = null }
+  const auth = useAuthStore()
+  const isLoggedIn = auth.isLoggedIn
 
-  const isLoggedIn = !!session
   if (to.meta.requiresAuth && !isLoggedIn) return { name: 'Login' }
   if (to.name === 'Login' && isLoggedIn) return { name: 'Dashboard' }
 
@@ -195,7 +187,6 @@ router.beforeEach((to) => {
   // without the permission, but the route itself must enforce it too (otherwise a
   // Paramedic/Doctor could reach /admin or /users by typing the URL directly).
   if (to.meta.permission && isLoggedIn) {
-    const auth = useAuthStore()
     if (!auth.hasPermission(to.meta.permission)) return { name: 'Unauthorized' }
   }
 })

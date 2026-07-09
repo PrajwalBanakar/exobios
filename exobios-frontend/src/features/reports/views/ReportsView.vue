@@ -123,6 +123,7 @@ const statusLabel = (s) => s === 'Published' ? t('reports.published') : t('repor
             {{ t('reports.newReport') }}
           </button>
         </div>
+        <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
             <tr class="border-b border-gray-100 bg-gray-50/50">
@@ -156,6 +157,7 @@ const statusLabel = (s) => s === 'Published' ? t('reports.published') : t('repor
             </tr>
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   </AppShell>

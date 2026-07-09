@@ -47,6 +47,8 @@ public class VitalsRequest {
     @DecimalMax(value = "500.0",  message = "Weight must not exceed 500 kg")
     private BigDecimal weight;
 
+    @DecimalMin(value = "5.0",   message = "BMI must be at least 5")
+    @DecimalMax(value = "100.0", message = "BMI must not exceed 100")
     private BigDecimal bmi;
 
     @DecimalMin(value = "0.0",    message = "Blood sugar must be at least 0 mg/dL")

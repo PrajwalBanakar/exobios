@@ -6,6 +6,7 @@ import com.exobios.backend.common.enums.ApiErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -79,6 +80,19 @@ public class GlobalExceptionHandler {
                 ApiErrorCode.FORBIDDEN, "Access denied", request.getRequestURI());
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ApiResponse.error("Access denied", error));
+    }
+
+    // Catches unique-constraint violations that slip past pre-checks under concurrent
+    // writes (e.g. a generated code/number colliding, or two requests racing a uniqueness
+    // pre-check) — maps to a client-correctable 409 instead of an opaque 500.
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleDataIntegrityViolation(
+            DataIntegrityViolationException ex, HttpServletRequest request) {
+        log.warn("Data integrity violation on {}: {}", request.getRequestURI(), ex.getMessage());
+        ErrorResponse error = ErrorResponse.of(
+                ApiErrorCode.CONFLICT, "The request conflicts with existing data", request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error("Conflict", error));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)

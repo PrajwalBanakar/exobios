@@ -5,11 +5,13 @@ import AppShell from '@/shared/components/AppShell.vue'
 import SyncStatusBadge from '@/shared/components/SyncStatusBadge.vue'
 import ConfirmModal from '@/shared/components/ConfirmModal.vue'
 import { usePatientsStore } from '@/features/patients/stores/patients'
+import { useTeleconsultStore } from '@/features/teleconsult/stores/teleconsult'
 import { useI18n } from '@/i18n'
 import { useToast } from '@/shared/composables/useToast'
 
 const router = useRouter()
 const store  = usePatientsStore()
+const teleconsultStore = useTeleconsultStore()
 const { t }  = useI18n()
 const { showToast } = useToast()
 
@@ -17,7 +19,7 @@ const stats = computed(() => [
   { labelKey: 'dashboard.totalPatients', value: store.patients.length,                                    color: 'bg-blue-600',   icon: 'patients'  },
   { labelKey: 'dashboard.emergency',     value: store.patients.filter(p => p.risk === 'High').length,     color: 'bg-red-500',    icon: 'emergency' },
   { labelKey: 'dashboard.referrals',     value: store.patients.filter(p => p.risk === 'Moderate').length, color: 'bg-orange-400', icon: 'referral'  },
-  { labelKey: 'dashboard.teleconsult',   value: 24,                                                        color: 'bg-green-500',  icon: 'video'     },
+  { labelKey: 'dashboard.teleconsult',   value: teleconsultStore.items.length,                             color: 'bg-green-500',  icon: 'video'     },
 ])
 
 const riskClasses = {

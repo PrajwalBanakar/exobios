@@ -15,12 +15,14 @@ import GIExam from '@/features/assessments/components/examination/systemic/GIExa
 import CNSExam from '@/features/assessments/components/examination/systemic/CNSExam.vue'
 import { addToQueue } from '@/shared/offline/syncQueue'
 import { isOnline } from '@/shared/offline/network'
+import { useToast } from '@/shared/composables/useToast'
 
 const router = useRouter()
 const route  = useRoute()
 const store  = usePatientsStore()
 const auth   = useAuthStore()
 const { t }  = useI18n()
+const { showToast } = useToast()
 
 // Which general-exam module to render — falls back to neither (generic checklist) for
 // roles outside Paramedic/Doctor (e.g. Super Admin previewing the form).
@@ -145,6 +147,7 @@ function handleDocAttach(e) {
   files.forEach(file => {
     const reader = new FileReader()
     reader.onload = (ev) => { attachedDocs.value.push({ name: file.name, size: file.size, data: ev.target.result }) }
+    reader.onerror = () => showToast(`Could not read "${file.name}". Please try again.`, 'error')
     reader.readAsDataURL(file)
   })
 }
@@ -204,6 +207,7 @@ function handleExamPhoto(e) {
   if (!file) return
   const reader = new FileReader()
   reader.onload = (ev) => { examForm.examPhoto = ev.target.result }
+  reader.onerror = () => showToast('Could not read exam photo. Please try again.', 'error')
   reader.readAsDataURL(file)
 }
 
@@ -331,11 +335,23 @@ function validateBasics() {
   return Object.keys(errors.value).length === 0
 }
 
+const analyzing = ref(false)
+
 async function analyze() {
+  if (analyzing.value) return
   if (!validateBasics()) {
     sections.value.basic = true
     return
   }
+  analyzing.value = true
+  try {
+    await runAnalysis()
+  } finally {
+    analyzing.value = false
+  }
+}
+
+async function runAnalysis() {
   const now = new Date()
   const assessmentTime = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) +
     ', ' + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
@@ -1173,10 +1189,11 @@ const SEL = ' bg-white'
             {{ draftSaved ? t('common.draftSaved') : t('common.saveDraft') }}
           </button>
         </div>
-        <button @click="analyze"
-          class="flex items-center gap-2 px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition">
+        <button @click="analyze" :disabled="analyzing"
+          class="flex items-center gap-2 px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition disabled:opacity-60 disabled:cursor-not-allowed">
           {{ t('common.analyze') }}
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          <svg v-if="analyzing" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v8H4z"/></svg>
+          <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </button>
       </div>
     </div>

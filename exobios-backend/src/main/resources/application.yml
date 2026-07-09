@@ -36,6 +36,13 @@ spring:
       fail-on-unknown-properties: false
     default-property-inclusion: non_null
 
+  data:
+    web:
+      pageable:
+        # Keep in sync with AppConstants.MAX_PAGE_SIZE / DEFAULT_PAGE_SIZE
+        max-page-size: 100
+        default-page-size: 20
+
   flyway:
     enabled: true
     locations: classpath:db/migration

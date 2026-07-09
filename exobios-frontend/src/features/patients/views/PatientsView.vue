@@ -42,7 +42,7 @@ const RISK_ORDER = { High: 0, Moderate: 1, Low: 2 }
 const filtered = computed(() => {
   const q    = search.value.toLowerCase().trim()
   const list = store.patients.filter(p => {
-    const mQ = !q || p.name.toLowerCase().includes(q) || p.location.toLowerCase().includes(q) || String(p.id).includes(q)
+    const mQ = !q || p.name.toLowerCase().includes(q) || (p.address?.village || p.location || '').toLowerCase().includes(q) || String(p.id).includes(q)
     const mR = riskFilter.value === 'All' || p.risk === riskFilter.value
     return mQ && mR
   })
@@ -52,7 +52,7 @@ const filtered = computed(() => {
     else if (sortKey.value === 'age')      { av = a.age; bv = b.age }
     else if (sortKey.value === 'risk')     { av = RISK_ORDER[a.risk] ?? 9; bv = RISK_ORDER[b.risk] ?? 9 }
     else if (sortKey.value === 'date')     { av = new Date(a.date); bv = new Date(b.date) }
-    else if (sortKey.value === 'location') { av = a.location.toLowerCase(); bv = b.location.toLowerCase() }
+    else if (sortKey.value === 'location') { av = (a.address?.village || a.location || '').toLowerCase(); bv = (b.address?.village || b.location || '').toLowerCase() }
     else return 0
     if (av < bv) return sortDir.value === 'asc' ? -1 : 1
     if (av > bv) return sortDir.value === 'asc' ?  1 : -1
@@ -187,7 +187,7 @@ const sortArrows = (key) => ({
                   </td>
                   <td class="px-4 py-3 text-gray-600 text-sm">{{ p.age }} / {{ p.gender }}</td>
                   <td class="px-4 py-3 text-gray-600 text-sm">{{ p.phone }}</td>
-                  <td class="px-4 py-3 text-gray-600 text-sm max-w-[160px] truncate">{{ p.location }}</td>
+                  <td class="px-4 py-3 text-gray-600 text-sm max-w-[160px] truncate">{{ p.address?.village || p.location || '—' }}</td>
                   <td class="px-4 py-3">
                     <span :class="[riskClasses[p.risk] || 'bg-gray-100 text-gray-600', 'px-2.5 py-1 rounded-full text-xs font-semibold']">{{ riskOptionLabel(p.risk) }}</span>
                   </td>

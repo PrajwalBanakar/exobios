@@ -221,7 +221,7 @@ async function submitMeasures() {
         <div><div class="text-gray-500 mb-0.5">Patient Name</div><div class="font-semibold text-gray-800">{{ patient.name }}</div></div>
         <div><div class="text-gray-500 mb-0.5">Patient ID</div><div class="font-semibold text-gray-800">PT-2025-{{ String(patientId).padStart(6,'0') }}</div></div>
         <div><div class="text-gray-500 mb-0.5">Age / Gender</div><div class="font-semibold text-gray-800">{{ patient.age }} / {{ patient.gender }}</div></div>
-        <div><div class="text-gray-500 mb-0.5">Location</div><div class="font-semibold text-gray-800">{{ patient.location }}</div></div>
+        <div><div class="text-gray-500 mb-0.5">Location</div><div class="font-semibold text-gray-800">{{ patient.address?.village || patient.location || '—' }}</div></div>
         <div>
           <div class="text-gray-500 mb-0.5">Risk Level</div>
           <div class="flex items-center gap-1">

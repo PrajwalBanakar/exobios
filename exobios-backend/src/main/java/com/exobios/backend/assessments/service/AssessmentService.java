@@ -27,12 +27,15 @@ import com.exobios.backend.common.exception.ResourceNotFoundException;
 import com.exobios.backend.integration.ai.AiGateway;
 import com.exobios.backend.integration.ai.AiRequest;
 import com.exobios.backend.integration.ai.AiResponse;
+import com.exobios.backend.common.exception.ConflictException;
 import com.exobios.backend.patients.entity.Patient;
 import com.exobios.backend.patients.repository.PatientRepository;
 import com.exobios.backend.security.UserPrincipal;
 import com.exobios.backend.users.entity.enums.Role;
+import com.exobios.backend.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -55,8 +58,11 @@ public class AssessmentService {
 
     private final AssessmentRepository assessmentRepository;
     private final PatientRepository    patientRepository;
+    private final UserRepository       userRepository;
     private final AssessmentMapper     assessmentMapper;
     private final AiGateway            aiGateway;
+
+    private static final int CODE_GENERATION_MAX_ATTEMPTS = 3;
 
     // ── Create ────────────────────────────────────────────────────────────────
 
@@ -69,7 +75,6 @@ public class AssessmentService {
         UUID ashaWorkerId = resolveAshaWorkerId(request, principal, patient);
 
         Assessment assessment = new Assessment();
-        assessment.setAssessmentNumber(generateAssessmentNumber());
         assessment.setPatientId(request.getPatientId());
         assessment.setAshaWorkerId(ashaWorkerId);
         assessment.setPatientComplaint(request.getPatientComplaint());
@@ -83,10 +88,30 @@ public class AssessmentService {
         applyExaminationFinding(assessment, request.getExaminationFinding());
         applyLegacyInformation(assessment, request.getLegacyInformation());
 
-        Assessment saved = assessmentRepository.save(assessment);
+        Assessment saved = createWithGeneratedNumber(assessment);
         log.info("Created assessment number={} patient={} ashaWorker={}",
                 saved.getAssessmentNumber(), request.getPatientId(), ashaWorkerId);
         return assessmentMapper.toDto(saved);
+    }
+
+    // Sequence numbers are computed as MAX(existing)+1 (see generateAssessmentNumber),
+    // which races under concurrent creates in the same year. assessment_number has a DB
+    // uniqueness constraint, so a colliding save fails fast — retry with a freshly
+    // regenerated number instead of surfacing an opaque 500 to the client.
+    private Assessment createWithGeneratedNumber(Assessment assessment) {
+        for (int attempt = 1; attempt <= CODE_GENERATION_MAX_ATTEMPTS; attempt++) {
+            assessment.setAssessmentNumber(generateAssessmentNumber());
+            try {
+                return assessmentRepository.saveAndFlush(assessment);
+            } catch (DataIntegrityViolationException e) {
+                if (attempt == CODE_GENERATION_MAX_ATTEMPTS) {
+                    throw new ConflictException(
+                            "Could not generate a unique assessment number, please retry");
+                }
+                log.warn("Assessment number collision on attempt {}, retrying", attempt);
+            }
+        }
+        throw new ConflictException("Could not generate a unique assessment number, please retry");
     }
 
     // ── Read ──────────────────────────────────────────────────────────────────
@@ -168,6 +193,9 @@ public class AssessmentService {
         AiAssessmentResult aiResult = callAiGateway(assessment);
         aiResult.setAssessment(assessment);
         assessment.setAiResult(aiResult);
+        // Mirror onto the assessment's own risk_level column — Analytics queries filter/
+        // aggregate on assessments.risk_level directly, not ai_assessment_results.risk_level.
+        assessment.setRiskLevel(aiResult.getRiskLevel());
 
         log.info("Submitted assessment id={} number={} aiStatus={}",
                 id, assessment.getAssessmentNumber(), aiResult.getStatus());
@@ -210,8 +238,13 @@ public class AssessmentService {
             }
             return principal.getId();
         }
-        // SUPER_ADMIN: use provided ashaWorkerId, else inherit from patient
-        return request.getAshaWorkerId() != null ? request.getAshaWorkerId() : patient.getAshaWorkerId();
+        // SUPER_ADMIN: use provided ashaWorkerId (validated below), else inherit from patient
+        if (request.getAshaWorkerId() == null) {
+            return patient.getAshaWorkerId();
+        }
+        userRepository.findById(request.getAshaWorkerId())
+                .orElseThrow(() -> new ResourceNotFoundException("User", request.getAshaWorkerId()));
+        return request.getAshaWorkerId();
     }
 
     private void assertOwnership(Assessment assessment, UserPrincipal principal) {

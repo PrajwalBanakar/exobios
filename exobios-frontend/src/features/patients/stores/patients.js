@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { useToast } from '@/shared/composables/useToast'
 
 const STORAGE_KEY   = 'exobios_patients'
 const STORE_VERSION = 'v3' // bump when seed data shape changes
@@ -190,7 +191,16 @@ export const usePatientsStore = defineStore('patients', () => {
       return raw ? JSON.parse(raw) : null
     } catch { return null }
   }
-  function persist(list) { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)) }
+  function persist(list) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
+    } catch {
+      // Most likely a full localStorage quota (patient records embed base64 photos/
+      // documents) — the in-memory change still applies, but won't survive a reload.
+      const { showToast } = useToast()
+      showToast('Could not save changes — storage may be full.', 'error')
+    }
+  }
 
   const patients = ref(load() ?? [...DEFAULT_PATIENTS])
 

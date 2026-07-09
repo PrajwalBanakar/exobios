@@ -17,6 +17,8 @@ public interface ReferralRepository extends JpaRepository<Referral, UUID> {
 
     Page<Referral> findAllByPatientId(UUID patientId, Pageable pageable);
 
+    Page<Referral> findAllByPatientIdAndAshaWorkerId(UUID patientId, UUID ashaWorkerId, Pageable pageable);
+
     Page<Referral> findAllByAshaWorkerId(UUID ashaWorkerId, Pageable pageable);
 
     Page<Referral> findAllByAshaWorkerIdAndStatus(UUID ashaWorkerId, ReferralStatus status,

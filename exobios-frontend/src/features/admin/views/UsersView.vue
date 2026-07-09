@@ -39,7 +39,8 @@ const newUser = ref({ name: '', role: 'ASHA', area: '', phone: '' })
 
 function addUser() {
   if (!newUser.value.name || !newUser.value.phone) return
-  users.value.push({ id: users.value.length + 1, ...newUser.value, status: 'Active', patients: 0, lastActive: 'Just now' })
+  const nextId = users.value.reduce((m, u) => Math.max(m, u.id), 0) + 1
+  users.value.push({ id: nextId, ...newUser.value, status: 'Active', patients: 0, lastActive: 'Just now' })
   newUser.value = { name: '', role: 'ASHA', area: '', phone: '' }
   showAddModal.value = false
   addSuccess.value = true
@@ -48,6 +49,9 @@ function addUser() {
 
 function toggleStatus(u) { u.status = u.status === 'Active' ? 'Inactive' : 'Active' }
 const statusLabel = (s) => s === 'Active' ? t('users.active') : t('users.inactive')
+
+const deleteConfirmId = ref(null)
+function doDelete(id) { users.value = users.value.filter(x => x.id !== id); deleteConfirmId.value = null }
 
 const summaryStats = computed(() => [
   { labelKey: 'users.totalUsers',  val: users.value.length },
@@ -113,40 +117,53 @@ const summaryStats = computed(() => [
               </tr>
             </thead>
             <tbody>
-              <tr v-for="u in filtered" :key="u.id" class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                <td class="px-5 py-3">
-                  <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs font-semibold text-blue-600 flex-shrink-0">
-                      {{ u.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase() }}
+              <template v-for="u in filtered" :key="u.id">
+                <tr v-if="deleteConfirmId !== u.id" class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                  <td class="px-5 py-3">
+                    <div class="flex items-center gap-2.5">
+                      <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs font-semibold text-blue-600 flex-shrink-0">
+                        {{ u.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase() }}
+                      </div>
+                      <span class="font-medium text-gray-800">{{ u.name }}</span>
                     </div>
-                    <span class="font-medium text-gray-800">{{ u.name }}</span>
-                  </div>
-                </td>
-                <td class="px-4 py-3">
-                  <span :class="[roleColor(u.role), 'px-2.5 py-1 rounded-full text-xs font-semibold']">{{ u.role }}</span>
-                </td>
-                <td class="px-4 py-3 text-gray-600 text-sm">{{ u.area }}</td>
-                <td class="px-4 py-3 text-gray-600 text-sm">{{ u.phone }}</td>
-                <td class="px-4 py-3 text-center font-semibold text-gray-700">{{ u.patients }}</td>
-                <td class="px-4 py-3 text-gray-500 text-xs">{{ u.lastActive }}</td>
-                <td class="px-4 py-3">
-                  <button @click="toggleStatus(u)"
-                    :class="['px-2.5 py-1 rounded-full text-xs font-semibold transition', u.status==='Active' ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200']">
-                    {{ statusLabel(u.status) }}
-                  </button>
-                </td>
-                <td class="px-4 py-3">
-                  <div class="flex items-center gap-1">
-                    <button class="p-1.5 text-blue-500 hover:bg-blue-50 rounded transition" :title="t('common.edit')">
-                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span :class="[roleColor(u.role), 'px-2.5 py-1 rounded-full text-xs font-semibold']">{{ u.role }}</span>
+                  </td>
+                  <td class="px-4 py-3 text-gray-600 text-sm">{{ u.area }}</td>
+                  <td class="px-4 py-3 text-gray-600 text-sm">{{ u.phone }}</td>
+                  <td class="px-4 py-3 text-center font-semibold text-gray-700">{{ u.patients }}</td>
+                  <td class="px-4 py-3 text-gray-500 text-xs">{{ u.lastActive }}</td>
+                  <td class="px-4 py-3">
+                    <button @click="toggleStatus(u)"
+                      :class="['px-2.5 py-1 rounded-full text-xs font-semibold transition', u.status==='Active' ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200']">
+                      {{ statusLabel(u.status) }}
                     </button>
-                    <button class="p-1.5 text-red-400 hover:bg-red-50 rounded transition" :title="t('common.delete')"
-                      @click="users = users.filter(x=>x.id!==u.id)">
-                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-1">
+                      <button class="p-1.5 text-blue-500 hover:bg-blue-50 rounded transition" :title="t('common.edit')">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      </button>
+                      <button class="p-1.5 text-red-400 hover:bg-red-50 rounded transition" :title="t('common.delete')"
+                        @click="deleteConfirmId = u.id">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr v-else class="border-b border-red-100 bg-red-50">
+                  <td colspan="8" class="px-5 py-3">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm text-red-700 font-medium">{{ t('common.delete') }} <strong>{{ u.name }}</strong>?</span>
+                      <div class="flex gap-2">
+                        <button @click="deleteConfirmId = null" class="px-3 py-1.5 text-xs border border-gray-300 text-gray-600 rounded-lg hover:bg-white">{{ t('common.cancel') }}</button>
+                        <button @click="doDelete(u.id)" class="px-3 py-1.5 text-xs bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg">{{ t('common.yesDelete') }}</button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </template>
             </tbody>
           </table>
         </div>

@@ -2,6 +2,7 @@ package com.exobios.backend.patients.service;
 
 import com.exobios.backend.common.dto.PageResponse;
 import com.exobios.backend.common.exception.BadRequestException;
+import com.exobios.backend.common.exception.ConflictException;
 import com.exobios.backend.common.exception.ForbiddenException;
 import com.exobios.backend.common.exception.ResourceNotFoundException;
 import com.exobios.backend.patients.dto.CreatePatientRequest;
@@ -17,6 +18,7 @@ import com.exobios.backend.users.entity.enums.Role;
 import com.exobios.backend.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -38,13 +40,14 @@ public class PatientService {
     private final PatientMapper     patientMapper;
     private final UserRepository    userRepository;
 
+    private static final int CODE_GENERATION_MAX_ATTEMPTS = 3;
+
     @Auditable(action = AuditAction.CREATE, entityType = "PATIENT")
     @Transactional
     public PatientDto createPatient(CreatePatientRequest request, UserPrincipal principal) {
         UUID ashaWorkerId = resolveAshaWorkerId(request, principal);
 
         Patient patient = new Patient();
-        patient.setPatientCode(generatePatientCode());
         patient.setName(request.getName());
         patient.setAge(request.getAge() != null ? request.getAge().shortValue() : null);
         patient.setGender(request.getGender());
@@ -58,9 +61,28 @@ public class PatientService {
         patient.setAshaWorkerId(ashaWorkerId);
         patient.setStatus(PatientStatus.ACTIVE);
 
-        Patient saved = patientRepository.save(patient);
+        Patient saved = createWithGeneratedCode(patient);
         log.info("Created patient code={} ashaWorker={}", saved.getPatientCode(), ashaWorkerId);
         return patientMapper.toDto(saved);
+    }
+
+    // Sequence numbers are computed as MAX(existing)+1 (see generatePatientCode), which
+    // races under concurrent creates in the same year. patient_code has a DB uniqueness
+    // constraint, so a colliding save fails fast — retry with a freshly regenerated code
+    // instead of surfacing an opaque 500 to the client.
+    private Patient createWithGeneratedCode(Patient patient) {
+        for (int attempt = 1; attempt <= CODE_GENERATION_MAX_ATTEMPTS; attempt++) {
+            patient.setPatientCode(generatePatientCode());
+            try {
+                return patientRepository.saveAndFlush(patient);
+            } catch (DataIntegrityViolationException e) {
+                if (attempt == CODE_GENERATION_MAX_ATTEMPTS) {
+                    throw new ConflictException("Could not generate a unique patient code, please retry");
+                }
+                log.warn("Patient code collision on attempt {}, retrying", attempt);
+            }
+        }
+        throw new ConflictException("Could not generate a unique patient code, please retry");
     }
 
     public PatientDto getPatientById(UUID id, UserPrincipal principal) {

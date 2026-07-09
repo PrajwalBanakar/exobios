@@ -4,14 +4,14 @@ import { useRouter, useRoute } from 'vue-router'
 import AppShell from '@/shared/components/AppShell.vue'
 import SyncStatusBadge from '@/shared/components/SyncStatusBadge.vue'
 import { usePatientsStore } from '@/features/patients/stores/patients'
-import { useI18n } from '@/i18n'
 import { addToQueue } from '@/shared/offline/syncQueue'
 import { isOnline } from '@/shared/offline/network'
+import { useToast } from '@/shared/composables/useToast'
 
 const router = useRouter()
 const route  = useRoute()
 const store  = usePatientsStore()
-const { t }  = useI18n()
+const { showToast } = useToast()
 
 const isEdit    = computed(() => route.name === 'EditPatient')
 const patientId = computed(() => isEdit.value ? Number(route.params.id) : null)
@@ -32,12 +32,8 @@ const form = reactive({
 
 const calculatedAge = computed(() => {
   if (!form.dob) return null
-  const birth = new Date(form.dob)
-  const today = new Date()
-  let age = today.getFullYear() - birth.getFullYear()
-  const m = today.getMonth() - birth.getMonth()
-  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
-  return age >= 0 ? age : null
+  const age = store.calcAge(form.dob)
+  return age !== null && age >= 0 ? age : null
 })
 
 const guardianLabel = computed(() =>
@@ -108,6 +104,7 @@ function handlePhoto(e) {
   if (!file) return
   const reader = new FileReader()
   reader.onload = (ev) => { form.photo = ev.target.result }
+  reader.onerror = () => showToast('Could not read photo. Please try again.', 'error')
   reader.readAsDataURL(file)
 }
 

@@ -135,12 +135,12 @@ const versionHistory = computed(() => {
 
 // ── Share ─────────────────────────────────────────────────────────────────
 function sendWhatsApp(p) {
-  const msg = encodeURIComponent(`Patient: ${p.name}, Age: ${p.age}/${p.gender}, Location: ${p.location}. Assessed at ${p.assessmentTime || p.date}.`)
+  const msg = encodeURIComponent(`Patient: ${p.name}, Age: ${p.age}/${p.gender}, Location: ${p.address?.village || p.location || '—'}. Assessed at ${p.assessmentTime || p.date}.`)
   window.open(`https://wa.me/?text=${msg}`, '_blank')
 }
 function sendEmail(p) {
   const subject = encodeURIComponent(`Patient Assessment — ${p.name}`)
-  const body    = encodeURIComponent(`Patient: ${p.name}\nAge/Gender: ${p.age}/${p.gender}\nLocation: ${p.location}\nAssessment Time: ${p.assessmentTime || p.date}`)
+  const body    = encodeURIComponent(`Patient: ${p.name}\nAge/Gender: ${p.age}/${p.gender}\nLocation: ${p.address?.village || p.location || '—'}\nAssessment Time: ${p.assessmentTime || p.date}`)
   window.open(`mailto:?subject=${subject}&body=${body}`)
 }
 function printResult() { window.print() }
@@ -166,7 +166,7 @@ function printResult() { window.print() }
         </div>
         <div><div class="text-xs text-gray-500">Patient ID</div><div class="text-sm font-semibold text-gray-800">PT-2025-{{ String(patientId).padStart(6,'0') }}</div></div>
         <div><div class="text-xs text-gray-500">{{ t('result.ageGender') }}</div><div class="text-sm font-semibold text-gray-800">{{ patient.age }} / {{ patient.gender }}</div></div>
-        <div><div class="text-xs text-gray-500">{{ t('result.location') }}</div><div class="text-sm font-semibold text-gray-800">{{ patient.location }}</div></div>
+        <div><div class="text-xs text-gray-500">{{ t('result.location') }}</div><div class="text-sm font-semibold text-gray-800">{{ patient.address?.village || patient.location || '—' }}</div></div>
         <!-- Show which assessment this is -->
         <div v-if="assessment">
           <div class="text-xs text-gray-500">Assessment Date</div>

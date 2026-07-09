@@ -80,7 +80,7 @@ const confidenceColors = { High: 'text-red-600', Medium: 'text-orange-500', Low:
           <div><span class="text-gray-500 text-xs">{{ t('result.patientName') }}: </span><span class="font-semibold text-gray-800">{{ patient.name }}</span></div>
           <div><span class="text-gray-500 text-xs">Patient ID: </span><span class="font-semibold text-gray-800">PT-2025-{{ String(patientId).padStart(6,'0') }}</span></div>
           <div><span class="text-gray-500 text-xs">{{ t('result.ageGender') }}: </span><span class="font-semibold text-gray-800">{{ patient.age }} / {{ patient.gender }}</span></div>
-          <div><span class="text-gray-500 text-xs">{{ t('result.location') }}: </span><span class="font-semibold text-gray-800">{{ patient.location }}</span></div>
+          <div><span class="text-gray-500 text-xs">{{ t('result.location') }}: </span><span class="font-semibold text-gray-800">{{ patient.address?.village || patient.location || '—' }}</span></div>
         </div>
         <div class="flex items-center gap-2">
           <button @click="router.back()" class="flex items-center gap-1.5 px-3 py-2 border border-gray-200 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-50 transition">

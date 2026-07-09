@@ -1,8 +1,11 @@
 package com.exobios.backend.sos.service;
 
+import com.exobios.backend.assessments.repository.AssessmentRepository;
 import com.exobios.backend.common.dto.PageResponse;
 import com.exobios.backend.common.exception.BadRequestException;
 import com.exobios.backend.common.exception.ForbiddenException;
+import com.exobios.backend.common.exception.ResourceNotFoundException;
+import com.exobios.backend.patients.repository.PatientRepository;
 import com.exobios.backend.security.UserPrincipal;
 import com.exobios.backend.sos.dto.CreateSosRequest;
 import com.exobios.backend.sos.dto.SosRecordDto;
@@ -30,12 +33,21 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class SosService {
 
-    private final SosRepository sosRepository;
-    private final SosMapper     sosMapper;
+    private final SosRepository        sosRepository;
+    private final SosMapper            sosMapper;
+    private final PatientRepository    patientRepository;
+    private final AssessmentRepository assessmentRepository;
 
     @Auditable(action = AuditAction.CREATE, entityType = "SOS")
     @Transactional
     public SosRecordDto createSos(CreateSosRequest request, UserPrincipal principal) {
+        if (!patientRepository.existsById(request.getPatientId())) {
+            throw new ResourceNotFoundException("Patient", request.getPatientId());
+        }
+        if (request.getAssessmentId() != null && !assessmentRepository.existsById(request.getAssessmentId())) {
+            throw new ResourceNotFoundException("Assessment", request.getAssessmentId());
+        }
+
         SosRecord sos = new SosRecord();
         sos.setPatientId(request.getPatientId());
         sos.setAssessmentId(request.getAssessmentId());

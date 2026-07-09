@@ -243,10 +243,10 @@ const notifDotColor = {
                 v-for="lang in languages"
                 :key="lang.code"
                 @click="setLocale(lang.code); showLangMenu = false"
-                :class="['w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-gray-50 transition text-left', locale.value === lang.code ? 'text-blue-600 font-semibold' : 'text-gray-700']"
+                :class="['w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-gray-50 transition text-left', locale === lang.code ? 'text-blue-600 font-semibold' : 'text-gray-700']"
               >
                 {{ lang.full }}
-                <svg v-if="locale.value === lang.code" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                <svg v-if="locale === lang.code" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
               </button>
             </div>
           </div>

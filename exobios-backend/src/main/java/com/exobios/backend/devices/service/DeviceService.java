@@ -12,9 +12,11 @@ import com.exobios.backend.devices.entity.Device;
 import com.exobios.backend.devices.entity.enums.DeviceStatus;
 import com.exobios.backend.devices.exception.DeviceNotFoundException;
 import com.exobios.backend.devices.mapper.DeviceMapper;
+import com.exobios.backend.common.exception.ResourceNotFoundException;
 import com.exobios.backend.devices.repository.DeviceRepository;
 import com.exobios.backend.security.UserPrincipal;
 import com.exobios.backend.users.entity.enums.Role;
+import com.exobios.backend.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -35,6 +37,7 @@ public class DeviceService {
 
     private final DeviceRepository deviceRepository;
     private final DeviceMapper     deviceMapper;
+    private final UserRepository   userRepository;
 
     @Auditable(action = AuditAction.CREATE, entityType = "DEVICE")
     @Transactional
@@ -96,6 +99,9 @@ public class DeviceService {
         }
         if (device.getStatus() == DeviceStatus.MAINTENANCE) {
             throw new BadRequestException("Cannot assign a device that is under MAINTENANCE");
+        }
+        if (!userRepository.existsById(request.getAssignedTo())) {
+            throw new ResourceNotFoundException("User", request.getAssignedTo());
         }
         device.setAssignedTo(request.getAssignedTo());
         device.setStatus(DeviceStatus.ASSIGNED);

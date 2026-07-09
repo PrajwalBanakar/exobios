@@ -7,6 +7,8 @@ import com.exobios.backend.assessments.repository.AssessmentRepository;
 import com.exobios.backend.common.dto.PageResponse;
 import com.exobios.backend.common.exception.BadRequestException;
 import com.exobios.backend.common.exception.ForbiddenException;
+import com.exobios.backend.common.exception.ResourceNotFoundException;
+import com.exobios.backend.patients.repository.PatientRepository;
 import com.exobios.backend.referrals.dto.CreateReferralRequest;
 import com.exobios.backend.referrals.dto.ReferralDto;
 import com.exobios.backend.referrals.dto.UpdateReferralRequest;
@@ -38,6 +40,7 @@ public class ReferralService {
 
     private final ReferralRepository   referralRepository;
     private final AssessmentRepository assessmentRepository;
+    private final PatientRepository    patientRepository;
     private final ReferralMapper       referralMapper;
 
     // ── Create ────────────────────────────────────────────────────────────────
@@ -80,7 +83,11 @@ public class ReferralService {
                                                    Pageable pageable, UserPrincipal principal) {
         Page<Referral> page;
         if (patientId != null) {
-            page = referralRepository.findAllByPatientId(patientId, pageable);
+            // Scope to the caller's own patients when ASHA — matches every other
+            // ownership-checked list method in this codebase (see assertReferralOwnership).
+            page = isAsha(principal)
+                    ? referralRepository.findAllByPatientIdAndAshaWorkerId(patientId, principal.getId(), pageable)
+                    : referralRepository.findAllByPatientId(patientId, pageable);
         } else if (isAsha(principal)) {
             page = status != null
                     ? referralRepository.findAllByAshaWorkerIdAndStatus(principal.getId(), status, pageable)
@@ -103,8 +110,13 @@ public class ReferralService {
 
     public PageResponse<ReferralDto> getPatientReferrals(UUID patientId, Pageable pageable,
                                                           UserPrincipal principal) {
-        return PageResponse.of(referralRepository.findAllByPatientId(patientId, pageable)
-                .map(referralMapper::toDto));
+        if (!patientRepository.existsById(patientId)) {
+            throw new ResourceNotFoundException("Patient", patientId);
+        }
+        Page<Referral> page = isAsha(principal)
+                ? referralRepository.findAllByPatientIdAndAshaWorkerId(patientId, principal.getId(), pageable)
+                : referralRepository.findAllByPatientId(patientId, pageable);
+        return PageResponse.of(page.map(referralMapper::toDto));
     }
 
     // ── Update ────────────────────────────────────────────────────────────────

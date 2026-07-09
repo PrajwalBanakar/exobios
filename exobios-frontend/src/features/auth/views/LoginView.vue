@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, nextTick, watch, computed } from 'vue'
+import { ref, reactive, nextTick, watch, computed, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore, PARAMEDIC_ROLES, DOCTOR_ROLES } from '@/features/auth/stores/auth'
 import RadioGroup from '@/shared/components/forms/RadioGroup.vue'
@@ -59,6 +59,10 @@ function startResendCountdown() {
     if (resendCountdown.value <= 0) clearInterval(resendTimer)
   }, 1000)
 }
+
+onUnmounted(() => {
+  if (resendTimer) clearInterval(resendTimer)
+})
 
 // Reset OTP digit inputs when entering the verify step
 watch(otpStep, (newStep) => {

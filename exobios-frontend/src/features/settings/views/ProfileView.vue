@@ -4,10 +4,12 @@ import { useRouter } from 'vue-router'
 import AppShell from '@/shared/components/AppShell.vue'
 import { useAuthStore, PARAMEDIC_ROLES, DOCTOR_ROLES, ADMIN_ROLES } from '@/features/auth/stores/auth'
 import { useI18n } from '@/i18n'
+import { useToast } from '@/shared/composables/useToast'
 
 const router = useRouter()
 const auth   = useAuthStore()
 const { t }  = useI18n()
+const { showToast } = useToast()
 
 const photoInputRef = ref(null)
 const profilePhoto  = ref('')
@@ -25,12 +27,24 @@ const photoKey   = computed(() => `exobios_profile_photo_${auth.user?.loginId ||
 const profileKey = computed(() => `exobios_profile_data_${auth.user?.loginId || 'guest'}`)
 
 onMounted(() => {
-  form.name   = auth.user?.name || 'Sunita Devi'
-  form.role   = auth.user?.role || 'ASHA Worker'
-  form.phone  = '9876543210'
-  form.ashaId = 'ASHA-2023-00890'
-  form.area   = 'Rampur Block, Uttar Pradesh'
-  form.email  = 'sunita.devi@asha.gov.in'
+  // Real identity fields come from the logged-in session / registered-user record.
+  const registered = auth.user?.loginId ? auth.findUserByPhone(auth.user.loginId) : null
+  form.name   = auth.user?.name || ''
+  form.role   = auth.user?.role || ''
+  form.phone  = auth.user?.loginId || ''
+  form.ashaId = registered?.ashaId || ''
+  form.area   = ''
+  form.email  = ''
+
+  // Fields the identity model doesn't track (area/email) and any prior manual edits
+  // to the fields above are restored from this user's own saved profile, if present.
+  try {
+    const raw = localStorage.getItem(profileKey.value)
+    if (raw) Object.assign(form, JSON.parse(raw))
+  } catch {
+    showToast('Could not load your saved profile details.', 'error')
+  }
+
   const savedPhoto = localStorage.getItem(photoKey.value)
   if (savedPhoto) profilePhoto.value = savedPhoto
 })
@@ -48,8 +62,13 @@ function handlePhotoChange(e) {
   const reader = new FileReader()
   reader.onload = (ev) => {
     profilePhoto.value = ev.target.result
-    localStorage.setItem(photoKey.value, ev.target.result)
+    try {
+      localStorage.setItem(photoKey.value, ev.target.result)
+    } catch {
+      showToast('Could not save photo — storage may be full.', 'error')
+    }
   }
+  reader.onerror = () => showToast('Could not read photo. Please try again.', 'error')
   reader.readAsDataURL(file)
 }
 
@@ -60,7 +79,12 @@ function removePhoto() {
 }
 
 function saveProfile() {
-  localStorage.setItem(profileKey.value, JSON.stringify({ ...form }))
+  try {
+    localStorage.setItem(profileKey.value, JSON.stringify({ ...form }))
+  } catch {
+    showToast('Could not save changes — storage may be full.', 'error')
+    return
+  }
   saved.value = true
   setTimeout(() => { saved.value = false }, 2500)
 }
