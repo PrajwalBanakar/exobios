@@ -97,7 +97,7 @@ class ReferralControllerTest extends AbstractControllerTest {
         String bearer = JwtTestSupport.ashaBearer(jwtTokenProvider, ashaId, "9876543210");
         Page<ReferralDto> page = new PageImpl<>(
                 List.of(sampleReferral(UUID.randomUUID(), ashaId, ReferralStatus.ACCEPTED)), PageRequest.of(0, 20), 1);
-        when(referralService.getReferrals(any(), any(), any(), any())).thenReturn(PageResponse.of(page));
+        when(referralService.getReferrals(any(), any(), any(), any(), any())).thenReturn(PageResponse.of(page));
 
         mockMvc.perform(get("/api/v1/referrals").param("status", "ACCEPTED").header("Authorization", bearer))
                 .andExpect(status().isOk())

@@ -8,15 +8,24 @@ import com.exobios.backend.common.exception.BadRequestException;
 import com.exobios.backend.common.exception.ForbiddenException;
 import com.exobios.backend.common.exception.ResourceNotFoundException;
 import com.exobios.backend.patients.repository.PatientRepository;
+import com.exobios.backend.common.exception.ConflictException;
 import com.exobios.backend.referrals.dto.CreateReferralRequest;
+import com.exobios.backend.referrals.dto.ReferralClinicalNoteDto;
 import com.exobios.backend.referrals.dto.ReferralDto;
 import com.exobios.backend.referrals.dto.UpdateReferralRequest;
 import com.exobios.backend.referrals.entity.Referral;
+import com.exobios.backend.referrals.entity.ReferralClinicalNote;
+import com.exobios.backend.referrals.entity.enums.ReferralReviewStage;
 import com.exobios.backend.referrals.entity.enums.ReferralStatus;
 import com.exobios.backend.referrals.exception.ReferralNotFoundException;
+import com.exobios.backend.referrals.mapper.ReferralClinicalNoteMapper;
 import com.exobios.backend.referrals.mapper.ReferralMapper;
+import com.exobios.backend.referrals.repository.ReferralClinicalNoteRepository;
 import com.exobios.backend.referrals.repository.ReferralRepository;
 import com.exobios.backend.security.UserPrincipal;
+import com.exobios.backend.users.entity.User;
+import com.exobios.backend.users.entity.enums.Role;
+import com.exobios.backend.users.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,19 +52,24 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ReferralServiceTest {
 
-    @Mock private ReferralRepository   referralRepository;
-    @Mock private AssessmentRepository assessmentRepository;
-    @Mock private PatientRepository    patientRepository;
-    @Mock private ReferralMapper       referralMapper;
+    @Mock private ReferralRepository             referralRepository;
+    @Mock private AssessmentRepository           assessmentRepository;
+    @Mock private PatientRepository              patientRepository;
+    @Mock private UserRepository                 userRepository;
+    @Mock private ReferralMapper                 referralMapper;
+    @Mock private ReferralClinicalNoteRepository referralClinicalNoteRepository;
+    @Mock private ReferralClinicalNoteMapper     referralClinicalNoteMapper;
 
     private ReferralService referralService;
 
     private final UUID ashaId    = UUID.randomUUID();
     private final UUID otherAsha = UUID.randomUUID();
+    private final UUID doctorId  = UUID.randomUUID();
 
     @BeforeEach
     void setUp() {
-        referralService = new ReferralService(referralRepository, assessmentRepository, patientRepository, referralMapper);
+        referralService = new ReferralService(referralRepository, assessmentRepository, patientRepository,
+                userRepository, referralMapper, referralClinicalNoteRepository, referralClinicalNoteMapper);
         lenient().when(referralMapper.toDto(any(Referral.class))).thenAnswer(inv -> {
             Referral r = inv.getArgument(0);
             return ReferralDto.builder().id(r.getId()).ashaWorkerId(r.getAshaWorkerId()).status(r.getStatus()).build();
@@ -66,8 +80,9 @@ class ReferralServiceTest {
         });
     }
 
-    private UserPrincipal asha(UUID id)  { return UserPrincipal.fromToken(id.toString(), "9876543210", "ASHA"); }
-    private UserPrincipal admin(UUID id) { return UserPrincipal.fromToken(id.toString(), "9000000000", "SUPER_ADMIN"); }
+    private UserPrincipal asha(UUID id)   { return UserPrincipal.fromToken(id.toString(), "9876543210", "ASHA"); }
+    private UserPrincipal admin(UUID id)  { return UserPrincipal.fromToken(id.toString(), "9000000000", "SUPER_ADMIN"); }
+    private UserPrincipal doctor(UUID id) { return UserPrincipal.fromToken(id.toString(), "9876500002", "DOCTOR"); }
 
     private Assessment assessment(UUID owner, AssessmentStatus status) {
         Assessment a = new Assessment();
@@ -140,7 +155,7 @@ class ReferralServiceTest {
         when(referralRepository.findAllByPatientIdAndAshaWorkerId(patientId, ashaId, pageable))
                 .thenReturn(new PageImpl<>(List.of()));
 
-        referralService.getReferrals(patientId, null, pageable, asha(ashaId));
+        referralService.getReferrals(patientId, null, null, pageable, asha(ashaId));
 
         verify(referralRepository).findAllByPatientIdAndAshaWorkerId(patientId, ashaId, pageable);
         // The unscoped variant must never be reached for an ASHA caller — this is the
@@ -154,7 +169,7 @@ class ReferralServiceTest {
         Pageable pageable = PageRequest.of(0, 20);
         when(referralRepository.findAllByPatientId(patientId, pageable)).thenReturn(new PageImpl<>(List.of()));
 
-        referralService.getReferrals(patientId, null, pageable, admin(UUID.randomUUID()));
+        referralService.getReferrals(patientId, null, null, pageable, admin(UUID.randomUUID()));
 
         verify(referralRepository).findAllByPatientId(patientId, pageable);
     }
@@ -164,9 +179,31 @@ class ReferralServiceTest {
         Pageable pageable = PageRequest.of(0, 20);
         when(referralRepository.findAllByAshaWorkerId(ashaId, pageable)).thenReturn(new PageImpl<>(List.of()));
 
-        referralService.getReferrals(null, null, pageable, asha(ashaId));
+        referralService.getReferrals(null, null, null, pageable, asha(ashaId));
 
         verify(referralRepository).findAllByAshaWorkerId(ashaId, pageable);
+    }
+
+    @Test
+    void getReferrals_asDoctor_withoutUnassignedFlag_isScopedToAssignedDoctor() {
+        Pageable pageable = PageRequest.of(0, 20);
+        when(referralRepository.findAllByAssignedDoctorId(doctorId, pageable)).thenReturn(new PageImpl<>(List.of()));
+
+        referralService.getReferrals(null, null, null, pageable, doctor(doctorId));
+
+        verify(referralRepository).findAllByAssignedDoctorId(doctorId, pageable);
+    }
+
+    @Test
+    void getReferrals_asDoctor_withUnassignedFlag_returnsSharedInbox() {
+        Pageable pageable = PageRequest.of(0, 20);
+        when(referralRepository.findAllByReviewStageAndAssignedDoctorIdIsNull(ReferralReviewStage.CREATED, pageable))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        referralService.getReferrals(null, null, true, pageable, doctor(doctorId));
+
+        verify(referralRepository).findAllByReviewStageAndAssignedDoctorIdIsNull(ReferralReviewStage.CREATED, pageable);
+        verify(referralRepository, never()).findAllByAssignedDoctorId(any(), any());
     }
 
     // ── getPatientReferrals — existence check + ownership scoping ───────────────
@@ -279,5 +316,193 @@ class ReferralServiceTest {
 
         assertThatThrownBy(() -> referralService.getAssessmentReferrals(assessmentId, asha(ashaId)))
                 .isInstanceOf(AssessmentNotFoundException.class);
+    }
+
+    // ── claimReferral ────────────────────────────────────────────────────────
+
+    @Test
+    void claimReferral_whenUnassigned_setsAssigneeAndAdvancesStage() {
+        UUID id = UUID.randomUUID();
+        Referral referral = existingReferral(id, ashaId, ReferralStatus.PENDING);
+        when(referralRepository.findById(id)).thenReturn(Optional.of(referral));
+        when(referralRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        referralService.claimReferral(id, doctor(doctorId));
+
+        assertThat(referral.getAssignedDoctorId()).isEqualTo(doctorId);
+        assertThat(referral.getReviewStage()).isEqualTo(ReferralReviewStage.ASSIGNED_TO_DOCTOR);
+    }
+
+    @Test
+    void claimReferral_whenAlreadyAssigned_throwsConflict() {
+        UUID id = UUID.randomUUID();
+        Referral referral = existingReferral(id, ashaId, ReferralStatus.PENDING);
+        referral.setAssignedDoctorId(UUID.randomUUID());
+        when(referralRepository.findById(id)).thenReturn(Optional.of(referral));
+
+        assertThatThrownBy(() -> referralService.claimReferral(id, doctor(doctorId)))
+                .isInstanceOf(ConflictException.class);
+        verify(referralRepository, never()).save(any());
+    }
+
+    // ── assignDoctor (SUPER_ADMIN override) ─────────────────────────────────
+
+    @Test
+    void assignDoctor_toValidDoctor_setsAssigneeAndAdvancesStageFromCreated() {
+        UUID id = UUID.randomUUID();
+        Referral referral = existingReferral(id, ashaId, ReferralStatus.PENDING);
+        User doctorUser = new User();
+        doctorUser.setRole(Role.DOCTOR);
+        when(referralRepository.findById(id)).thenReturn(Optional.of(referral));
+        when(userRepository.findById(doctorId)).thenReturn(Optional.of(doctorUser));
+        when(referralRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        referralService.assignDoctor(id, doctorId, admin(UUID.randomUUID()));
+
+        assertThat(referral.getAssignedDoctorId()).isEqualTo(doctorId);
+        assertThat(referral.getReviewStage()).isEqualTo(ReferralReviewStage.ASSIGNED_TO_DOCTOR);
+    }
+
+    @Test
+    void assignDoctor_toNonDoctorUser_throwsBadRequest() {
+        UUID id = UUID.randomUUID();
+        Referral referral = existingReferral(id, ashaId, ReferralStatus.PENDING);
+        User ashaUser = new User();
+        ashaUser.setRole(Role.ASHA);
+        when(referralRepository.findById(id)).thenReturn(Optional.of(referral));
+        when(userRepository.findById(ashaId)).thenReturn(Optional.of(ashaUser));
+
+        assertThatThrownBy(() -> referralService.assignDoctor(id, ashaId, admin(UUID.randomUUID())))
+                .isInstanceOf(BadRequestException.class);
+        verify(referralRepository, never()).save(any());
+    }
+
+    @Test
+    void assignDoctor_toUnknownUser_throwsBadRequest() {
+        UUID id = UUID.randomUUID();
+        Referral referral = existingReferral(id, ashaId, ReferralStatus.PENDING);
+        UUID unknownId = UUID.randomUUID();
+        when(referralRepository.findById(id)).thenReturn(Optional.of(referral));
+        when(userRepository.findById(unknownId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> referralService.assignDoctor(id, unknownId, admin(UUID.randomUUID())))
+                .isInstanceOf(BadRequestException.class);
+    }
+
+    // ── updateReviewStage — forward-only transition guard ───────────────────
+
+    @Test
+    void updateReviewStage_legalTransition_succeeds() {
+        UUID id = UUID.randomUUID();
+        Referral referral = existingReferral(id, ashaId, ReferralStatus.PENDING);
+        referral.setAssignedDoctorId(doctorId);
+        referral.setReviewStage(ReferralReviewStage.ASSIGNED_TO_DOCTOR);
+        when(referralRepository.findById(id)).thenReturn(Optional.of(referral));
+        when(referralRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        referralService.updateReviewStage(id, ReferralReviewStage.UNDER_REVIEW, doctor(doctorId));
+
+        assertThat(referral.getReviewStage()).isEqualTo(ReferralReviewStage.UNDER_REVIEW);
+    }
+
+    @Test
+    void updateReviewStage_skippingAStage_throwsBadRequest() {
+        UUID id = UUID.randomUUID();
+        Referral referral = existingReferral(id, ashaId, ReferralStatus.PENDING);
+        referral.setAssignedDoctorId(doctorId);
+        referral.setReviewStage(ReferralReviewStage.ASSIGNED_TO_DOCTOR);
+        when(referralRepository.findById(id)).thenReturn(Optional.of(referral));
+
+        assertThatThrownBy(() -> referralService.updateReviewStage(id, ReferralReviewStage.CLOSED, doctor(doctorId)))
+                .isInstanceOf(BadRequestException.class);
+        verify(referralRepository, never()).save(any());
+    }
+
+    @Test
+    void updateReviewStage_movingBackward_throwsBadRequest() {
+        UUID id = UUID.randomUUID();
+        Referral referral = existingReferral(id, ashaId, ReferralStatus.PENDING);
+        referral.setAssignedDoctorId(doctorId);
+        referral.setReviewStage(ReferralReviewStage.UNDER_REVIEW);
+        when(referralRepository.findById(id)).thenReturn(Optional.of(referral));
+
+        assertThatThrownBy(() -> referralService.updateReviewStage(
+                id, ReferralReviewStage.ASSIGNED_TO_DOCTOR, doctor(doctorId)))
+                .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void updateReviewStage_directlyFromCreated_isRejected() {
+        // CREATED -> ASSIGNED_TO_DOCTOR is only reachable via claim/assign, never a raw PATCH.
+        UUID id = UUID.randomUUID();
+        Referral referral = existingReferral(id, ashaId, ReferralStatus.PENDING);
+        when(referralRepository.findById(id)).thenReturn(Optional.of(referral));
+
+        assertThatThrownBy(() -> referralService.updateReviewStage(
+                id, ReferralReviewStage.ASSIGNED_TO_DOCTOR, admin(UUID.randomUUID())))
+                .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void updateReviewStage_asNonAssignedDoctor_throwsForbidden() {
+        UUID id = UUID.randomUUID();
+        Referral referral = existingReferral(id, ashaId, ReferralStatus.PENDING);
+        referral.setAssignedDoctorId(UUID.randomUUID());
+        referral.setReviewStage(ReferralReviewStage.ASSIGNED_TO_DOCTOR);
+        when(referralRepository.findById(id)).thenReturn(Optional.of(referral));
+
+        assertThatThrownBy(() -> referralService.updateReviewStage(id, ReferralReviewStage.UNDER_REVIEW, doctor(doctorId)))
+                .isInstanceOf(ForbiddenException.class);
+    }
+
+    // ── Clinical notes ───────────────────────────────────────────────────────
+
+    @Test
+    void addClinicalNote_savesAndReturnsMappedDto() {
+        UUID id = UUID.randomUUID();
+        Referral referral = existingReferral(id, ashaId, ReferralStatus.PENDING);
+        when(referralRepository.findById(id)).thenReturn(Optional.of(referral));
+        when(referralClinicalNoteRepository.save(any(ReferralClinicalNote.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+        ReferralClinicalNoteDto expected = ReferralClinicalNoteDto.builder().referralId(id).note("Looks stable").build();
+        when(referralClinicalNoteMapper.toDto(any(ReferralClinicalNote.class))).thenReturn(expected);
+
+        ReferralClinicalNoteDto result = referralService.addClinicalNote(id, "Looks stable", doctor(doctorId));
+
+        assertThat(result.getNote()).isEqualTo("Looks stable");
+    }
+
+    @Test
+    void addClinicalNote_forUnknownReferral_throwsReferralNotFound() {
+        UUID id = UUID.randomUUID();
+        when(referralRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> referralService.addClinicalNote(id, "note", doctor(doctorId)))
+                .isInstanceOf(ReferralNotFoundException.class);
+    }
+
+    @Test
+    void getClinicalNotes_returnsNewestFirstFromRepository() {
+        UUID id = UUID.randomUUID();
+        when(referralRepository.findById(id)).thenReturn(Optional.of(existingReferral(id, ashaId, ReferralStatus.PENDING)));
+        when(referralClinicalNoteRepository.findAllByReferralIdOrderByCreatedAtDesc(id)).thenReturn(List.of());
+
+        referralService.getClinicalNotes(id, doctor(doctorId));
+
+        verify(referralClinicalNoteRepository).findAllByReferralIdOrderByCreatedAtDesc(id);
+    }
+
+    // ── Recommendation ───────────────────────────────────────────────────────
+
+    @Test
+    void setRecommendation_updatesReferral() {
+        UUID id = UUID.randomUUID();
+        Referral referral = existingReferral(id, ashaId, ReferralStatus.PENDING);
+        when(referralRepository.findById(id)).thenReturn(Optional.of(referral));
+        when(referralRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        referralService.setRecommendation(id, "Refer to cardiology", doctor(doctorId));
+
+        assertThat(referral.getDoctorRecommendation()).isEqualTo("Refer to cardiology");
     }
 }

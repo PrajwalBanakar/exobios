@@ -49,7 +49,8 @@ public class AssessmentController {
     }
 
     @GetMapping("/assessments/{id}")
-    @Operation(summary = "Get assessment detail by ID")
+    @Operation(summary = "Get assessment detail by ID — DOCTOR gets read-only access for referral review")
+    @PreAuthorize("hasAnyRole('ASHA', 'SUPER_ADMIN', 'DOCTOR')")
     public ResponseEntity<ApiResponse<AssessmentDto>> getAssessmentById(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserPrincipal principal) {
@@ -58,7 +59,8 @@ public class AssessmentController {
     }
 
     @GetMapping("/patients/{patientId}/assessments")
-    @Operation(summary = "Get assessment history for a patient")
+    @Operation(summary = "Get assessment history for a patient — DOCTOR gets read-only access for referral review")
+    @PreAuthorize("hasAnyRole('ASHA', 'SUPER_ADMIN', 'DOCTOR')")
     public ResponseEntity<ApiResponse<PageResponse<AssessmentDto>>> getPatientAssessments(
             @PathVariable UUID patientId,
             @PageableDefault(size = 20, sort = "assessedAt", direction = Sort.Direction.DESC)

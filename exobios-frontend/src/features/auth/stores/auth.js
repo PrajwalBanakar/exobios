@@ -9,7 +9,7 @@ export const DOCTOR_ROLES    = ['MBBS Doctor']
 export const ADMIN_ROLES     = ['Super Admin']
 
 const PARAMEDIC_PERMS = ['view_patients', 'add_patient', 'create_assessment']
-const DOCTOR_PERMS    = ['view_patients', 'add_patient', 'create_assessment', 'view_reports', 'manage_teleconsult']
+const DOCTOR_PERMS    = ['view_patients', 'add_patient', 'create_assessment', 'view_reports', 'manage_teleconsult', 'review_referrals']
 const ADMIN_PERMS     = ['view_patients', 'add_patient', 'create_assessment', 'view_reports', 'manage_teleconsult', 'manage_users', 'manage_system', 'super_admin']
 
 const ROLE_PERMISSIONS = {

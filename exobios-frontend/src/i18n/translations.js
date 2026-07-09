@@ -6,6 +6,8 @@ const translations = {
     'nav.maternalHealth':'Maternal Health',
     'nav.sos':           'SOS / Emergency',
     'nav.referrals':     'Referrals',
+    'nav.doctorDashboard':'Doctor Dashboard',
+    'nav.referralInbox': 'Referral Inbox',
     'nav.teleconsult':   'Teleconsult',
     'nav.devices':       'Devices',
     'nav.notifications': 'Notifications',
@@ -936,6 +938,8 @@ const translations = {
     'lang.select':   'भाषा चुनें',
 
     'nav.referrals':   'रेफरल',
+    'nav.doctorDashboard': 'डॉक्टर डैशबोर्ड',
+    'nav.referralInbox':   'रेफरल इनबॉक्स',
     'nav.teleconsult': 'टेलीकंसल्ट',
     'nav.devices':     'उपकरण',
 
@@ -1496,6 +1500,8 @@ const translations = {
     'lang.select':   'ಭಾಷೆ ಆಯ್ಕೆ ಮಾಡಿ',
 
     'nav.referrals':   'ರೆಫರಲ್‌ಗಳು',
+    'nav.doctorDashboard': 'ವೈದ್ಯರ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್',
+    'nav.referralInbox':   'ರೆಫರಲ್ ಇನ್‌ಬಾಕ್ಸ್',
     'nav.teleconsult': 'ಟೆಲಿಕನ್ಸಲ್ಟ್',
     'nav.devices':     'ಸಾಧನಗಳು',
 

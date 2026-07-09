@@ -1,6 +1,7 @@
 package com.exobios.backend.referrals.dto;
 
 import com.exobios.backend.referrals.entity.enums.ReferralPriority;
+import com.exobios.backend.referrals.entity.enums.ReferralReviewStage;
 import com.exobios.backend.referrals.entity.enums.ReferralStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,6 +27,9 @@ public class ReferralDto {
     private ReferralPriority priority;
     private ReferralStatus   status;
     private LocalDate        followUpDate;
+    private ReferralReviewStage reviewStage;
+    private UUID              assignedDoctorId;
+    private String            doctorRecommendation;
     private String           createdBy;
     private Instant          createdAt;
     private Instant          updatedAt;

@@ -1,6 +1,7 @@
 package com.exobios.backend.referrals.repository;
 
 import com.exobios.backend.referrals.entity.Referral;
+import com.exobios.backend.referrals.entity.enums.ReferralReviewStage;
 import com.exobios.backend.referrals.entity.enums.ReferralStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,4 +26,12 @@ public interface ReferralRepository extends JpaRepository<Referral, UUID> {
                                                    Pageable pageable);
 
     Page<Referral> findAllByStatus(ReferralStatus status, Pageable pageable);
+
+    Page<Referral> findAllByAssignedDoctorId(UUID assignedDoctorId, Pageable pageable);
+
+    Page<Referral> findAllByReviewStageAndAssignedDoctorIdIsNull(ReferralReviewStage reviewStage, Pageable pageable);
+
+    int countByAssignedDoctorIdAndReviewStage(UUID assignedDoctorId, ReferralReviewStage reviewStage);
+
+    int countByReviewStageAndAssignedDoctorIdIsNull(ReferralReviewStage reviewStage);
 }

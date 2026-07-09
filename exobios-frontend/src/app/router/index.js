@@ -121,6 +121,36 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/doctor/dashboard',
+    name: 'DoctorDashboard',
+    component: () => import('@/features/doctor/views/DoctorDashboardView.vue'),
+    meta: { requiresAuth: true, permission: 'review_referrals' },
+  },
+  {
+    path: '/doctor/referrals',
+    name: 'ReferralInbox',
+    component: () => import('@/features/doctor/views/ReferralInboxView.vue'),
+    meta: { requiresAuth: true, permission: 'review_referrals' },
+  },
+  {
+    path: '/doctor/referrals/:id',
+    name: 'ReferralDetail',
+    component: () => import('@/features/doctor/views/ReferralDetailView.vue'),
+    meta: { requiresAuth: true, permission: 'review_referrals' },
+  },
+  {
+    path: '/doctor/patients/:id',
+    name: 'PatientReview',
+    component: () => import('@/features/doctor/views/PatientReviewView.vue'),
+    meta: { requiresAuth: true, permission: 'review_referrals' },
+  },
+  {
+    path: '/doctor/patients/:patientId/assessments/:index',
+    name: 'AssessmentReview',
+    component: () => import('@/features/doctor/views/AssessmentReviewView.vue'),
+    meta: { requiresAuth: true, permission: 'review_referrals' },
+  },
+  {
     path: '/teleconsult',
     name: 'Teleconsult',
     component: () => import('@/features/teleconsult/views/TeleconsultView.vue'),
@@ -181,7 +211,9 @@ router.beforeEach((to) => {
   const isLoggedIn = auth.isLoggedIn
 
   if (to.meta.requiresAuth && !isLoggedIn) return { name: 'Login' }
-  if (to.name === 'Login' && isLoggedIn) return { name: 'Dashboard' }
+  if (to.name === 'Login' && isLoggedIn) {
+    return { name: auth.isDoctor ? 'DoctorDashboard' : 'Dashboard' }
+  }
 
   // Route-level permission gate — the sidebar already hides these links from users
   // without the permission, but the route itself must enforce it too (otherwise a

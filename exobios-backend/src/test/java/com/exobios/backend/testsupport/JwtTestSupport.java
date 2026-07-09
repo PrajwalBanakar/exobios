@@ -25,6 +25,10 @@ public final class JwtTestSupport {
         return bearer(provider, userId, phone, Role.SUPER_ADMIN.name());
     }
 
+    public static String doctorBearer(JwtTokenProvider provider, UUID userId, String phone) {
+        return bearer(provider, userId, phone, Role.DOCTOR.name());
+    }
+
     public static String bearer(JwtTokenProvider provider, UUID userId, String phone, String role) {
         UserPrincipal principal = UserPrincipal.fromToken(userId.toString(), phone, role);
         return "Bearer " + provider.generateAccessToken(principal);

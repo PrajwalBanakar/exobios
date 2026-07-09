@@ -21,6 +21,10 @@ const isOnline          = ref(navigator.onLine)
 const nav = computed(() => {
   const items = [
     { key: 'nav.dashboard',     icon: 'grid',     to: '/dashboard' },
+    ...(auth.isDoctor ? [
+      { key: 'nav.doctorDashboard', icon: 'grid',     to: '/doctor/dashboard' },
+      { key: 'nav.referralInbox',   icon: 'referral', to: '/doctor/referrals' },
+    ] : []),
     { key: 'nav.patients',      icon: 'person',   to: '/patients'  },
     { key: 'nav.childHealth',    icon: 'child',    to: '/child-health' },
     { key: 'nav.maternalHealth', icon: 'maternal', to: '/maternal-health' },

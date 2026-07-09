@@ -2,9 +2,14 @@ package com.exobios.backend.referrals.controller;
 
 import com.exobios.backend.common.dto.ApiResponse;
 import com.exobios.backend.common.dto.PageResponse;
+import com.exobios.backend.referrals.dto.AssignDoctorRequest;
+import com.exobios.backend.referrals.dto.CreateClinicalNoteRequest;
 import com.exobios.backend.referrals.dto.CreateReferralRequest;
+import com.exobios.backend.referrals.dto.RecommendationRequest;
+import com.exobios.backend.referrals.dto.ReferralClinicalNoteDto;
 import com.exobios.backend.referrals.dto.ReferralDto;
 import com.exobios.backend.referrals.dto.ReferralStatusUpdateRequest;
+import com.exobios.backend.referrals.dto.ReviewStageUpdateRequest;
 import com.exobios.backend.referrals.dto.UpdateReferralRequest;
 import com.exobios.backend.referrals.entity.enums.ReferralStatus;
 import com.exobios.backend.referrals.service.ReferralService;
@@ -37,7 +42,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('ASHA', 'SUPER_ADMIN')")
+@PreAuthorize("hasAnyRole('ASHA', 'SUPER_ADMIN', 'DOCTOR')")
 @Tag(name = "Referrals", description = "Patient referrals to higher medical facilities")
 public class ReferralController {
 
@@ -62,15 +67,17 @@ public class ReferralController {
     }
 
     @GetMapping("/referrals")
-    @Operation(summary = "List/search referrals — optional filters: patientId, status")
+    @Operation(summary = "List/search referrals — optional filters: patientId, status; "
+            + "DOCTOR callers may pass unassigned=true to see the claimable inbox")
     public ResponseEntity<ApiResponse<PageResponse<ReferralDto>>> getReferrals(
             @RequestParam(required = false) UUID patientId,
             @RequestParam(required = false) ReferralStatus status,
+            @RequestParam(required = false) Boolean unassigned,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
             Pageable pageable,
             @AuthenticationPrincipal UserPrincipal principal) {
         return ResponseEntity.ok(ApiResponse.success(
-                referralService.getReferrals(patientId, status, pageable, principal)));
+                referralService.getReferrals(patientId, status, unassigned, pageable, principal)));
     }
 
     @GetMapping("/assessments/{assessmentId}/referrals")
@@ -104,13 +111,80 @@ public class ReferralController {
     }
 
     @PatchMapping("/referrals/{id}/status")
-    @Operation(summary = "Update referral status")
+    @Operation(summary = "Update referral status (destination-facility outcome) — ASHA/SUPER_ADMIN only")
+    @PreAuthorize("hasAnyRole('ASHA', 'SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<ReferralDto>> updateStatus(
             @PathVariable UUID id,
             @Valid @RequestBody ReferralStatusUpdateRequest request,
             @AuthenticationPrincipal UserPrincipal principal) {
         return ResponseEntity.ok(ApiResponse.success("Referral status updated",
                 referralService.updateStatus(id, request.getStatus(), principal)));
+    }
+
+    // ── Doctor review ────────────────────────────────────────────────────
+
+    @PatchMapping("/referrals/{id}/claim")
+    @Operation(summary = "Claim an unassigned referral (DOCTOR self-assigns)")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<ApiResponse<ReferralDto>> claimReferral(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.success("Referral claimed",
+                referralService.claimReferral(id, principal)));
+    }
+
+    @PatchMapping("/referrals/{id}/assign")
+    @Operation(summary = "Assign/reassign a referral to a specific doctor — SUPER_ADMIN only")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse<ReferralDto>> assignDoctor(
+            @PathVariable UUID id,
+            @Valid @RequestBody AssignDoctorRequest request,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.success("Referral assigned",
+                referralService.assignDoctor(id, request.getDoctorId(), principal)));
+    }
+
+    @PatchMapping("/referrals/{id}/review-stage")
+    @Operation(summary = "Advance the referral's doctor-review stage (one legal step at a time)")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse<ReferralDto>> updateReviewStage(
+            @PathVariable UUID id,
+            @Valid @RequestBody ReviewStageUpdateRequest request,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.success("Review stage updated",
+                referralService.updateReviewStage(id, request.getReviewStage(), principal)));
+    }
+
+    @PostMapping("/referrals/{id}/notes")
+    @Operation(summary = "Add a clinical note to a referral")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse<ReferralClinicalNoteDto>> addClinicalNote(
+            @PathVariable UUID id,
+            @Valid @RequestBody CreateClinicalNoteRequest request,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        ReferralClinicalNoteDto created = referralService.addClinicalNote(id, request.getNote(), principal);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Clinical note added", created));
+    }
+
+    @GetMapping("/referrals/{id}/notes")
+    @Operation(summary = "List clinical notes for a referral, newest first")
+    @PreAuthorize("hasAnyRole('ASHA', 'SUPER_ADMIN', 'DOCTOR')")
+    public ResponseEntity<ApiResponse<List<ReferralClinicalNoteDto>>> getClinicalNotes(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.success(referralService.getClinicalNotes(id, principal)));
+    }
+
+    @PatchMapping("/referrals/{id}/recommendation")
+    @Operation(summary = "Set/update the doctor's recommendation for a referral")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse<ReferralDto>> setRecommendation(
+            @PathVariable UUID id,
+            @Valid @RequestBody RecommendationRequest request,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.success("Recommendation saved",
+                referralService.setRecommendation(id, request.getRecommendation(), principal)));
     }
 
     @DeleteMapping("/referrals/{id}")

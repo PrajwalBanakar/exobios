@@ -2,6 +2,7 @@ package com.exobios.backend.referrals.entity;
 
 import com.exobios.backend.common.entity.BaseEntity;
 import com.exobios.backend.referrals.entity.enums.ReferralPriority;
+import com.exobios.backend.referrals.entity.enums.ReferralReviewStage;
 import com.exobios.backend.referrals.entity.enums.ReferralStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -50,4 +51,16 @@ public class Referral extends BaseEntity {
 
     @Column(name = "follow_up_date")
     private LocalDate followUpDate;
+
+    // ── Doctor review lifecycle (separate from `status`, which tracks the
+    //    destination hospital's outcome) ────────────────────────────────
+    @Enumerated(EnumType.STRING)
+    @Column(name = "review_stage", nullable = false, length = 30)
+    private ReferralReviewStage reviewStage = ReferralReviewStage.CREATED;
+
+    @Column(name = "assigned_doctor_id")
+    private UUID assignedDoctorId;
+
+    @Column(name = "doctor_recommendation", columnDefinition = "TEXT")
+    private String doctorRecommendation;
 }

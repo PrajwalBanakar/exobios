@@ -10,5 +10,8 @@ public enum AuditAction {
     SUBMIT,
     ANALYZE,
     REFER,
-    RESOLVE
+    RESOLVE,
+    ASSIGN,
+    REVIEW,
+    RECOMMEND
 }
