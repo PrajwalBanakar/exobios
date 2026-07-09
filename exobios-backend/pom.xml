@@ -24,6 +24,11 @@
         <jjwt.version>0.12.5</jjwt.version>
         <springdoc.version>2.5.0</springdoc.version>
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
+        <!-- Spring Boot 3.3.0's managed Testcontainers/docker-java version predates this
+             machine's Docker Desktop (Engine API 1.55) and can't negotiate a connection
+             to it; bumping just this property (Spring Boot's BOM is designed to be
+             overridden this way) pulls in a docker-java new enough to talk to it. -->
+        <testcontainers.version>1.21.4</testcontainers.version>
     </properties>
 
     <dependencies>
@@ -122,6 +127,11 @@
         </dependency>
         <!-- Testcontainers versions managed by Spring Boot BOM -->
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
@@ -178,6 +188,26 @@
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+            </plugin>
+
+            <!--
+                Surefire's default include pattern (**/*Test.java, Test*.java, ...) does not
+                match our *RepositoryIT.java classes, so `mvn test` alone silently skips them.
+                Failsafe picks up the standard *IT.java convention and binds to the
+                integration-test/verify phases, so `mvn verify` runs unit tests first, then
+                these Testcontainers-backed repository tests, then fails the build on either.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
         </plugins>
