@@ -32,5 +32,11 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/tests/setup.js'],
+    coverage: {
+      provider: 'v8',
+      all: true,
+      include: ['src/**/*.{js,vue}'],
+      exclude: ['src/tests/**', 'src/**/*.test.js', 'src/app/main.js'],
+    },
   },
 })

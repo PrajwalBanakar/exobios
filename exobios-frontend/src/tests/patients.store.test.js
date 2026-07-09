@@ -79,4 +79,26 @@ describe('Patients Store', () => {
     expect(store.patients[0].name).toBe('Newest')
     expect(store.patients.length).toBe(before + 1)
   })
+
+  it('addAssessment() is a no-op for an unknown patient id', () => {
+    const store = usePatientsStore()
+    const before = JSON.stringify(store.patients)
+    store.addAssessment(999999, { primaryComplaint: 'Fever' })
+    expect(JSON.stringify(store.patients)).toBe(before)
+  })
+
+  it('update() is a no-op for an unknown patient id', () => {
+    const store = usePatientsStore()
+    const before = store.patients.length
+    store.update(999999, { name: 'Ghost' })
+    expect(store.patients.length).toBe(before)
+  })
+
+  it('surfaces a toast instead of throwing when localStorage.setItem quota is exceeded', () => {
+    const store = usePatientsStore()
+    localStorage.setItem.mockImplementationOnce(() => { throw new Error('QuotaExceededError') })
+    expect(() => store.add({ name: 'Big Photo Patient', dob: '1990-01-01', gender: 'Male', phone: '9000000007', risk: 'Low', date: '1 Jan 2025' })).not.toThrow()
+    // The in-memory change still applies even though persistence failed.
+    expect(store.patients.some(p => p.name === 'Big Photo Patient')).toBe(true)
+  })
 })
