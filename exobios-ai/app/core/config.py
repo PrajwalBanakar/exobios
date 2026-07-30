@@ -38,6 +38,22 @@ class Settings(BaseSettings):
     min_similarity_score: float = Field(default=0.0, alias="MIN_SIMILARITY_SCORE")
     max_returned_chunks: int = Field(default=10, alias="MAX_RETURNED_CHUNKS")
 
+    max_prompt_tokens: int = Field(default=4000, alias="MAX_PROMPT_TOKENS")
+    max_context_tokens: int = Field(default=2000, alias="MAX_CONTEXT_TOKENS")
+    reserved_response_tokens: int = Field(default=500, alias="RESERVED_RESPONSE_TOKENS")
+    default_prompt_template: str = Field(default="diagnosis", alias="DEFAULT_PROMPT_TEMPLATE")
+
+    # Reuses openai_api_key above — no separate LLM API key setting.
+    llm_model: str = Field(default="gpt-4.1-mini", alias="LLM_MODEL")
+    llm_temperature: float = Field(default=0.2, ge=0.0, le=2.0, alias="LLM_TEMPERATURE")
+    llm_max_output_tokens: int = Field(default=1500, gt=0, alias="LLM_MAX_OUTPUT_TOKENS")
+    llm_timeout_seconds: float = Field(default=30.0, gt=0, alias="LLM_TIMEOUT_SECONDS")
+    llm_max_retries: int = Field(default=2, ge=0, le=10, alias="LLM_MAX_RETRIES")
+    # Optional: the prompt-budget check in GenerationService only runs when
+    # this is configured, since not every deployment wants to hardcode a
+    # specific model's context window here.
+    llm_context_window: int | None = Field(default=None, gt=0, alias="LLM_CONTEXT_WINDOW")
+
     @field_validator("ai_api_key", "openai_api_key")
     @classmethod
     def api_key_must_not_be_blank(cls, value: str) -> str:
