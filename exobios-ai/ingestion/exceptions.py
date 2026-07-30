@@ -21,7 +21,7 @@ class DocumentConversionError(IngestionError):
         super().__init__(f"Failed to convert {file_path}: {reason}")
 
 
-class MetadataExtractionError(IngestionError):
+class DocumentClassificationError(IngestionError):
     """Raised when building DocumentMetadata from a source fails."""
 
     def __init__(self, file_path: str, reason: str):
