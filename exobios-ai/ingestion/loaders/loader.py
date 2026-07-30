@@ -5,16 +5,9 @@ for every document:
     send the doc to docling -- get back a docling document
     upload the dd to s3 -> get back a link/id of it from s3
     upload the raw doc as well to S3 -> get a link of it
-    store in db : unique id <-> docling document s3 link <-> document title
+    store in db : unique id <-> docling document s3 link (exported in some format) <-> document title
     store in db : unique id <-> raw document s3 link <-> document title
-
-    one more responsibility:
-    build this:
-         "document_id": "doc_moh_fever_guidelines_v3",
-        "title": "Ministry of Health National Fever Management Guidelines",
-        "issuing_authority": "Ministry of Health & Family Welfare",
-        "version": "3.0",
-        "publication_date": "2023-04-01",
+    store in db : the DocumentMetadata for this doc
 """
 
 import uuid
@@ -24,30 +17,69 @@ from pathlib import Path
 from .load_documents import load_documents
 from core.reporting import reporter
 from schemas.step_result import StepResult, StepStatus
+from schemas.document_schema import DocumentMetadata
 from exceptions import DocumentDiscoveryError
 from .convert import convert_to_docling_document
+from .classify_documents import classify
+from services.upload import upload_parsed_document_to_S3, upload_raw_document_to_S3,save_document_metadata
 
 logger = logging.getLogger(__name__)
 
 
+def _pick_top_category(category_scores: dict) -> str:
+    return max(category_scores, key=category_scores.get)
+
+
+def _pick_applicable_roles(role_scores: dict, threshold: float = 0.5) -> list[str]:
+    # tunable threshhold, if none are > threshhold just pick the highest
+    roles = [role for role, score in role_scores.items() if score >= threshold]
+    if not roles:
+        roles = [max(role_scores, key=role_scores.get)]
+    return roles
+
+
+def storeParsedDocLocally(content: str) -> None:
+    output_path = output_folder / f"{file_path.stem}.md"
+    output_path.write_text(parsed_markdown, encoding="utf-8")
+
 def run() -> None:
     folder_path = Path("documents")
     output_folder = folder_path / "docling_output"
-    output_folder.mkdir(parents=True, exist_ok=True)  
+    output_folder.mkdir(parents=True, exist_ok=True)
 
     for file_path in load_documents(folder_path):
         try:
             doc_id = str(uuid.uuid4())
             docling_document = convert_to_docling_document(file_path)
             print(f"Number of pages: {len(docling_document.pages)}")
-            output_path = output_folder / f"{file_path.stem}.md"
-            output_path.write_text(docling_document.export_to_markdown(), encoding="utf-8")
 
-            reporter.report(StepResult(
-                step_name="document_loader_loop",
-                status=StepStatus.SUCCESS,
-                data={"doc_id": doc_id, "file": str(file_path), "output": str(output_path)},
-            ))
+            parsed_markdown = docling_document.export_to_markdown()
+            
+            storeParsedDocLocally(parsed_markdown)
+
+            classified = classify(docling_document)
+
+            object_key = f"{doc_id}"
+            parsed_uploaded = upload_parsed_document_to_S3(parsed_markdown, object_key)
+            raw_uploaded = upload_raw_document_to_S3(str(file_path), object_key)
+
+            if not (parsed_uploaded and raw_uploaded):
+                reporter.report(StepResult(
+                    step_name="document_loading_main_loop",
+                    status=StepStatus.FAIL,
+                    error_message=f"S3 upload failed for {file_path.name}, skipping DB write",
+                ))
+                continue
+
+            metadata = DocumentMetadata(
+                document_id=doc_id,
+                document_title=classified["title"],
+                complaint_category=_pick_top_category(classified["category_scores"]),
+                applicable_roles=_pick_applicable_roles(classified["role_scores"]),
+                file_location=object_key,  # same key, different bucket per artifact type
+            )
+
+            save_document_metadata(metadata)
 
         except DocumentDiscoveryError as e:
             reporter.report(StepResult(
