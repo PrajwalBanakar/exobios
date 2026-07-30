@@ -3,6 +3,7 @@ import os
 os.environ.setdefault("AI_API_KEY", "test-api-key")
 os.environ.setdefault("ENABLE_API_DOCS", "true")
 os.environ.setdefault("APP_ENV", "test")
+os.environ.setdefault("OPENAI_API_KEY", "test-openai-key")
 
 import pytest
 from fastapi.testclient import TestClient

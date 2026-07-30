@@ -3,6 +3,7 @@ import logging
 import time
 from pathlib import Path
 
+from app.embeddings.services.embedding_service import EmbeddingService
 from app.ingestion.chunkers.base import Chunker
 from app.ingestion.cleaning.text_cleaner import TextCleaner
 from app.ingestion.exceptions import (
@@ -21,12 +22,13 @@ logger = logging.getLogger("app.ingestion")
 
 
 class IngestionService:
-    """Orchestrates: load -> parse -> clean -> chunk -> register.
+    """Orchestrates: load -> parse -> clean -> chunk -> embed -> register.
 
     Every collaborator is injected as an interface (FileLoader, ParserRegistry,
-    TextCleaner, Chunker, DocumentRegistry), so this class has no knowledge of
-    PDF/DOCX specifics, storage backend, or chunking strategy — each can be
-    swapped independently.
+    TextCleaner, Chunker, DocumentRegistry, EmbeddingService), so this class
+    has no knowledge of PDF/DOCX specifics, storage backend, chunking
+    strategy, embedding provider, or vector store — each can be swapped
+    independently.
     """
 
     def __init__(
@@ -36,12 +38,14 @@ class IngestionService:
         cleaner: TextCleaner,
         chunker: Chunker,
         registry: DocumentRegistry,
+        embedding_service: EmbeddingService,
     ) -> None:
         self._loader = loader
         self._parser_registry = parser_registry
         self._cleaner = cleaner
         self._chunker = chunker
         self._registry = registry
+        self._embedding_service = embedding_service
 
     def ingest(
         self,
@@ -114,8 +118,15 @@ class IngestionService:
             raise ChunkingError(document_id=metadata.id, reason=str(exc)) from exc
 
         logger.info("chunking_completed document_id=%s chunk_count=%s", metadata.id, len(chunks))
-
         metadata.chunk_count = len(chunks)
+
+        # Embedding/vector-store failures raise (EmbeddingGenerationError /
+        # VectorStoreError, both AppError subclasses with their own
+        # structured logging) and propagate here without being caught, so a
+        # document is only ever registered as COMPLETED once its chunks are
+        # actually queryable in the vector store.
+        self._embedding_service.embed_document(metadata, chunks)
+
         metadata.status = DocumentStatus.COMPLETED
         self._registry.register(metadata)
 
