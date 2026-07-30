@@ -38,6 +38,8 @@ class FakeQdrantClient:
         self.upserted: list[tuple[str, list]] = []
         self.deleted: list[tuple[str, object]] = []
         self.scroll_result: tuple[list, None] = ([], None)
+        self.query_result: list = []
+        self.query_calls: list[dict] = []
         self.fail_with: Exception | None = None
 
     def get_collections(self):
@@ -66,6 +68,19 @@ class FakeQdrantClient:
         if self.fail_with is not None:
             raise self.fail_with
         return self.scroll_result
+
+    def query_points(self, collection_name, query, limit, score_threshold=None, with_payload=True):
+        if self.fail_with is not None:
+            raise self.fail_with
+        self.query_calls.append(
+            {
+                "collection_name": collection_name,
+                "query": query,
+                "limit": limit,
+                "score_threshold": score_threshold,
+            }
+        )
+        return SimpleNamespace(points=self.query_result)
 
 
 @pytest.fixture
@@ -101,3 +116,31 @@ def make_chunk(document_id, chunk_number: int = 1, text: str = "hello world", **
     }
     metadata_defaults.update(overrides)
     return Chunk(text=text, metadata=ChunkMetadata(**metadata_defaults))
+
+
+def make_scored_point(id: str, score: float, payload: dict):
+    """A qdrant_client ScoredPoint stand-in — QdrantVectorStore.search() only
+    reads .id/.score/.payload, so a SimpleNamespace is enough."""
+    return SimpleNamespace(id=id, score=score, payload=payload)
+
+
+def make_search_payload(document=None, chunk=None, **overrides) -> dict:
+    document = document or make_document_metadata()
+    chunk = chunk or make_chunk(document.id)
+    payload = {
+        "document_id": str(document.id),
+        "chunk_id": str(chunk.id),
+        "text": chunk.text,
+        "page_number": chunk.metadata.page_number,
+        "start_offset": chunk.metadata.start_offset,
+        "end_offset": chunk.metadata.end_offset,
+        "section_title": chunk.metadata.section_title,
+        "document_type": document.document_type.value,
+        "filename": document.filename,
+        "language": document.language,
+        "tags": document.tags,
+        "version": document.version,
+        "source": document.source,
+    }
+    payload.update(overrides)
+    return payload

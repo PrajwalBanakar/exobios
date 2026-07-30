@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     qdrant_api_key: str | None = Field(default=None, alias="QDRANT_API_KEY")
     qdrant_collection: str = Field(default="exobios_chunks", alias="QDRANT_COLLECTION")
 
+    retrieval_top_k: int = Field(default=20, alias="RETRIEVAL_TOP_K")
+    min_similarity_score: float = Field(default=0.0, alias="MIN_SIMILARITY_SCORE")
+    max_returned_chunks: int = Field(default=10, alias="MAX_RETURNED_CHUNKS")
+
     @field_validator("ai_api_key", "openai_api_key")
     @classmethod
     def api_key_must_not_be_blank(cls, value: str) -> str:

@@ -4,7 +4,7 @@ from qdrant_client import models
 from app.embeddings.exceptions import VectorStoreError
 from app.embeddings.models.embedding import EmbeddedChunk, EmbeddingVector
 from app.embeddings.vectorstores.qdrant_store import QdrantVectorStore
-from tests.embeddings.conftest import make_chunk, make_document_metadata
+from tests.embeddings.conftest import make_chunk, make_document_metadata, make_scored_point
 
 
 def _store(fake_qdrant_client, **kwargs) -> QdrantVectorStore:
@@ -69,6 +69,7 @@ def test_upsert_chunks_sends_correct_payload(fake_qdrant_client):
     assert point.payload == {
         "document_id": str(document.id),
         "chunk_id": str(chunk.id),
+        "text": "patient history",
         "page_number": chunk.metadata.page_number,
         "start_offset": chunk.metadata.start_offset,
         "end_offset": chunk.metadata.end_offset,
@@ -137,6 +138,50 @@ def test_document_exists_wraps_client_errors(fake_qdrant_client):
 
     with pytest.raises(VectorStoreError):
         store.document_exists(make_document_metadata().id)
+
+
+def test_search_returns_vector_matches_from_query_points(fake_qdrant_client):
+    fake_qdrant_client.query_result = [
+        make_scored_point("id-1", 0.9, {"document_id": "doc-1"}),
+        make_scored_point("id-2", 0.8, {"document_id": "doc-2"}),
+    ]
+    store = _store(fake_qdrant_client)
+
+    matches = store.search(query_vector=[0.1, 0.2], top_k=5, min_score=0.5)
+
+    assert [m.id for m in matches] == ["id-1", "id-2"]
+    assert [m.score for m in matches] == [0.9, 0.8]
+    assert matches[0].payload == {"document_id": "doc-1"}
+    assert len(fake_qdrant_client.query_calls) == 1
+    call = fake_qdrant_client.query_calls[0]
+    assert call["collection_name"] == "exobios_chunks"
+    assert call["query"] == [0.1, 0.2]
+    assert call["limit"] == 5
+    assert call["score_threshold"] == 0.5
+
+
+def test_search_defaults_missing_payload_to_empty_dict(fake_qdrant_client):
+    fake_qdrant_client.query_result = [make_scored_point("id-1", 0.9, None)]
+    store = _store(fake_qdrant_client)
+
+    matches = store.search(query_vector=[0.1], top_k=1)
+
+    assert matches[0].payload == {}
+
+
+def test_search_returns_empty_list_when_no_matches(fake_qdrant_client):
+    fake_qdrant_client.query_result = []
+    store = _store(fake_qdrant_client)
+
+    assert store.search(query_vector=[0.1], top_k=5) == []
+
+
+def test_search_wraps_client_errors(fake_qdrant_client):
+    fake_qdrant_client.fail_with = RuntimeError("timeout")
+    store = _store(fake_qdrant_client)
+
+    with pytest.raises(VectorStoreError):
+        store.search(query_vector=[0.1], top_k=5)
 
 
 def test_health_returns_true_when_client_reachable(fake_qdrant_client):

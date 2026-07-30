@@ -19,3 +19,14 @@ class EmbeddedChunk(BaseModel):
 
     chunk: Chunk
     vector: EmbeddingVector
+
+
+class VectorMatch(BaseModel):
+    """A single VectorStore.search() hit — backend-independent (no Qdrant
+    ScoredPoint or similar leaks past the VectorStore implementation)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    score: float
+    payload: dict[str, object]

@@ -3,7 +3,7 @@ from uuid import UUID
 from qdrant_client import QdrantClient, models
 
 from app.embeddings.exceptions import VectorStoreError
-from app.embeddings.models.embedding import EmbeddedChunk
+from app.embeddings.models.embedding import EmbeddedChunk, VectorMatch
 from app.embeddings.vectorstores.base import VectorStore
 from app.ingestion.models.document import DocumentMetadata
 
@@ -79,6 +79,25 @@ class QdrantVectorStore(VectorStore):
             raise VectorStoreError(reason=str(exc)) from exc
         return len(points) > 0
 
+    def search(
+        self, query_vector: list[float], top_k: int, min_score: float | None = None
+    ) -> list[VectorMatch]:
+        try:
+            response = self._client.query_points(
+                collection_name=self._collection_name,
+                query=query_vector,
+                limit=top_k,
+                score_threshold=min_score,
+                with_payload=True,
+            )
+        except Exception as exc:
+            raise VectorStoreError(reason=str(exc)) from exc
+
+        return [
+            VectorMatch(id=str(point.id), score=point.score, payload=point.payload or {})
+            for point in response.points
+        ]
+
     def health(self) -> bool:
         try:
             self._client.get_collections()
@@ -99,6 +118,10 @@ class QdrantVectorStore(VectorStore):
         return {
             _DOCUMENT_ID_KEY: str(document.id),
             "chunk_id": str(item.chunk.id),
+            # Chunk text lives only here — Qdrant is the sole place per-chunk
+            # content is stored, so retrieval (AI-4) depends on it being in
+            # the payload to return anything more than ids and scores.
+            "text": item.chunk.text,
             "page_number": item.chunk.metadata.page_number,
             "start_offset": item.chunk.metadata.start_offset,
             "end_offset": item.chunk.metadata.end_offset,
