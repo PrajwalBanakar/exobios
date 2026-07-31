@@ -8,7 +8,7 @@ class ChunkMetadata(BaseModel):
     chunk_id: UUID
     page_start: int
     page_end: int
-    warning_chunk: bool
+    # warning_chunk: bool
     content: str
     section: str
     heading: str

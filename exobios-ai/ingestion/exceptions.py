@@ -46,3 +46,17 @@ class DatabasePersistError(IngestionError):
         self.document_id = document_id
         self.reason = reason
         super().__init__(f"Failed to persist document {document_id} to DB: {reason}")
+
+class ChunkingException(IngestionError):
+    """Raised when chunking a document."""
+
+    def __init__(self, document_id: str, reason: str):
+        self.document_id = document_id
+        self.reason = reason
+        super().__init__(f"Failed to chunk document {document_id}: {reason}")
+
+class EmbeddingException(IngestionError):
+
+    def __init__(self, reason: str):
+        self.reason = reason
+        super().__init__(f"Failed to get embeddings: {reason}")

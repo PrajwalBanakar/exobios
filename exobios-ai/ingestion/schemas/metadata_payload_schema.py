@@ -1,6 +1,6 @@
 from pydantic import BaseModel
-from document_schema import DocumentMetadata
-from chunk_schema import ChunkPayload
+from schemas.document_schema import DocumentMetadata
+from schemas.chunk_schema import ChunkPayload
 from uuid import UUID
 
 class PayLoad(BaseModel):
