@@ -65,3 +65,45 @@ Note:
 5. ACT-SP - Artemisinin-based Combination Therapy (Artesunate+Sulfadoxine-Pyrimethamine)
 6. CQ Chloroquine
 7. PQ Primaquine
+
+## Treatment of Vivax Malaria
+
+Diagnosis  of vivax malaria  may  be  made  by  the  use  of  RDT  (Bivalent)  or  microscopic examination of the blood smear. On confirmation following treatment is to be given:
+
+## Drug schedule for treatment of P vivax malaria:
+
+1. Chloroquine:
+
+25 mg/kg body weight divided over three days i.e.
+
+10 mg/kg on day 1,
+
+10 mg/kg on day 2 and
+
+5 mg/kg on day 3.
+
+2. Primaquine *
+
+- : 0.25 mg/kg body weight daily for 14 days.
+
+## Primaquine is contraindicated in infants, pregnant women and individuals with G6PD deficiency.
+
+14 day regimen of Primaquine should be given under supervision.
+
+## Dosage Chart for Treatment of Vivax Malaria
+
+|                 | Day 1            | Day 1       | Day 2            | Day 2       | Day 3            | Day 3       | Day 4 to 14   |
+|-----------------|------------------|-------------|------------------|-------------|------------------|-------------|---------------|
+| Age             | CQ (150 mg base) | PQ (2.5 mg) | CQ (150 mg base) | PQ (2.5 mg) | CQ (150 mg base) | PQ (2.5 mg) | PQ (2.5 mg)   |
+| Less than 1 yr  | ½                | 0           | ½                | 0           | ¼                | 0           | 0             |
+| 1-4 years       | 1                | 1           | 1                | 1           | ½                | 1           | 1             |
+| 5-8 years       | 2                | 2           | 2                | 2           | 1                | 2           | 2             |
+| 9-14 years      | 3                | 4           | 3                | 4           | 1½               | 4           | 4             |
+| 15 yrs or more* | 4                | 6           | 4                | 6           | 2                | 6           | 6             |
+| Pregnancy       | 4                | 0           | 4                | 0           | 2                | 0           | 0             |
+
+Note: CQ 250mg tablet is having 150 mg base
+
+## Treatment of Falciparum Malaria
+
+Diagnosis of falciparum malaria may be made by the use of RDT (Monovalent or Bivalent) or  microscopic  examination  of  the  blood  smear.  It  is  imperative  to  start  the  treatment  for falciparum  malaria  immediately  on  diagnosis.    The  treatment  for  falciparum  malaria  is  as follows:
