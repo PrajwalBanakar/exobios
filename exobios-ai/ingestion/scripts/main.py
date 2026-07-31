@@ -7,6 +7,8 @@ from exceptions import IngestionError
 import logging
 from core.reporting import reporter
 from schemas.step_result import StepResult, StepStatus
+from dotenv import load_dotenv
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-
+from typing import List
 class DocumentMetadata(BaseModel):
     document_id: str
     document_title: str

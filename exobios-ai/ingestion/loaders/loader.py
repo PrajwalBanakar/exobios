@@ -38,14 +38,16 @@ def _pick_applicable_roles(role_scores: dict, threshold: float = 0.5) -> list[st
     return roles
 
 
-def storeParsedDocLocally(content: str) -> None:
-    output_path = output_folder / f"{file_path.stem}.md"
-    output_path.write_text(parsed_markdown, encoding="utf-8")
-
-def run() -> None:
+def storeParsedDocLocally(content: str, file_path: Path) -> None:
     folder_path = Path("documents")
     output_folder = folder_path / "docling_output"
     output_folder.mkdir(parents=True, exist_ok=True)
+    output_path = output_folder / f"{file_path.stem}.md"
+    output_path.write_text(content, encoding="utf-8")
+
+def run() -> None:
+    folder_path = Path("documents")
+    
 
     for file_path in load_documents(folder_path):
         try:
@@ -55,8 +57,6 @@ def run() -> None:
 
             parsed_markdown = docling_document.export_to_markdown()
             
-            storeParsedDocLocally(parsed_markdown)
-
             classified = classify(docling_document)
 
             object_key = f"{doc_id}"
@@ -80,7 +80,7 @@ def run() -> None:
             )
 
             save_document_metadata(metadata)
-
+            storeParsedDocLocally(parsed_markdown, file_path)
         except DocumentDiscoveryError as e:
             reporter.report(StepResult(
                 step_name="document_loading_main_loop",
