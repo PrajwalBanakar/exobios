@@ -7,9 +7,12 @@ class Settings(BaseSettings):
     # openai_api_key: str
     zeroshot_classification_token_hf: str
     s3_bucket_name_parsed_doc: str
-    s3_bucket_name_raw_docs: str
+    s3_bucket_name_raw_doc: str
     supabase_url: str
     supabase_key: str
+    aws_access_key_id: str
+    aws_secret_access_key: str
+    aws_default_region: str
     # qdrant_url: str = "http://localhost:6333"
     # collection_name: str = "clinical_corpus"
     # embedding_model: str = "text-embedding-3-small"
