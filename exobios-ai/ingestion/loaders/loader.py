@@ -22,6 +22,9 @@ from exceptions import DocumentDiscoveryError
 from .convert import convert_to_docling_document
 from .classify_documents import classify
 from services.upload import upload_parsed_document_to_S3, upload_raw_document_to_S3,save_document_metadata
+from chunkers.chunker import chunk_docling_document
+from embedder.embedder import embed_chunks, build_metadata_payloads 
+from store.qdrant_store import store_metadata_payloads
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +83,16 @@ def run() -> None:
             )
 
             save_document_metadata(metadata)
+            
             storeParsedDocLocally(parsed_markdown, file_path)
+            
+            chunks = chunk_docling_document(docling_document, doc_id)
+            
+            vectors = embed_chunks(chunks)
+            
+            metadata_payloads = build_metadata_payloads(chunks, vectors, metadata)
+            
+            store_metadata_payloads(metadata_payloads)
         except DocumentDiscoveryError as e:
             reporter.report(StepResult(
                 step_name="document_loading_main_loop",

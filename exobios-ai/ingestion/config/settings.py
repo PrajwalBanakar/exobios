@@ -13,13 +13,15 @@ class Settings(BaseSettings):
     aws_access_key_id: str
     aws_secret_access_key: str
     aws_default_region: str
-    # qdrant_url: str = "http://localhost:6333"
-    # collection_name: str = "clinical_corpus"
-    # embedding_model: str = "text-embedding-3-small"
-    # chunk_max_tokens: int = 400
-    # tokenizer_model: str = "BAAI/bge-small-en-v1.5"
-    # client_files_dir: str = "data/client_files"
-    # registry_path: str = "data/registry.json"
+    chunk_max_tokens: int = 400
+    ingestion_version: str = "ingestion_2026_07_31" 
+    openai_embedding_model: str = "text-embedding-3-small"
+    openai_api_key: str
+    chunk_max_tokens: int = 400
+    qdrant_url: str
+    collection_name: str
+    
+    embedding_model: str = "text-embedding-3-small"
 
     class Config:
         env_file = ".env"
