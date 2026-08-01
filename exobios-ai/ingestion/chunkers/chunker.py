@@ -79,4 +79,9 @@ def chunk_docling_document(docling_doc: DoclingDocument, document_id: str) -> Li
             "message": f"Successfully chunked document {document_id} into {len(enriched_chunks)} chunks.",
         },
     ))
+    
+    print("\n" * 5)
+    for c in enriched_chunks:
+        print(c)
+        print("\n" * 2)
     return enriched_chunks

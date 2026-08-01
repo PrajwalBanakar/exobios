@@ -17,7 +17,7 @@ from schemas.step_result import StepResult, StepStatus
 
 _client = QdrantClient(url=settings.qdrant_url)
 
-VECTOR_SIZE = 1536  # text-embedding-3-small output size
+VECTOR_SIZE = 384  # some hf model's vector sze
 BATCH_SIZE = 100
 
 

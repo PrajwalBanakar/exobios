@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     chunk_max_tokens: int = 400
     ingestion_version: str = "ingestion_2026_07_31" 
     openai_embedding_model: str = "text-embedding-3-small"
-    openai_api_key: str
+    openai_api_key: str | None = None
     chunk_max_tokens: int = 400
     qdrant_url: str
     collection_name: str
