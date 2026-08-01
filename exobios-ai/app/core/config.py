@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -23,8 +23,12 @@ class Settings(BaseSettings):
     # match the backend's `app.ai.api-key` / `AI_API_KEY` value exactly.
     ai_api_key: str = Field(alias="AI_API_KEY")
 
-    # Required: no embeddings can be generated without it.
-    openai_api_key: str = Field(alias="OPENAI_API_KEY")
+    # Exactly one of these two must be set (see api_key_provider_is_configured
+    # below). GEMINI_API_KEY is a free-tier alternative for local dev/demo
+    # use — when set, the embeddings and generation factories wire up Gemini
+    # providers instead of OpenAI's, with no other code changes required.
+    openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
+    gemini_api_key: str | None = Field(default=None, alias="GEMINI_API_KEY")
     embedding_model: str = Field(default="text-embedding-3-small", alias="EMBEDDING_MODEL")
     embedding_batch_size: int = Field(default=100, alias="EMBEDDING_BATCH_SIZE")
 
@@ -54,12 +58,29 @@ class Settings(BaseSettings):
     # specific model's context window here.
     llm_context_window: int | None = Field(default=None, gt=0, alias="LLM_CONTEXT_WINDOW")
 
-    @field_validator("ai_api_key", "openai_api_key")
+    @field_validator("ai_api_key")
     @classmethod
     def api_key_must_not_be_blank(cls, value: str) -> str:
         if not value or not value.strip():
             raise ValueError("API key fields must be set to a non-empty value")
         return value
+
+    @field_validator("openai_api_key", "gemini_api_key", "llm_context_window", mode="before")
+    @classmethod
+    def blank_env_string_becomes_unset(cls, value: object) -> object:
+        # A literal `KEY=` line in .env parses as "" (not "unset"), which
+        # would otherwise fail int-parsing (llm_context_window) or read as a
+        # falsy-but-present secret. Treat a blank string as not-configured
+        # so a template .env with unfilled optional lines still loads.
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
+    @model_validator(mode="after")
+    def one_embedding_and_generation_provider_key_is_configured(self) -> "Settings":
+        if not self.openai_api_key and not self.gemini_api_key:
+            raise ValueError("Set either OPENAI_API_KEY or GEMINI_API_KEY")
+        return self
 
 
 @lru_cache

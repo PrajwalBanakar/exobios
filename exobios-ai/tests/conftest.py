@@ -4,6 +4,11 @@ os.environ.setdefault("AI_API_KEY", "test-api-key")
 os.environ.setdefault("ENABLE_API_DOCS", "true")
 os.environ.setdefault("APP_ENV", "test")
 os.environ.setdefault("OPENAI_API_KEY", "test-openai-key")
+# Tests assume OpenAI-only wiring by default. Without this, a real
+# GEMINI_API_KEY in a developer's local .env (e.g. for the Gemini demo
+# pipeline) would leak into every test's Settings() and silently flip
+# the embeddings/generation/retrieval factories over to Gemini.
+os.environ.setdefault("GEMINI_API_KEY", "")
 
 import pytest
 from fastapi.testclient import TestClient
