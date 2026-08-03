@@ -1,0 +1,28 @@
+[project]
+name = "app"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=0.120.2",
+    "fastapi>=0.141.1",
+    "langchain",
+    "langgraph>=1.2.10",
+    "langsmith>=0.10.15",
+    "openai>=2.52.0",
+    "pydantic-settings>=2.14.2",
+    "qdrant-client>=1.18.0",
+    "requests>=2.34.2",
+    "supabase>=2.31.0",
+    "tiktoken>=0.13.0",
+    "uvicorn[standard]>=0.52.1",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=8.4.2",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.16.1",
+]
