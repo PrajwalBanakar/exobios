@@ -1,6 +1,25 @@
-def main():
-    print("Hello from app!")
+from fastapi import FastAPI
+
+from api.routes import analyze, health
+from core.exceptions import AppException, handle_app_exception
+from core.logging_config import setup_logging
+from core.observability import setup_observability
+from middleware.request_context import RequestContextMiddleware
+
+setup_logging()
+setup_observability()
 
 
-if __name__ == "__main__":
-    main()
+def create_app() -> FastAPI:
+    app = FastAPI(title="exobios-ai")
+
+    app.add_middleware(RequestContextMiddleware)
+    app.add_exception_handler(AppException, handle_app_exception)
+
+    app.include_router(analyze.router)
+    app.include_router(health.router)
+
+    return app
+
+
+app = create_app()
