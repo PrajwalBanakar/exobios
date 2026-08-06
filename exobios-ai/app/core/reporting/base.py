@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
-from schemas.step import StepResult
 
-class Reporting(ABC):
+from schemas.step_result import StepResult
+
+
+class Reporter(ABC):
     @abstractmethod
-    def report(self, StepResult) -> None:
+    def report(self, result: StepResult) -> None:
         ...
