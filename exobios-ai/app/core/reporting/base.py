@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from schemas.step_result import StepResult
+from schemas.step import StepResult, StepStatus
 
 
 class Reporter(ABC):

@@ -2,9 +2,9 @@ from datetime import datetime, timezone
 
 from core.exceptions import PersistenceException
 from core.reporting import reporter
-from repositories import assessment_repository
+from repositories import assesment
 from schemas.state_object import AssessmentState
-from schemas.step_result import StepResult, StepStatus
+from schemas.step import StepResult, StepStatus
 from .assesment import upsert_assessment
 
 def persist_state(state: AssessmentState, stage_name: str) -> None:
@@ -13,7 +13,7 @@ def persist_state(state: AssessmentState, stage_name: str) -> None:
     state snapshot plus records which stage last ran and when, so an
     assessment can be reopened at any point without replaying the graph."""
     try:
-        assessment_repository.upsert_assessment(
+        assesment.upsert_assessment(
             str(state.assessment_id),
             {
                 "assessment_id": str(state.assessment_id),

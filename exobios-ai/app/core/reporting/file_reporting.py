@@ -1,7 +1,8 @@
 import logging
 
 from core.reporting.base import Reporter
-from schemas.step_result import StepResult, StepStatus
+from schemas.step import StepResult, StepStatus
+
 
 logger = logging.getLogger("app.reporter")
 

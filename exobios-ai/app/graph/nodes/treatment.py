@@ -11,7 +11,8 @@ from core.reporting import reporter
 from graph.nodes.diagnosis import _format_citations
 from graph.tools.retrieval import retrieve_and_rerank
 from schemas.stages.treatment_protocol import TreatmentProtocolResult
-from schemas.step_result import StepResult, StepStatus
+from schemas.step import StepResult, StepStatus
+
 from services.llm_service import llm_service
 
 SYSTEM_PROMPT = """You are a clinical decision support assistant. Given a

@@ -1,149 +1,145 @@
-2026-08-01 12:39:32,413 | INFO | botocore.credentials | Found credentials in environment variables.
-2026-08-01 12:39:39,939 | INFO | docling.datamodel.document | detected formats: [<InputFormat.PDF: 'pdf'>]
-2026-08-01 12:39:40,183 | INFO | docling.document_converter | Going to convert document batch...
-2026-08-01 12:39:40,185 | INFO | docling.document_converter | Initializing pipeline for StandardPdfPipeline with options hash 051c1e157cd81d4fe9f97027ec51ea64
-2026-08-01 12:39:40,218 | INFO | docling.models.factories.base_factory | Loading plugin 'docling_defaults'
-2026-08-01 12:39:40,226 | INFO | docling.models.factories | Registered picture descriptions: ['picture_description_vlm_engine', 'vlm', 'api']
-2026-08-01 12:39:40,227 | INFO | httpx | HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
-2026-08-01 12:39:40,244 | INFO | docling.models.factories.base_factory | Loading plugin 'docling_defaults'
-2026-08-01 12:39:40,285 | INFO | docling.models.factories | Registered ocr engines: ['auto', 'easyocr', 'kserve_v2_ocr', 'nemotron-ocr', 'ocrmac', 'rapidocr', 'tesserocr', 'tesseract']
-2026-08-01 12:39:40,301 | INFO | docling.models.factories.base_factory | Loading plugin 'docling_defaults'
-2026-08-01 12:39:40,311 | INFO | docling.models.factories | Registered layout engines: ['layout_object_detection', 'docling_layout_default', 'docling_experimental_table_crops_layout']
-2026-08-01 12:39:41,328 | INFO | docling.utils.accelerator_utils | Accelerator device: 'cpu'
-2026-08-01 12:39:42,928 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/docling-project/docling-layout-heron/revision/main "HTTP/1.1 200 OK"
-2026-08-01 12:39:43,650 | INFO | docling.models.factories.base_factory | Loading plugin 'docling_defaults'
-2026-08-01 12:39:43,658 | INFO | docling.models.factories | Registered table structure engines: ['docling_tableformer', 'docling_tableformer_v2', 'granite_vision_table']
-2026-08-01 12:39:44,103 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/docling-project/docling-models/revision/v2.3.0 "HTTP/1.1 200 OK"
-2026-08-01 12:39:44,179 | INFO | docling.utils.accelerator_utils | Accelerator device: 'cpu'
-2026-08-01 12:39:44,920 | INFO | docling.pipeline.base_pipeline | Processing document ASHA_1.pdf
-2026-08-01 12:39:45,439 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [3]: std::bad_alloc
-2026-08-01 12:39:45,482 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [4]: std::bad_alloc
-2026-08-01 12:39:45,597 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [5]: std::bad_alloc
-2026-08-01 12:39:45,676 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [6]: std::bad_alloc
-2026-08-01 12:39:45,770 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [7]: std::bad_alloc
-2026-08-01 12:39:45,839 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [8]: std::bad_alloc
-2026-08-01 12:39:46,165 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [9]: std::bad_alloc
-2026-08-01 12:39:46,302 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [10]: std::bad_alloc
-2026-08-01 12:39:46,403 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [11]: std::bad_alloc
-2026-08-01 12:39:46,529 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [12]: std::bad_alloc
-2026-08-01 12:39:46,665 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [13]: std::bad_alloc
-2026-08-01 12:39:46,751 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [14]: std::bad_alloc
-2026-08-01 12:39:46,846 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [15]: std::bad_alloc
-2026-08-01 12:39:46,946 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [16]: std::bad_alloc
-2026-08-01 12:39:47,028 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [17]: std::bad_alloc
-2026-08-01 12:39:47,129 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [18]: std::bad_alloc
-2026-08-01 12:39:47,231 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [19]: std::bad_alloc
-2026-08-01 12:39:47,311 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [20]: std::bad_alloc
-2026-08-01 12:39:47,396 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [21]: std::bad_alloc
-2026-08-01 12:39:47,508 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [22]: std::bad_alloc
-2026-08-01 12:39:47,608 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [23]: std::bad_alloc
-2026-08-01 12:39:47,726 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [24]: std::bad_alloc
-2026-08-01 12:39:47,795 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [25]: std::bad_alloc
-2026-08-01 12:39:47,911 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [26]: std::bad_alloc
-2026-08-01 12:39:48,007 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [27]: std::bad_alloc
-2026-08-01 12:39:48,179 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [28]: std::bad_alloc
-2026-08-01 12:39:48,286 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [29]: std::bad_alloc
-2026-08-01 12:39:48,368 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [30]: std::bad_alloc
-2026-08-01 12:39:48,457 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [31]: std::bad_alloc
-2026-08-01 12:39:48,528 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [32]: std::bad_alloc
-2026-08-01 12:39:48,673 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [33]: std::bad_alloc
-2026-08-01 12:39:48,723 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [34]: std::bad_alloc
-2026-08-01 12:39:48,842 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [35]: std::bad_alloc
-2026-08-01 12:39:48,881 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [36]: std::bad_alloc
-2026-08-01 12:39:49,212 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [37]: std::bad_alloc
-2026-08-01 12:39:49,302 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [38]: std::bad_alloc
-2026-08-01 12:39:49,367 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [39]: std::bad_alloc
-2026-08-01 12:39:49,472 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [40]: std::bad_alloc
-2026-08-01 12:39:49,593 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [41]: std::bad_alloc
-2026-08-01 12:39:49,722 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [42]: std::bad_alloc
-2026-08-01 12:39:49,825 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [43]: std::bad_alloc
-2026-08-01 12:39:49,922 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [44]: std::bad_alloc
-2026-08-01 12:39:49,981 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [45]: std::bad_alloc
-2026-08-01 12:39:50,097 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [46]: std::bad_alloc
-2026-08-01 12:39:50,179 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [47]: std::bad_alloc
-2026-08-01 12:39:50,300 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [48]: std::bad_alloc
-2026-08-01 12:39:50,396 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [49]: std::bad_alloc
-2026-08-01 12:39:50,449 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [50]: std::bad_alloc
-2026-08-01 12:39:50,668 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [51]: std::bad_alloc
-2026-08-01 12:39:50,759 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [52]: std::bad_alloc
-2026-08-01 12:39:50,840 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [53]: std::bad_alloc
-2026-08-01 12:39:50,912 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [54]: std::bad_alloc
-2026-08-01 12:39:50,993 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [55]: std::bad_alloc
-2026-08-01 12:39:51,077 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [56]: std::bad_alloc
-2026-08-01 12:39:51,168 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [57]: std::bad_alloc
-2026-08-01 12:39:51,215 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [58]: std::bad_alloc
-2026-08-01 12:39:51,304 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [59]: std::bad_alloc
-2026-08-01 12:39:51,341 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [60]: std::bad_alloc
-2026-08-01 12:39:51,618 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [62]: std::bad_alloc
-2026-08-01 12:39:51,733 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [63]: std::bad_alloc
-2026-08-01 12:39:51,817 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [64]: std::bad_alloc
-2026-08-01 12:39:51,867 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [65]: std::bad_alloc
-2026-08-01 12:39:51,922 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [66]: std::bad_alloc
-2026-08-01 12:39:51,993 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [67]: std::bad_alloc
-2026-08-01 12:39:52,035 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [68]: std::bad_alloc
-2026-08-01 12:39:52,082 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [69]: std::bad_alloc
-2026-08-01 12:39:52,126 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [70]: std::bad_alloc
-2026-08-01 12:39:52,198 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [71]: std::bad_alloc
-2026-08-01 12:39:52,250 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [72]: std::bad_alloc
-2026-08-01 12:39:52,315 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [73]: std::bad_alloc
-2026-08-01 12:39:52,368 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [74]: std::bad_alloc
-2026-08-01 12:39:52,441 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [75]: std::bad_alloc
-2026-08-01 12:39:52,475 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [76]: std::bad_alloc
-2026-08-01 12:39:52,555 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [77]: std::bad_alloc
-2026-08-01 12:39:52,604 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [78]: std::bad_alloc
-2026-08-01 12:39:52,645 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [79]: std::bad_alloc
-2026-08-01 12:39:52,690 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [80]: std::bad_alloc
-2026-08-01 12:39:52,744 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [81]: std::bad_alloc
-2026-08-01 12:39:52,792 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [82]: std::bad_alloc
-2026-08-01 12:39:52,835 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [83]: std::bad_alloc
-2026-08-01 12:39:52,869 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [84]: std::bad_alloc
-2026-08-01 12:39:52,915 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [85]: std::bad_alloc
-2026-08-01 12:39:52,953 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [86]: std::bad_alloc
-2026-08-01 12:39:52,987 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [87]: std::bad_alloc
-2026-08-01 12:39:53,039 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [88]: std::bad_alloc
-2026-08-01 12:39:55,328 | INFO | docling.document_converter | Finished converting document ASHA_1.pdf in 15.39 sec.
-2026-08-01 12:39:55,330 | INFO | ingestion.reporter | {"step_name":"convert","status":"success","data":{"file":"documents\\ASHA_1.pdf"},"error_message":null}
-2026-08-01 12:39:59,281 | INFO | ingestion.reporter | {"step_name":"classify","status":"success","data":{"title":"Skills that Save Lives","category_scores":{"CHILD_HEALTH":0.7915534377098083,"FEVER":0.1930120289325714,"RESPIRATORY":0.010409086011350155,"GASTROINTESTINAL":0.005025438964366913},"role_scores":{"COMMUNITY_HEALTH_WORKER":0.8904265761375427,"DOCTOR":0.10957347601652145}},"error_message":null}
-2026-08-01 12:40:01,950 | INFO | ingestion.reporter | {"step_name":"upload_to_S3_parsed","status":"success","data":{"bucket":"parsed-documents-179127603023-eu-north-1-an","key":"45b957e6-311e-467d-b891-856817168b6a"},"error_message":null}
-2026-08-01 12:40:32,870 | INFO | ingestion.reporter | {"step_name":"upload_to_S3_raw","status":"success","data":{"bucket":"raw-documents-179127603023-eu-north-1-an","key":"45b957e6-311e-467d-b891-856817168b6a"},"error_message":null}
-2026-08-01 12:40:34,833 | INFO | httpx | HTTP Request: POST https://ixzdnyoeqpofdxlogguw.supabase.co/rest/v1/documents "HTTP/2 201 Created"
-2026-08-01 12:40:34,841 | INFO | ingestion.reporter | {"step_name":"save_document_metadata","status":"success","data":{"document_id":"45b957e6-311e-467d-b891-856817168b6a","title":"Skills that Save Lives"},"error_message":null}
-2026-08-01 12:40:34,870 | INFO | ingestion.reporter | {"step_name":"chunking","status":"success","data":{"document_id":"45b957e6-311e-467d-b891-856817168b6a","num_chunks":4,"message":"Successfully chunked document 45b957e6-311e-467d-b891-856817168b6a into 4 chunks."},"error_message":null}
-2026-08-01 12:40:39,430 | INFO | ingestion.reporter | {"step_name":"embedding","status":"success","data":{"num_chunks_embedded":4},"error_message":null}
-2026-08-01 12:40:39,492 | INFO | httpx | HTTP Request: GET http://localhost:6333/collections "HTTP/1.1 200 OK"
-2026-08-01 12:40:40,065 | INFO | httpx | HTTP Request: PUT http://localhost:6333/collections/corpus "HTTP/1.1 200 OK"
-2026-08-01 12:40:40,150 | INFO | httpx | HTTP Request: PUT http://localhost:6333/collections/corpus/points?wait=true "HTTP/1.1 200 OK"
-2026-08-01 12:40:40,151 | INFO | ingestion.reporter | {"step_name":"qdrant_upsert","status":"success","data":{"num_points_stored":4},"error_message":null}
-2026-08-01 12:40:40,154 | INFO | docling.datamodel.document | detected formats: [<InputFormat.PDF: 'pdf'>]
-2026-08-01 12:40:40,158 | INFO | docling.document_converter | Going to convert document batch...
-2026-08-01 12:40:40,158 | INFO | docling.pipeline.base_pipeline | Processing document DOC_1.pdf
-2026-08-01 12:40:40,638 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [3]: std::bad_alloc
-2026-08-01 12:40:40,734 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [4]: std::bad_alloc
-2026-08-01 12:40:40,818 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [5]: std::bad_alloc
-2026-08-01 12:40:40,901 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [6]: std::bad_alloc
-2026-08-01 12:40:41,003 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [7]: std::bad_alloc
-2026-08-01 12:40:41,105 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [8]: std::bad_alloc
-2026-08-01 12:40:41,185 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [9]: std::bad_alloc
-2026-08-01 12:40:41,273 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [10]: std::bad_alloc
-2026-08-01 12:40:41,392 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [11]: std::bad_alloc
-2026-08-01 12:40:41,455 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [12]: std::bad_alloc
-2026-08-01 12:40:41,547 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [13]: std::bad_alloc
-2026-08-01 12:40:41,635 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [14]: std::bad_alloc
-2026-08-01 12:40:41,734 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [15]: std::bad_alloc
-2026-08-01 12:40:41,788 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [16]: std::bad_alloc
-2026-08-01 12:40:41,876 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [17]: std::bad_alloc
-2026-08-01 12:40:41,937 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [18]: std::bad_alloc
-2026-08-01 12:40:42,020 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [19]: std::bad_alloc
-2026-08-01 12:40:42,064 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [20]: std::bad_alloc
-2026-08-01 12:40:44,648 | INFO | docling.document_converter | Finished converting document DOC_1.pdf in 4.50 sec.
-2026-08-01 12:40:44,648 | INFO | ingestion.reporter | {"step_name":"convert","status":"success","data":{"file":"documents\\DOC_1.pdf"},"error_message":null}
-2026-08-01 12:40:48,638 | INFO | ingestion.reporter | {"step_name":"classify","status":"success","data":{"title":"Diagnosis and Treatment of Malaria","category_scores":{"FEVER":0.8683822154998779,"CHILD_HEALTH":0.05768045037984848,"RESPIRATORY":0.042586661875247955,"GASTROINTESTINAL":0.03135063499212265},"role_scores":{"DOCTOR":0.6399384140968323,"COMMUNITY_HEALTH_WORKER":0.3600616455078125}},"error_message":null}
-2026-08-01 12:40:50,637 | INFO | ingestion.reporter | {"step_name":"upload_to_S3_parsed","status":"success","data":{"bucket":"parsed-documents-179127603023-eu-north-1-an","key":"5f13b2fd-0183-4406-b0b8-3663f8ce0773"},"error_message":null}
-2026-08-01 12:40:57,208 | INFO | ingestion.reporter | {"step_name":"upload_to_S3_raw","status":"success","data":{"bucket":"raw-documents-179127603023-eu-north-1-an","key":"5f13b2fd-0183-4406-b0b8-3663f8ce0773"},"error_message":null}
-2026-08-01 12:40:57,839 | INFO | httpx | HTTP Request: POST https://ixzdnyoeqpofdxlogguw.supabase.co/rest/v1/documents "HTTP/2 201 Created"
-2026-08-01 12:40:57,839 | INFO | ingestion.reporter | {"step_name":"save_document_metadata","status":"success","data":{"document_id":"5f13b2fd-0183-4406-b0b8-3663f8ce0773","title":"Diagnosis and Treatment of Malaria"},"error_message":null}
-2026-08-01 12:40:57,882 | INFO | ingestion.reporter | {"step_name":"chunking","status":"success","data":{"document_id":"5f13b2fd-0183-4406-b0b8-3663f8ce0773","num_chunks":4,"message":"Successfully chunked document 5f13b2fd-0183-4406-b0b8-3663f8ce0773 into 4 chunks."},"error_message":null}
-2026-08-01 12:41:01,833 | INFO | ingestion.reporter | {"step_name":"embedding","status":"success","data":{"num_chunks_embedded":4},"error_message":null}
-2026-08-01 12:41:01,885 | INFO | httpx | HTTP Request: GET http://localhost:6333/collections "HTTP/1.1 200 OK"
-2026-08-01 12:41:01,955 | INFO | httpx | HTTP Request: PUT http://localhost:6333/collections/corpus/points?wait=true "HTTP/1.1 200 OK"
-2026-08-01 12:41:01,955 | INFO | ingestion.reporter | {"step_name":"qdrant_upsert","status":"success","data":{"num_points_stored":4},"error_message":null}
+2026-08-07 13:00:03,045 | INFO | botocore.credentials | Found credentials in environment variables.
+2026-08-07 13:00:14,211 | INFO | docling.datamodel.document | detected formats: [<InputFormat.PDF: 'pdf'>]
+2026-08-07 13:00:14,417 | INFO | docling.document_converter | Going to convert document batch...
+2026-08-07 13:00:14,417 | INFO | docling.document_converter | Initializing pipeline for StandardPdfPipeline with options hash 051c1e157cd81d4fe9f97027ec51ea64
+2026-08-07 13:00:14,430 | INFO | httpx | HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2026-08-07 13:00:14,454 | INFO | docling.models.factories.base_factory | Loading plugin 'docling_defaults'
+2026-08-07 13:00:14,462 | INFO | docling.models.factories | Registered picture descriptions: ['picture_description_vlm_engine', 'vlm', 'api']
+2026-08-07 13:00:14,487 | INFO | docling.models.factories.base_factory | Loading plugin 'docling_defaults'
+2026-08-07 13:00:14,523 | INFO | docling.models.factories | Registered ocr engines: ['auto', 'easyocr', 'kserve_v2_ocr', 'nemotron-ocr', 'ocrmac', 'rapidocr', 'tesserocr', 'tesseract']
+2026-08-07 13:00:14,547 | INFO | docling.models.factories.base_factory | Loading plugin 'docling_defaults'
+2026-08-07 13:00:14,554 | INFO | docling.models.factories | Registered layout engines: ['layout_object_detection', 'docling_layout_default', 'docling_experimental_table_crops_layout']
+2026-08-07 13:00:15,585 | INFO | docling.utils.accelerator_utils | Accelerator device: 'cpu'
+2026-08-07 13:00:19,991 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/docling-project/docling-layout-heron/revision/main "HTTP/1.1 200 OK"
+2026-08-07 13:00:20,984 | INFO | docling.models.factories.base_factory | Loading plugin 'docling_defaults'
+2026-08-07 13:00:20,993 | INFO | docling.models.factories | Registered table structure engines: ['docling_tableformer', 'docling_tableformer_v2', 'granite_vision_table']
+2026-08-07 13:00:21,793 | INFO | httpx | HTTP Request: GET https://huggingface.co/api/models/docling-project/docling-models/revision/v2.3.0 "HTTP/1.1 200 OK"
+2026-08-07 13:00:21,867 | INFO | docling.utils.accelerator_utils | Accelerator device: 'cpu'
+2026-08-07 13:00:23,103 | INFO | docling.pipeline.base_pipeline | Processing document ASHA_1.pdf
+2026-08-07 13:00:23,552 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [3]: std::bad_alloc
+2026-08-07 13:00:23,632 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [4]: std::bad_alloc
+2026-08-07 13:00:23,731 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [5]: std::bad_alloc
+2026-08-07 13:00:23,812 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [6]: std::bad_alloc
+2026-08-07 13:00:23,879 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [7]: std::bad_alloc
+2026-08-07 13:00:23,968 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [8]: std::bad_alloc
+2026-08-07 13:00:24,080 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [9]: std::bad_alloc
+2026-08-07 13:00:24,142 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [10]: std::bad_alloc
+2026-08-07 13:00:24,220 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [11]: std::bad_alloc
+2026-08-07 13:00:24,289 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [12]: std::bad_alloc
+2026-08-07 13:00:24,362 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [13]: std::bad_alloc
+2026-08-07 13:00:24,433 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [14]: std::bad_alloc
+2026-08-07 13:00:24,514 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [15]: std::bad_alloc
+2026-08-07 13:00:24,602 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [16]: std::bad_alloc
+2026-08-07 13:00:24,665 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [17]: std::bad_alloc
+2026-08-07 13:00:24,807 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [18]: std::bad_alloc
+2026-08-07 13:00:24,936 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [19]: std::bad_alloc
+2026-08-07 13:00:25,004 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [20]: std::bad_alloc
+2026-08-07 13:00:25,066 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [21]: std::bad_alloc
+2026-08-07 13:00:25,145 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [22]: std::bad_alloc
+2026-08-07 13:00:25,225 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [23]: std::bad_alloc
+2026-08-07 13:00:25,290 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [24]: std::bad_alloc
+2026-08-07 13:00:25,339 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [25]: std::bad_alloc
+2026-08-07 13:00:25,414 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [26]: std::bad_alloc
+2026-08-07 13:00:25,485 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [27]: std::bad_alloc
+2026-08-07 13:00:25,547 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [28]: std::bad_alloc
+2026-08-07 13:00:25,598 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [29]: std::bad_alloc
+2026-08-07 13:00:25,644 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [30]: std::bad_alloc
+2026-08-07 13:00:25,689 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [31]: std::bad_alloc
+2026-08-07 13:00:25,751 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [32]: std::bad_alloc
+2026-08-07 13:00:25,830 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [33]: std::bad_alloc
+2026-08-07 13:00:25,878 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [34]: std::bad_alloc
+2026-08-07 13:00:25,923 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [35]: std::bad_alloc
+2026-08-07 13:00:25,959 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [36]: std::bad_alloc
+2026-08-07 13:00:26,032 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [37]: std::bad_alloc
+2026-08-07 13:00:26,094 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [38]: std::bad_alloc
+2026-08-07 13:00:26,158 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [39]: std::bad_alloc
+2026-08-07 13:00:26,210 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [40]: std::bad_alloc
+2026-08-07 13:00:26,260 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [41]: std::bad_alloc
+2026-08-07 13:00:26,324 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [42]: std::bad_alloc
+2026-08-07 13:00:26,371 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [43]: std::bad_alloc
+2026-08-07 13:00:26,414 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [44]: std::bad_alloc
+2026-08-07 13:00:26,454 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [45]: std::bad_alloc
+2026-08-07 13:00:26,500 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [46]: std::bad_alloc
+2026-08-07 13:00:26,548 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [47]: std::bad_alloc
+2026-08-07 13:00:26,602 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [48]: std::bad_alloc
+2026-08-07 13:00:26,661 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [49]: std::bad_alloc
+2026-08-07 13:00:26,699 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [50]: std::bad_alloc
+2026-08-07 13:00:26,766 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [51]: std::bad_alloc
+2026-08-07 13:00:26,820 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [52]: std::bad_alloc
+2026-08-07 13:00:26,874 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [53]: std::bad_alloc
+2026-08-07 13:00:26,924 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [54]: std::bad_alloc
+2026-08-07 13:00:26,972 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [55]: std::bad_alloc
+2026-08-07 13:00:27,027 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [56]: std::bad_alloc
+2026-08-07 13:00:27,080 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [57]: std::bad_alloc
+2026-08-07 13:00:27,119 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [58]: std::bad_alloc
+2026-08-07 13:00:27,254 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [60]: std::bad_alloc
+2026-08-07 13:00:27,347 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [61]: std::bad_alloc
+2026-08-07 13:00:27,429 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [62]: std::bad_alloc
+2026-08-07 13:00:27,492 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [63]: std::bad_alloc
+2026-08-07 13:00:27,563 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [64]: std::bad_alloc
+2026-08-07 13:00:27,655 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [65]: std::bad_alloc
+2026-08-07 13:00:27,740 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [66]: std::bad_alloc
+2026-08-07 13:00:27,812 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [67]: std::bad_alloc
+2026-08-07 13:00:27,889 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [68]: std::bad_alloc
+2026-08-07 13:00:27,980 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [69]: std::bad_alloc
+2026-08-07 13:00:28,031 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [70]: std::bad_alloc
+2026-08-07 13:00:28,094 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [71]: std::bad_alloc
+2026-08-07 13:00:28,154 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [72]: std::bad_alloc
+2026-08-07 13:00:28,219 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [73]: std::bad_alloc
+2026-08-07 13:00:28,265 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [74]: std::bad_alloc
+2026-08-07 13:00:28,319 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [75]: std::bad_alloc
+2026-08-07 13:00:28,377 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [76]: std::bad_alloc
+2026-08-07 13:00:28,434 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [77]: std::bad_alloc
+2026-08-07 13:00:28,523 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [78]: std::bad_alloc
+2026-08-07 13:00:28,568 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [79]: std::bad_alloc
+2026-08-07 13:00:28,620 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [80]: std::bad_alloc
+2026-08-07 13:00:28,672 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [81]: std::bad_alloc
+2026-08-07 13:00:28,727 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [82]: std::bad_alloc
+2026-08-07 13:00:28,772 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [83]: std::bad_alloc
+2026-08-07 13:00:28,815 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [84]: std::bad_alloc
+2026-08-07 13:00:28,860 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [85]: std::bad_alloc
+2026-08-07 13:00:28,911 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [86]: std::bad_alloc
+2026-08-07 13:00:28,947 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [87]: std::bad_alloc
+2026-08-07 13:00:29,006 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 1, pages [88]: std::bad_alloc
+2026-08-07 13:00:31,563 | INFO | docling.document_converter | Finished converting document ASHA_1.pdf in 17.35 sec.
+2026-08-07 13:00:31,564 | INFO | ingestion.reporter | {"step_name":"convert","status":"success","data":{"file":"documents\\ASHA_1.pdf"},"error_message":null}
+2026-08-07 13:00:42,251 | INFO | ingestion.reporter | {"step_name":"classify","status":"success","data":{"title":"Skills that Save Lives","category_scores":{"CHILD_HEALTH":0.9898515343666077,"RESPIRATORY":0.004004308488219976,"FEVER":0.0034390485379844904,"GASTROINTESTINAL":0.002705075778067112},"role_scores":{"COMMUNITY_HEALTH_WORKER":0.6214680075645447,"DOCTOR":0.3785320222377777}},"error_message":null}
+2026-08-07 13:00:47,500 | INFO | httpx | HTTP Request: POST https://ixzdnyoeqpofdxlogguw.supabase.co/rest/v1/documents "HTTP/2 201 Created"
+2026-08-07 13:00:47,501 | INFO | ingestion.reporter | {"step_name":"save_document_metadata","status":"success","data":{"document_id":"706fd130-25c8-4335-98d6-f79b596b1576","title":"Skills that Save Lives"},"error_message":null}
+2026-08-07 13:00:47,508 | INFO | ingestion.reporter | {"step_name":"chunking","status":"success","data":{"document_id":"706fd130-25c8-4335-98d6-f79b596b1576","num_chunks":1,"message":"Successfully chunked document 706fd130-25c8-4335-98d6-f79b596b1576 into 1 chunks."},"error_message":null}
+2026-08-07 13:00:50,001 | INFO | ingestion.reporter | {"step_name":"embedding","status":"success","data":{"num_chunks_embedded":1},"error_message":null}
+2026-08-07 13:00:50,064 | INFO | httpx | HTTP Request: GET http://localhost:6333/collections "HTTP/1.1 200 OK"
+2026-08-07 13:00:50,597 | INFO | httpx | HTTP Request: PUT http://localhost:6333/collections/corpus "HTTP/1.1 200 OK"
+2026-08-07 13:00:50,638 | INFO | httpx | HTTP Request: PUT http://localhost:6333/collections/corpus/points?wait=true "HTTP/1.1 200 OK"
+2026-08-07 13:00:50,640 | INFO | ingestion.reporter | {"step_name":"qdrant_upsert","status":"success","data":{"num_points_stored":1},"error_message":null}
+2026-08-07 13:00:50,643 | INFO | docling.datamodel.document | detected formats: [<InputFormat.PDF: 'pdf'>]
+2026-08-07 13:00:50,649 | INFO | docling.document_converter | Going to convert document batch...
+2026-08-07 13:00:50,650 | INFO | docling.pipeline.base_pipeline | Processing document DOC_1.pdf
+2026-08-07 13:00:51,231 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [3]: std::bad_alloc
+2026-08-07 13:00:51,345 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [4]: std::bad_alloc
+2026-08-07 13:00:51,420 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [5]: std::bad_alloc
+2026-08-07 13:00:51,517 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [6]: std::bad_alloc
+2026-08-07 13:00:51,612 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [7]: std::bad_alloc
+2026-08-07 13:00:51,722 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [8]: std::bad_alloc
+2026-08-07 13:00:51,802 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [9]: std::bad_alloc
+2026-08-07 13:00:51,865 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [10]: std::bad_alloc
+2026-08-07 13:00:51,969 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [11]: std::bad_alloc
+2026-08-07 13:00:52,024 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [12]: std::bad_alloc
+2026-08-07 13:00:52,103 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [13]: std::bad_alloc
+2026-08-07 13:00:52,166 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [14]: std::bad_alloc
+2026-08-07 13:00:52,246 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [15]: std::bad_alloc
+2026-08-07 13:00:52,308 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [16]: std::bad_alloc
+2026-08-07 13:00:52,371 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [17]: std::bad_alloc
+2026-08-07 13:00:52,436 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [18]: std::bad_alloc
+2026-08-07 13:00:52,502 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [19]: std::bad_alloc
+2026-08-07 13:00:52,562 | ERROR | docling.pipeline.standard_pdf_pipeline | Stage preprocess failed for run 2, pages [20]: std::bad_alloc
+2026-08-07 13:00:56,203 | INFO | docling.document_converter | Finished converting document DOC_1.pdf in 5.56 sec.
+2026-08-07 13:00:56,204 | INFO | ingestion.reporter | {"step_name":"convert","status":"success","data":{"file":"documents\\DOC_1.pdf"},"error_message":null}
+2026-08-07 13:01:04,522 | INFO | ingestion.reporter | {"step_name":"classify","status":"success","data":{"title":"Diagnosis and Treatment of Malaria","category_scores":{"FEVER":0.8683822154998779,"CHILD_HEALTH":0.05768045037984848,"RESPIRATORY":0.042586661875247955,"GASTROINTESTINAL":0.03135063499212265},"role_scores":{"DOCTOR":0.6399384140968323,"COMMUNITY_HEALTH_WORKER":0.3600616455078125}},"error_message":null}
+2026-08-07 13:01:08,057 | INFO | httpx | HTTP Request: POST https://ixzdnyoeqpofdxlogguw.supabase.co/rest/v1/documents "HTTP/2 201 Created"
+2026-08-07 13:01:08,058 | INFO | ingestion.reporter | {"step_name":"save_document_metadata","status":"success","data":{"document_id":"01d75c70-9cca-49ba-8088-28d3483e8e3a","title":"Diagnosis and Treatment of Malaria"},"error_message":null}
+2026-08-07 13:01:08,072 | INFO | ingestion.reporter | {"step_name":"chunking","status":"success","data":{"document_id":"01d75c70-9cca-49ba-8088-28d3483e8e3a","num_chunks":4,"message":"Successfully chunked document 01d75c70-9cca-49ba-8088-28d3483e8e3a into 4 chunks."},"error_message":null}
+2026-08-07 13:01:20,464 | INFO | ingestion.reporter | {"step_name":"embedding","status":"success","data":{"num_chunks_embedded":4},"error_message":null}
+2026-08-07 13:01:20,524 | INFO | httpx | HTTP Request: GET http://localhost:6333/collections "HTTP/1.1 200 OK"
+2026-08-07 13:01:20,565 | INFO | httpx | HTTP Request: PUT http://localhost:6333/collections/corpus/points?wait=true "HTTP/1.1 200 OK"
+2026-08-07 13:01:20,566 | INFO | ingestion.reporter | {"step_name":"qdrant_upsert","status":"success","data":{"num_points_stored":4},"error_message":null}

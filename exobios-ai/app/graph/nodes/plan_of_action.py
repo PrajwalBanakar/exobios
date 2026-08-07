@@ -11,7 +11,7 @@ persist the state to db
 from core.reporting import reporter
 from schemas.stages.deterministic_rule import Severity
 from schemas.stages.plan_of_action import PlanOfActionResult
-from schemas.step_result import StepResult, StepStatus
+from schemas.step import StepResult, StepStatus
 from services.llm_service import llm_service
 
 SYSTEM_PROMPT = """You are a clinical decision support assistant. Synthesize

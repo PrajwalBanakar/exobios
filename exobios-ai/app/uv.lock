@@ -8,6 +8,18 @@ resolution-markers = [
 ]
 
 [[package]]
+name = "aiomqtt"
+version = "2.0.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "paho-mqtt" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1c/93/d8aae771d12ab974112868e46921215668f1d612a739e11a8b59b4ce9e33/aiomqtt-2.0.1.tar.gz", hash = "sha256:60f6451c8ab7235cfb392b1b0cab398e9bc6040f4b140628c0615371abcde15f", size = 16940, upload-time = "2024-03-13T22:10:16.522Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c8/ce/e2353bb4f2d4232981e5aff348c0bf8e2ca1e3abaff4278960952e603825/aiomqtt-2.0.1-py3-none-any.whl", hash = "sha256:7c26a867212366ae0841571e6c2d06cebc00c2de029475b920c2cd7396aeacea", size = 16028, upload-time = "2024-03-13T22:10:14.809Z" },
+]
+
+[[package]]
 name = "annotated-doc"
 version = "0.0.5"
 source = { registry = "https://pypi.org/simple" }
@@ -46,6 +58,7 @@ dependencies = [
     { name = "fastapi" },
     { name = "fastembed" },
     { name = "google-genai" },
+    { name = "groq" },
     { name = "langchain" },
     { name = "langgraph" },
     { name = "langsmith" },
@@ -53,6 +66,7 @@ dependencies = [
     { name = "pymongo" },
     { name = "qdrant-client" },
     { name = "requests" },
+    { name = "roq" },
     { name = "supabase" },
     { name = "tiktoken" },
     { name = "uvicorn", extra = ["standard"] },
@@ -71,6 +85,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.141.1" },
     { name = "fastembed", specifier = ">=0.8.0" },
     { name = "google-genai", specifier = ">=2.17.0" },
+    { name = "groq", specifier = ">=1.6.0" },
     { name = "langchain" },
     { name = "langgraph", specifier = ">=1.2.10" },
     { name = "langsmith", specifier = ">=0.10.15" },
@@ -78,6 +93,7 @@ requires-dist = [
     { name = "pymongo", specifier = ">=4.17.0" },
     { name = "qdrant-client", specifier = ">=1.18.0" },
     { name = "requests", specifier = ">=2.34.2" },
+    { name = "roq", specifier = ">=0.0.2" },
     { name = "supabase", specifier = ">=2.31.0" },
     { name = "tiktoken", specifier = ">=0.13.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.52.1" },
@@ -447,6 +463,23 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/58/2e/03a0486e192cde27f7ffbb20c63fa934a132396a667b1a0e1b7e5f606ad7/google_genai-2.17.0.tar.gz", hash = "sha256:6b640a2390c82b4a240873eddb9f518c6d2c33244b2de16ed3d14526a6da7f57", size = 648676, upload-time = "2026-08-06T05:10:41.382Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b3/37/71e397a5b93d9a3c139e95acdcb00b4169ed59ae20e16616f2875170abb7/google_genai-2.17.0-py3-none-any.whl", hash = "sha256:a4835563c60aee646c9c4b261c507aa4a624710d25017012d20dc65abf3d9a54", size = 1044950, upload-time = "2026-08-06T05:10:39.308Z" },
+]
+
+[[package]]
+name = "groq"
+version = "1.6.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "distro" },
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "sniffio" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/67/3e/687064918e861082cb02165872bbda31269126a108a78794dae86ddadae2/groq-1.6.0.tar.gz", hash = "sha256:c4237ecf0053ba85fd926bb31cb4b178996310474b4618867994e3e40d8e3c02", size = 158424, upload-time = "2026-07-24T17:25:49.517Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/20/40/164338d796cf41ea5930a42023e986d8c993720bed670d5aa143e5854873/groq-1.6.0-py3-none-any.whl", hash = "sha256:fa16db582455db324adcff1b5908519474736872e28cd5c8fa2b8bef6860e12a", size = 143693, upload-time = "2026-07-24T17:25:48.2Z" },
 ]
 
 [[package]]
@@ -1191,6 +1224,12 @@ wheels = [
 ]
 
 [[package]]
+name = "paho-mqtt"
+version = "1.6.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f8/dd/4b75dcba025f8647bc9862ac17299e0d7d12d3beadbf026d8c8d74215c12/paho-mqtt-1.6.1.tar.gz", hash = "sha256:2a8291c81623aec00372b5a85558a372c747cbca8e9934dfe218638b8eefc26f", size = 99373, upload-time = "2021-10-21T10:33:59.864Z" }
+
+[[package]]
 name = "pillow"
 version = "12.3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1900,6 +1939,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/f3/61/d7545dafb7ac2230c70d38d31cbfe4cc64f7144dc41f6e4e4b78ecd9f5bb/requests-toolbelt-1.0.0.tar.gz", hash = "sha256:7681a0a3d047012b5bdc0ee37d7f8f07ebe76ab08caeccfc3921ce23c88d5bc6", size = 206888, upload-time = "2023-05-01T04:11:33.229Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3f/51/d4db610ef29373b879047326cbf6fa98b6c1969d6f6dc423279de2b1be2c/requests_toolbelt-1.0.0-py2.py3-none-any.whl", hash = "sha256:cccfdd665f0a24fcf4726e690f65639d272bb0637b9b92dfd91a5568ccf6bd06", size = 54481, upload-time = "2023-05-01T04:11:28.427Z" },
+]
+
+[[package]]
+name = "roq"
+version = "0.0.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiomqtt" },
+    { name = "paho-mqtt" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/30/46/560a8a38230a537e1d3ba2cc08f11f1500662afa8e461fba2a7238cf3932/roq-0.0.2.tar.gz", hash = "sha256:193a5bfb07e13e1e47a02a815fdfcb7be56442e47d51a1837511b9bc6d7ccdce", size = 7960, upload-time = "2024-03-26T15:19:48.53Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/57/ca/10a31891ddb434a185f60bb6d50072026628098729587d50be70615a378a/roq-0.0.2-py3-none-any.whl", hash = "sha256:aa4c4b45882ede6864b786df5d569e5b61b6c2b8061e1e6a53b2ff7c08487e67", size = 9025, upload-time = "2024-03-26T15:19:46.937Z" },
 ]
 
 [[package]]

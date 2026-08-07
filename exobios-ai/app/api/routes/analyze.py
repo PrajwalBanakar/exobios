@@ -8,7 +8,7 @@ from graph.builder import assessment_graph
 from schemas.request import AiRequest
 from schemas.response import AssessmentResponse
 from schemas.state_object import AssessmentState
-from repository.persistence import persist_state
+from repositories.persistence import persist_state
 
 router = APIRouter()
 logger = logging.getLogger("app.analyze")

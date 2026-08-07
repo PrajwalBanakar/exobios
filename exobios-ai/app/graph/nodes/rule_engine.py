@@ -8,7 +8,7 @@ substitute for client-supplied/clinically-reviewed thresholds.
 from core.reporting import reporter
 from schemas.request import AiRequest
 from schemas.stages.deterministic_rule import DeterministicFlag, DeterministicRuleResult, Severity
-from schemas.step_result import StepResult, StepStatus
+from schemas.step import StepResult, StepStatus
 
 
 def _severity_rank(s: Severity) -> int:

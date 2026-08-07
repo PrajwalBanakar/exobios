@@ -7,8 +7,9 @@ duplicated.
 
 from core.reporting import reporter
 from schemas.stages.deterministic_rule import Severity
-from schemas.step_result import StepResult, StepStatus
-from repository.persistence import persist_state
+from schemas.step import StepResult, StepStatus
+
+from repositories.persistence import persist_state
 
 _STAGE_CITATION_GETTERS = {
     "diagnosis": lambda state: [c for cand in (state.diagnosis.candidates if state.diagnosis else []) for c in cand.citations],

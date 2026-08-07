@@ -11,7 +11,7 @@ from core.exceptions import InsufficientEvidenceException
 from core.reporting import reporter
 from graph.tools.retrieval import retrieve_and_rerank
 from schemas.stages.diagnosis import DiagnosisResult
-from schemas.step_result import StepResult, StepStatus
+from schemas.step import StepResult, StepStatus
 from services.llm_service import llm_service
 
 SYSTEM_PROMPT = """You are a clinical decision support assistant. You must
