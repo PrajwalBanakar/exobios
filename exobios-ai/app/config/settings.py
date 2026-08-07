@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class QdrantSettings(BaseModel):
     url: str = "http://localhost:6333"
-    collection_name: str = "clinical_corpus"
+    collection_name: str = "corpus"
 
 
 class EmbeddingSettings(BaseModel):
@@ -27,8 +27,8 @@ class RerankerSettings(BaseModel):
 
 
 class LLMSettings(BaseModel):
-    gemini_api_key: str
-    model: str = "gemini-2.0-flash"
+    groq_api_key: str
+    model: str = "llama-3.3-70b-versatile"
     max_output_tokens: int = 2048
     temperature: float = 0.2
 
@@ -45,11 +45,16 @@ class LangSmithSettings(BaseModel):
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_nested_delimiter="__", case_sensitive=False)
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_nested_delimiter="__",
+        case_sensitive=False,
+        extra="ignore",
+    )
 
     ai_api_key: str
 
-    qdrant: QdrantSettings
+    qdrant: QdrantSettings = QdrantSettings()
     embedding: EmbeddingSettings
     reranker: RerankerSettings
     llm: LLMSettings
