@@ -7,7 +7,8 @@ from botocore.exceptions import ClientError
 from boto3.exceptions import S3UploadFailedError
 from config.settings import settings
 from core.reporting import reporter
-from schemas.step_result import StepResult, StepStatus
+from schemas.step import StepResult, StepStatus
+
 from core.supabase_client import supabase_client
 from schemas.document_schema import DocumentMetadata
 

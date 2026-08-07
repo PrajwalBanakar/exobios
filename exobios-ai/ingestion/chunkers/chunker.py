@@ -16,7 +16,8 @@ from config.settings import settings
 from core.reporting import reporter
 from exceptions import ChunkingException
 from schemas.chunk_schema import ChunkMetadata
-from schemas.step_result import StepResult, StepStatus
+from schemas.step import StepResult, StepStatus
+
 from docling_core.transforms.chunker.tokenizer.openai import OpenAITokenizer
 
 encoding = tiktoken.get_encoding("cl100k_base")

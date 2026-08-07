@@ -20,7 +20,8 @@ from openai import OpenAI
 
 from config.settings import settings
 from core.reporting import reporter
-from schemas.step_result import StepResult, StepStatus
+from schemas.step import StepResult, StepStatus
+
 from schemas.chunk_schema import ChunkMetadata, ChunkPayload
 from schemas.chunk_schema import VectorRecord
 from schemas.document_schema import DocumentMetadata

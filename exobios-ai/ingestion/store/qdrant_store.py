@@ -13,7 +13,8 @@ from qdrant_client import QdrantClient, models
 from config.settings import settings
 from core.reporting import reporter
 from schemas.metadata_payload_schema import MetadataPayload
-from schemas.step_result import StepResult, StepStatus
+from schemas.step import StepResult, StepStatus
+
 
 _client = QdrantClient(url=settings.qdrant_url)
 
@@ -21,7 +22,6 @@ VECTOR_SIZE = 384  # some hf model's vector size
 BATCH_SIZE = 100
 _SPARSE_MODEL_NAME = "Qdrant/bm25"
 
-# Initialize sparse embedding model lazily or globally
 _sparse_model = SparseTextEmbedding(model_name=_SPARSE_MODEL_NAME)
 
 
@@ -52,7 +52,7 @@ def store_metadata_payloads(metadata_payloads: List[MetadataPayload]) -> bool:
 
     points = []
     for mp in metadata_payloads:
-        text_content = mp.payload.chunk_payload.text_content
+        text_content = mp.payload.chunk_payload.chunk_metadata.content
 
         points.append(
             models.PointStruct(

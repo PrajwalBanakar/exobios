@@ -16,7 +16,8 @@ from pathlib import Path
 
 from .load_documents import load_documents
 from core.reporting import reporter
-from schemas.step_result import StepResult, StepStatus
+from schemas.step import StepResult, StepStatus
+
 from schemas.document_schema import DocumentMetadata
 from exceptions import DocumentDiscoveryError
 from .convert import convert_to_docling_document
@@ -63,16 +64,16 @@ def run() -> None:
             classified = classify(docling_document)
 
             object_key = f"{doc_id}"
-            parsed_uploaded = upload_parsed_document_to_S3(parsed_markdown, object_key)
-            raw_uploaded = upload_raw_document_to_S3(str(file_path), object_key)
+            # parsed_uploaded = upload_parsed_document_to_S3(parsed_markdown, object_key)
+            # raw_uploaded = upload_raw_document_to_S3(str(file_path), object_key)
 
-            if not (parsed_uploaded and raw_uploaded):
-                reporter.report(StepResult(
-                    step_name="document_loading_main_loop",
-                    status=StepStatus.FAIL,
-                    error_message=f"S3 upload failed for {file_path.name}, skipping DB write",
-                ))
-                continue
+            # if not (parsed_uploaded and raw_uploaded):
+            #     reporter.report(StepResult(
+            #         step_name="document_loading_main_loop",
+            #         status=StepStatus.FAIL,
+            #         error_message=f"S3 upload failed for {file_path.name}, skipping DB write",
+            #     ))
+            #     continue
 
             metadata = DocumentMetadata(
                 document_id=doc_id,

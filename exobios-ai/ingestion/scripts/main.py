@@ -6,7 +6,8 @@ from core.logging_config import setup_logging
 from exceptions import IngestionError
 import logging
 from core.reporting import reporter
-from schemas.step_result import StepResult, StepStatus
+from schemas.step import StepResult, StepStatus
+
 from dotenv import load_dotenv
 load_dotenv()
 

@@ -10,7 +10,8 @@ from core.reporting import reporter
 import logging
 
 from exceptions import DocumentConversionError
-from schemas.step_result import StepResult, StepStatus
+from schemas.step import StepResult, StepStatus
+
 
 logger = logging.getLogger(__name__)
 
