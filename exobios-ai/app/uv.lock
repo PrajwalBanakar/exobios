@@ -8,18 +8,6 @@ resolution-markers = [
 ]
 
 [[package]]
-name = "aiomqtt"
-version = "2.0.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "paho-mqtt" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/1c/93/d8aae771d12ab974112868e46921215668f1d612a739e11a8b59b4ce9e33/aiomqtt-2.0.1.tar.gz", hash = "sha256:60f6451c8ab7235cfb392b1b0cab398e9bc6040f4b140628c0615371abcde15f", size = 16940, upload-time = "2024-03-13T22:10:16.522Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c8/ce/e2353bb4f2d4232981e5aff348c0bf8e2ca1e3abaff4278960952e603825/aiomqtt-2.0.1-py3-none-any.whl", hash = "sha256:7c26a867212366ae0841571e6c2d06cebc00c2de029475b920c2cd7396aeacea", size = 16028, upload-time = "2024-03-13T22:10:14.809Z" },
-]
-
-[[package]]
 name = "annotated-doc"
 version = "0.0.5"
 source = { registry = "https://pypi.org/simple" }
@@ -66,7 +54,6 @@ dependencies = [
     { name = "pymongo" },
     { name = "qdrant-client" },
     { name = "requests" },
-    { name = "roq" },
     { name = "supabase" },
     { name = "tiktoken" },
     { name = "uvicorn", extra = ["standard"] },
@@ -93,7 +80,6 @@ requires-dist = [
     { name = "pymongo", specifier = ">=4.17.0" },
     { name = "qdrant-client", specifier = ">=1.18.0" },
     { name = "requests", specifier = ">=2.34.2" },
-    { name = "roq", specifier = ">=0.0.2" },
     { name = "supabase", specifier = ">=2.31.0" },
     { name = "tiktoken", specifier = ">=0.13.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.52.1" },
@@ -1224,12 +1210,6 @@ wheels = [
 ]
 
 [[package]]
-name = "paho-mqtt"
-version = "1.6.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f8/dd/4b75dcba025f8647bc9862ac17299e0d7d12d3beadbf026d8c8d74215c12/paho-mqtt-1.6.1.tar.gz", hash = "sha256:2a8291c81623aec00372b5a85558a372c747cbca8e9934dfe218638b8eefc26f", size = 99373, upload-time = "2021-10-21T10:33:59.864Z" }
-
-[[package]]
 name = "pillow"
 version = "12.3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1939,19 +1919,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/f3/61/d7545dafb7ac2230c70d38d31cbfe4cc64f7144dc41f6e4e4b78ecd9f5bb/requests-toolbelt-1.0.0.tar.gz", hash = "sha256:7681a0a3d047012b5bdc0ee37d7f8f07ebe76ab08caeccfc3921ce23c88d5bc6", size = 206888, upload-time = "2023-05-01T04:11:33.229Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3f/51/d4db610ef29373b879047326cbf6fa98b6c1969d6f6dc423279de2b1be2c/requests_toolbelt-1.0.0-py2.py3-none-any.whl", hash = "sha256:cccfdd665f0a24fcf4726e690f65639d272bb0637b9b92dfd91a5568ccf6bd06", size = 54481, upload-time = "2023-05-01T04:11:28.427Z" },
-]
-
-[[package]]
-name = "roq"
-version = "0.0.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "aiomqtt" },
-    { name = "paho-mqtt" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/30/46/560a8a38230a537e1d3ba2cc08f11f1500662afa8e461fba2a7238cf3932/roq-0.0.2.tar.gz", hash = "sha256:193a5bfb07e13e1e47a02a815fdfcb7be56442e47d51a1837511b9bc6d7ccdce", size = 7960, upload-time = "2024-03-26T15:19:48.53Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/57/ca/10a31891ddb434a185f60bb6d50072026628098729587d50be70615a378a/roq-0.0.2-py3-none-any.whl", hash = "sha256:aa4c4b45882ede6864b786df5d569e5b61b6c2b8061e1e6a53b2ff7c08487e67", size = 9025, upload-time = "2024-03-26T15:19:46.937Z" },
 ]
 
 [[package]]

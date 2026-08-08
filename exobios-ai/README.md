@@ -1,208 +1,193 @@
 # exobios-ai
 
-The Exobios AI microservice — a FastAPI application that the Spring Boot backend
-(`exobios-backend`) calls to analyze submitted patient assessments.
+RAG-based clinical decision support service for exobios. Two independent
+projects, one shared Qdrant corpus:
 
-## AI-1 scope
+- **`ingestion/`** — offline batch pipeline. Parses client documents, chunks,
+  classifies, embeds (dense + BM25 sparse), uploads raw/parsed files to S3,
+  writes document metadata to Supabase, writes vectors + payload to Qdrant.
+- **`app/`** — FastAPI service. Exposes `POST /analyze`, called by the Spring
+  Boot backend. Runs a 4-stage LangGraph pipeline (diagnosis → investigation
+  → treatment protocol → plan of action) against the Qdrant corpus, generates
+  with an LLM, persists the running assessment state to MongoDB.
 
-This is **Phase AI-1**: the service skeleton and backend contract integration.
-It exists to prove the backend and AI service can talk to each other correctly,
-nothing more.
+They share nothing at runtime except the Qdrant collection — `ingestion`
+writes to it, `app` reads from it. Separate `.venv`s, separate `pyproject.toml`s.
 
-**No clinical AI functionality is implemented in this phase.** There is no
-RAG, no vector store (Qdrant), no database, no embeddings, no LLM integration,
-no prompt engineering, no medical guideline ingestion, no red-flag detection,
-no diagnosis generation, and no risk classification. `POST /analyze` always
-returns a safe, deterministic placeholder response — it never makes a
-clinical claim about the submitted patient.
-
-## Project structure
-
-```text
-exobios-ai/
-├── app/
-│   ├── main.py                  # FastAPI app factory, middleware, exception handlers
-│   ├── api/
-│   │   ├── dependencies.py      # X-Api-Key verification
-│   │   └── routes/
-│   │       ├── analyze.py       # POST /analyze
-│   │       └── health.py        # GET /health
-│   ├── core/
-│   │   ├── config.py            # Typed settings (pydantic-settings)
-│   │   ├── exceptions.py        # AppError / AuthenticationError
-│   │   └── logging.py           # Structured logging + request-id context
-│   ├── middleware/
-│   │   └── request_context.py   # Request ID + access-log middleware
-│   ├── schemas/
-│   │   ├── analyze.py           # AiRequest / AiResponse — mirrors the Java DTOs
-│   │   ├── errors.py            # Error envelope
-│   │   └── health.py            # Health response
-│   └── services/
-│       └── analysis_service.py  # Placeholder response generation
-├── tests/
-├── Dockerfile
-├── .dockerignore
-├── .env.example
-└── pyproject.toml
-```
+---
 
 ## Prerequisites
 
 - Python 3.12+
-- (Optional) Docker Desktop, for container builds
+- [uv](https://docs.astral.sh/uv/)
+- Docker (for local Qdrant)
+- Accounts / credentials for: AWS S3, Supabase, HuggingFace, MongoDB Atlas,
+  an LLM provider (Grok/xAI currently used for generation), LangSmith (optional)
 
-## Local setup (PowerShell)
+---
 
-```powershell
-cd exobios-ai
-
-py -3.12 -m venv .venv
-
-.\.venv\Scripts\Activate.ps1
-
-python -m pip install --upgrade pip
-
-pip install -e ".[dev]"
-
-Copy-Item .env.example .env
-# Edit .env and set AI_API_KEY to match the backend's AI_API_KEY / app.ai.api-key
-
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-## Environment variables
-
-| Variable | Default | Notes |
-|---|---|---|
-| `APP_NAME` | `exobios-ai` | Reported in `/health` |
-| `APP_ENV` | `development` | Free-form environment label |
-| `APP_VERSION` | `0.1.0` | Reported in `/health` |
-| `HOST` | `0.0.0.0` | Uvicorn bind host |
-| `PORT` | `8000` | Uvicorn bind port |
-| `AI_API_KEY` | *(required, no default)* | Must match the backend's `AI_API_KEY` / `app.ai.api-key` exactly. The app refuses to start without it. |
-| `LOG_LEVEL` | `INFO` | Standard Python logging level |
-| `ENABLE_API_DOCS` | `true` | Set to `false` in production to disable `/docs`, `/redoc`, `/openapi.json` |
-
-`.env` is loaded automatically in local development and is git-ignored. Never
-commit a real key — `.env.example` only ships a placeholder.
-
-## Running tests
-
-```powershell
-pytest
-```
-
-## Ruff
-
-```powershell
-ruff check .
-ruff format .
-```
-
-## Docker
-
-Build and run standalone:
-
-```powershell
-docker build -t exobios-ai .
-docker run -p 8000:8000 -e AI_API_KEY=local-dev-key-12345 exobios-ai
-```
-
-Or via the backend's Compose stack (recommended — starts Postgres, the
-backend, and this service together):
-
-```powershell
-cd ../exobios-backend
-docker compose up -d
-```
-
-The Compose file builds this service from `../exobios-ai` and gives it the
-service name `ai-service`. Inside the Compose network, the backend reaches it
-at `http://ai-service:8000`, **not** `localhost` — Compose environment
-variables set this by default (`AI_SERVICE_URL=http://ai-service:8000`), but
-if your `exobios-backend/.env` already defines `AI_SERVICE_URL` (e.g. copied
-from `.env.example` for a non-Docker setup), that value takes precedence and
-will point the containerized backend at itself. Remove or comment out that
-line in `exobios-backend/.env` before running `docker compose up`, or export
-`AI_SERVICE_URL=http://ai-service:8000` explicitly.
-
-## Running both services on the host (no Docker)
-
-Start this service as shown above, then configure the backend
-(`exobios-backend/.env`):
-
-```env
-AI_SERVICE_URL=http://localhost:8000
-AI_API_KEY=<matching-key>
-```
-
-## `GET /health`
-
-Liveness only — no API key required, no dependency checks (there are no
-external dependencies in AI-1 to check).
+## 1. Qdrant (shared by both projects)
 
 ```bash
-curl http://localhost:8000/health
+docker compose up -d   # see docker-compose.yml — persists via a named volume
 ```
 
-```json
-{"status": "UP", "service": "exobios-ai", "version": "0.1.0"}
+Verify: `http://localhost:6333/dashboard`
+
+Collection schema (created automatically on first ingestion run): named
+vectors `dense` (384-dim, cosine — matches `sentence-transformers/all-MiniLM-L6-v2`)
+and `sparse` (BM25, via `Qdrant/bm25` through `fastembed`). Both `ingestion`
+and `app` must reference the **same collection name** and the **same
+embedding model** — mismatched dimensions or a different embedding model
+will silently produce meaningless similarity scores, not an error.
+
+---
+
+## 2. `ingestion/` setup
+
+```bash
+cd ingestion
+uv python pin 3.12
+uv sync
+cp .env.example .env   # fill in below
 ```
 
-## `POST /analyze`
+**`.env` (flat keys, case-insensitive):**
 
-Requires `X-Api-Key`. Accepts the backend's `AiRequest` shape and always
-returns the same safe placeholder `AiResponse` — see
-[`docs/api/ai-service-contract.md`](../docs/api/ai-service-contract.md) for
-the full field-by-field contract.
+```env
+zeroshot_classification_token_hf=hf_...
+s3_bucket_name_parsed_doc=...
+s3_bucket_name_raw_doc=...
+supabase_url=https://your-project.supabase.co
+supabase_key=your-service-role-key
+aws_access_key_id=...
+aws_secret_access_key=...
+aws_default_region=...
+qdrant_url=http://localhost:6333
+collection_name=clinical_corpus
+openai_api_key=...   # only if the classification/embedding step still calls OpenAI; see note below
+```
+
+Drop source PDFs/DOCX into `ingestion/documents/`, then:
+
+```bash
+uv run python -m scripts.main
+```
+
+Per-document flow: convert (Docling) → classify (HF zero-shot, category +
+role) → upload raw + parsed to S3 → write document metadata to Supabase →
+chunk (HybridChunker + tiktoken) → embed (dense, HF) + BM25 sparse vector →
+upsert to Qdrant.
+
+Logs: `logs/` (structured, one line per step via the shared `Reporter`).
+
+**Known limitation:** Docling's layout/OCR stage can throw `std::bad_alloc`
+on memory-constrained machines, especially on image/table-heavy pages —
+this is a compute ceiling, not a pipeline bug (see project notes). Affected
+pages are skipped; the document still ingests with whatever content
+survives. Re-run on higher-memory hardware for full-fidelity extraction.
+
+---
+
+## 3. `app/` setup
+
+```bash
+cd app
+uv python pin 3.12
+uv sync
+cp .env.example .env   # fill in below
+```
+
+**`.env` (nested keys, `__` delimiter):**
+
+```env
+AI_API_KEY=dummy-xai-api-key   # shared secret checked against incoming X-Api-Key from Spring Boot
+
+QDRANT__URL=http://localhost:6333
+QDRANT__COLLECTION_NAME=clinical_corpus
+
+EMBEDDING__HF_TOKEN=hf_...     # must match the model used in ingestion (all-MiniLM-L6-v2)
+
+RERANKER__HF_TOKEN=hf_...      # HF-hosted cross-encoder, no local model
+
+LLM__GEMINI_API_KEY=...        # or swap llm_service.py for the active provider — see note below
+
+MONGO__URI=mongodb+srv://user:pass@cluster.mongodb.net
+MONGO__DB_NAME=exobios
+
+LANGSMITH__API_KEY=            # optional, enables tracing if set
+LANGSMITH__PROJECT=exobios-ai
+```
+
+**Generation provider note:** `services/llm_service.py` currently ships
+wired for Gemini. Since generation has been switched to Grok, update that
+file's client + `LLMSettings` in `config/settings.py` accordingly (Grok's
+API is OpenAI-compatible, so this is a small swap — same
+`generate_structured` interface, different client/base URL/model name).
+Nothing else in the pipeline needs to change; every node calls
+`llm_service.generate_structured(...)` generically.
+
+Run:
+
+```bash
+uv run uvicorn main:app --reload --port 8000
+```
+
+Verify: `GET http://localhost:8000/health`
+
+---
+
+## 4. Request flow, end to end
+
+```
+Spring Boot --POST /analyze--> app (X-Api-Key checked)
+  -> rule_engine (deterministic, no LLM/retrieval)
+  -> diagnosis        (embed -> Qdrant hybrid search -> rerank -> LLM)  -> validate -> persist
+  -> investigation     (query built from diagnosis)                     -> validate -> persist
+  -> treatment_protocol (query built from diagnosis + patient factors)  -> validate -> persist
+  -> plan_of_action     (synthesis only, no retrieval)                  -> validate -> persist
+  -> response shaped from final state, returned to Spring Boot
+```
+
+One MongoDB document per `assessment_id`, updated in place after every
+stage — reopening an assessment later reads the same document; no replay
+of the graph required.
+
+---
+
+## 5. Quick end-to-end test (no Spring Boot needed)
 
 ```bash
 curl -X POST http://localhost:8000/analyze \
   -H "Content-Type: application/json" \
-  -H "X-Api-Key: local-dev-key-12345" \
+  -H "X-Api-Key: dummy-xai-api-key" \
   -d '{
         "assessmentId": "11111111-1111-1111-1111-111111111111",
         "patientId": "22222222-2222-2222-2222-222222222222",
-        "symptoms": []
+        "patientComplaint": "high fever for 3 days",
+        "complaintCategory": "FEVER",
+        "vitals": {"temperature": 102.4, "spo2": 97, "heartRate": 98}
       }'
 ```
 
-```json
-{
-  "status": "PENDING",
-  "summary": "AI analysis pipeline is not implemented in this service version.",
-  "riskLevel": null,
-  "confidenceScore": 0.0,
-  "redFlags": "",
-  "recommendations": "",
-  "modelVersion": "stub-v0.1.0",
-  "source": "exobios-ai-stub"
-}
-```
+Expect a full `AssessmentResponse` JSON back: deterministic flags,
+diagnosis candidates with citations, investigations, treatment protocol,
+plan of action. Check Mongo for a matching document under `assessment_id`.
 
-## Security notes
+---
 
-- `X-Api-Key` is compared using `secrets.compare_digest` (constant-time).
-- The service never logs the patient complaint, symptom descriptions, past
-  illnesses, medications, allergies, or any other patient-identifying detail.
-  Logs only ever include: request ID, assessment ID, complaint category,
-  symptom count, whether vitals were provided, response status, HTTP status,
-  and duration.
-- Error responses never include stack traces, file paths, environment
-  variables, or secrets.
-- `ENABLE_API_DOCS=false` disables Swagger/OpenAPI exposure entirely — set
-  this in production.
+## 6. Troubleshooting
 
-## Troubleshooting
-
-- **App won't start / `AI_API_KEY` validation error** — `AI_API_KEY` is
-  required with no default; set it in `.env` or the environment.
-- **Backend gets `AiResponse.placeholder()` instead of the stub response** —
-  this means `RestAiGateway` couldn't reach this service at all (wrong
-  `AI_SERVICE_URL`, service not running, or connection/read timeout). Check
-  `GET /health` first.
-- **Backend `401`s or falls back on `/analyze`** — confirm both services
-  have the *same* `AI_API_KEY` value.
-- **Docker container marked unhealthy** — the container health check calls
-  `GET /health` on port 8000 internally; check `docker logs <container>` for
-  a startup error (most likely a missing `AI_API_KEY`).
+- **Empty/irrelevant retrieval results** — check the Qdrant collection
+  actually has points (`/dashboard`), and that `complaint_category` filters
+  in the request aren't excluding the only chunks present (common with a
+  small test corpus — try omitting `complaintCategory` from the request).
+- **`insufficient_quota` / 429 from an LLM/embedding call** — billing not
+  configured on that provider, or a genuinely small free-tier rate limit
+  hit; not a code bug.
+- **Vector dimension mismatch on upsert/search** — `ingestion` and `app`
+  must use the identical embedding model; confirm `EMBEDDING__` settings
+  in `app` match ingestion's embedder.
+- **Dependency resolving against the wrong `.venv`** — always `cd` into the
+  specific project (`ingestion/` or `app/`) before running `uv` commands;
+  don't `source activate` across projects in the same shell.
