@@ -2,34 +2,23 @@ import logging
 import time
 import uuid
 
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-from starlette.responses import Response
 
-from app.core.logging import request_id_ctx
+from core.logging_config import request_id_ctx
 
-logger = logging.getLogger("app.request")
-
-REQUEST_ID_HEADER = "X-Request-Id"
+logger = logging.getLogger("app.access")
 
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        request_id = request.headers.get(REQUEST_ID_HEADER) or str(uuid.uuid4())
-        token = request_id_ctx.set(request_id)
-        request.state.request_id = request_id
+    async def dispatch(self, request: Request, call_next):
+        request_id = str(uuid.uuid4())
+        request_id_ctx.set(request_id)
+        start = time.time()
 
-        start = time.perf_counter()
         response = await call_next(request)
-        duration_ms = round((time.perf_counter() - start) * 1000, 2)
 
-        response.headers[REQUEST_ID_HEADER] = request_id
-        logger.info(
-            "method=%s path=%s status_code=%s duration_ms=%s",
-            request.method,
-            request.url.path,
-            response.status_code,
-            duration_ms,
-        )
-        request_id_ctx.reset(token)
+        duration_ms = round((time.time() - start) * 1000, 1)
+        logger.info(f"{request.method} {request.url.path} -> {response.status_code} ({duration_ms}ms)")
+        response.headers["X-Request-Id"] = request_id
         return response

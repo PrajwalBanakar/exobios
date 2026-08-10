@@ -1,0 +1,21 @@
+[project]
+name = "ingestion"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "boto3>=1.43.59",
+    "docling>=2.115.0",
+    "docling-core[chunking-openai]>=2.88.0",
+    "dotenv>=0.9.9",
+    "fastembed>=0.8.0",
+    "openai>=2.51.0",
+    "qdrant-client>=1.18.0",
+    "supabase>=2.31.0",
+]
+
+[dependency-groups]
+dev = [
+    "boto3-stubs[s3]>=1.43.59",
+]
