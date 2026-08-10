@@ -53,10 +53,16 @@ class RetrievalService:
             else self._max_returned_chunks
         )
 
-        logger.info("retrieval_started query_length=%s top_k=%s", query_length, top_k)
+        filters = self._build_filters(request)
+        logger.info(
+            "retrieval_started query_length=%s top_k=%s filtered=%s",
+            query_length,
+            top_k,
+            bool(filters),
+        )
 
         query_vector = self._embed_query(query, query_length)
-        search_result = self._retrieve(query_vector, top_k, min_score, query_length)
+        search_result = self._retrieve(query_vector, top_k, min_score, query_length, filters)
         ranked = self._rerank(search_result.chunks, max_returned_chunks, query_length)
 
         elapsed_ms = round((time.perf_counter() - start) * 1000, 2)
@@ -86,11 +92,26 @@ class RetrievalService:
         )
         return query_vector
 
+    def _build_filters(self, request: SearchRequest) -> dict[str, object] | None:
+        filters: dict[str, object] = {}
+        if request.subject is not None:
+            filters["subject"] = request.subject.value
+        if request.document_id is not None:
+            filters["document_id"] = str(request.document_id)
+        return filters or None
+
     def _retrieve(
-        self, query_vector: list[float], top_k: int, min_score: float, query_length: int
+        self,
+        query_vector: list[float],
+        top_k: int,
+        min_score: float,
+        query_length: int,
+        filters: dict[str, object] | None,
     ) -> SearchResult:
         try:
-            search_result = self._retriever.search(query_vector, top_k=top_k, min_score=min_score)
+            search_result = self._retriever.search(
+                query_vector, top_k=top_k, min_score=min_score, filters=filters
+            )
         except SearchError:
             logger.error("retrieval_failed query_length=%s stage=vector_search", query_length)
             raise

@@ -11,7 +11,11 @@ class Retriever(ABC):
 
     @abstractmethod
     def search(
-        self, query_vector: list[float], top_k: int, min_score: float | None = None
+        self,
+        query_vector: list[float],
+        top_k: int,
+        min_score: float | None = None,
+        filters: dict[str, object] | None = None,
     ) -> SearchResult: ...
 
     @abstractmethod

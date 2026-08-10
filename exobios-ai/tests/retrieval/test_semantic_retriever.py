@@ -30,10 +30,10 @@ class FakeVectorStore:
     def document_exists(self, document_id) -> bool:
         return False
 
-    def search(self, query_vector, top_k, min_score=None):
+    def search(self, query_vector, top_k, min_score=None, filters=None):
         if self.fail_with is not None:
             raise self.fail_with
-        self.calls.append((query_vector, top_k, min_score))
+        self.calls.append((query_vector, top_k, min_score, filters))
         return self.matches
 
     def health(self) -> bool:
@@ -63,7 +63,7 @@ def test_search_maps_vector_matches_to_retrieved_chunks():
     assert retrieved.language == "en"
     assert retrieved.version == document.version
     assert retrieved.source == document.source
-    assert store.calls == [([0.1, 0.2], 5, 0.5)]
+    assert store.calls == [([0.1, 0.2], 5, 0.5, None)]
 
 
 def test_search_defaults_missing_optional_payload_fields():
@@ -114,6 +114,57 @@ def test_search_wraps_vector_store_errors_as_search_error():
 
     with pytest.raises(SearchError):
         retriever.search([0.1], top_k=5)
+
+
+def test_search_maps_textbook_payload_fields_when_present():
+    document = make_document_metadata(filename="physiology.pdf")
+    chunk = make_chunk(document.id, text="the cardiac cycle...")
+    payload = make_search_payload(
+        document=document,
+        chunk=chunk,
+        subject="PHYSIOLOGY",
+        title="Guyton and Hall Textbook of Medical Physiology",
+        edition="14th",
+        chapter_number="9",
+        chapter_title="Heart Muscle",
+        subsection_title="Diastole",
+        pdf_page_start=117,
+        pdf_page_end=119,
+        printed_page_start=106,
+        printed_page_end=108,
+        page_classification="MAIN_CONTENT",
+    )
+    match = VectorMatch(id=payload["chunk_id"], score=0.9, payload=payload)
+    store = FakeVectorStore(matches=[match])
+    retriever = SemanticRetriever(vector_store=store)
+
+    retrieved = retriever.search([0.1], top_k=1).chunks[0]
+
+    assert retrieved.subject.value == "PHYSIOLOGY"
+    assert retrieved.title == "Guyton and Hall Textbook of Medical Physiology"
+    assert retrieved.chapter_number == "9"
+    assert retrieved.chapter_title == "Heart Muscle"
+    assert retrieved.subsection_title == "Diastole"
+    assert retrieved.pdf_page_start == 117
+    assert retrieved.pdf_page_end == 119
+    assert retrieved.printed_page_start == 106
+    assert retrieved.printed_page_end == 108
+    assert retrieved.page_classification == "MAIN_CONTENT"
+
+
+def test_search_leaves_textbook_fields_none_for_clinical_payload():
+    document = make_document_metadata()
+    chunk = make_chunk(document.id)
+    payload = make_search_payload(document=document, chunk=chunk)
+    match = VectorMatch(id=payload["chunk_id"], score=0.5, payload=payload)
+    store = FakeVectorStore(matches=[match])
+    retriever = SemanticRetriever(vector_store=store)
+
+    retrieved = retriever.search([0.1], top_k=1).chunks[0]
+
+    assert retrieved.subject is None
+    assert retrieved.chapter_number is None
+    assert retrieved.pdf_page_start is None
 
 
 def test_health_delegates_to_vector_store():

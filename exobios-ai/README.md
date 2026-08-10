@@ -12,6 +12,8 @@ conflate them:
 |---|---|
 | **`POST /analyze` (the HTTP API the backend calls)** | Still a stub. Always returns a safe, deterministic placeholder — no RAG, no LLM call, no clinical claim. This is intentional: the backend integration was proven first (AI-1), before any AI logic existed. |
 | **The RAG pipeline (ingestion → embeddings → retrieval → prompting → generation)** | Fully implemented and testable end-to-end, but **not yet wired into `POST /analyze`**. It's exercised today via [`scripts/demo_pipeline.py`](scripts/demo_pipeline.py), not through the API. |
+| **Document storage + registry (AI-7A)** | Implemented and persistent. Original PDFs live under `data/source_documents/<subject>/` (git-ignored) behind a `DocumentStorage` abstraction; metadata is registered via [`scripts/register_document.py`](scripts/register_document.py) into a persistent `SQLiteDocumentRegistry`. Registration only — **no chunking, embedding, or Qdrant insertion happens yet** (that's a later phase). |
+| **Textbook extraction + chunking (AI-7B)** | Implemented, dry-run only. `scripts/prepare_textbook.py` resolves a registered document through `DocumentStorage`, extracts text page-by-page (PyMuPDF), detects chapter/unit/section structure heuristically, and produces token-budgeted, structure-aware chunks — written to `data/extracted/<document_id>/pages.jsonl` and `data/processed/<document_id>/{chunks.jsonl,summary.json}` for inspection. **Still no embeddings and no Qdrant writes** (that's AI-7C). |
 
 In other words: the clinical AI logic exists and works, it's just not plugged
 into the endpoint the backend hits yet. Connecting them is the next phase of
@@ -148,9 +150,35 @@ exobios-ai/
 │       ├── models/                     # GenerationRequest / GenerationResponse / usage
 │       ├── services/                   # GenerationService
 │       └── factory.py                  # build_default_generation_service()
+│   │
+│   ├── storage/                      # Document storage abstraction (AI-7A)
+│   │   ├── interface.py                # DocumentStorage — read/exists/list by logical key
+│   │   └── local_storage.py            # LocalDocumentStorage — confined to DOCUMENT_STORAGE_ROOT
+│   │
+│   └── ingestion/
+│       ├── registry/                 # (existing package, extended in AI-7A)
+│       │   ├── interface.py            # DocumentRegistry — now with filterable list_all()
+│       │   ├── in_memory_registry.py   # process-local, resets on restart (tests / lightweight use)
+│       │   └── sqlite_registry.py      # persistent local registry (AI-7A default for the POC)
+│       │
+│       └── textbook/                 # Textbook extraction + chunking (AI-7B)
+│           ├── page_extractor.py       # TextbookPageExtractor — PyMuPDF, page/structure/font baseline
+│           ├── structure_detector.py   # chapter/unit/heading pattern + font-size heuristics
+│           ├── chunker.py              # TextbookChunker — token-budgeted, boundary-preferring
+│           ├── noise_filter.py         # drops empty/boilerplate chunks (Contents, bare page numbers)
+│           ├── artifacts.py            # writes pages.jsonl / chunks.jsonl / summary.json
+│           ├── service.py              # TextbookPreparationService — orchestrates the above
+│           └── factory.py              # build_default_textbook_preparation_service()
 │
 ├── scripts/
-│   └── demo_pipeline.py           # Runs the full pipeline end-to-end outside the API
+│   ├── demo_pipeline.py           # Runs the full RAG pipeline end-to-end outside the API
+│   ├── register_document.py       # Registers a textbook's metadata (AI-7A) — no ingestion
+│   └── prepare_textbook.py        # Extracts + chunks a registered textbook (AI-7B) — dry-run only
+├── data/                          # Local document storage (AI-7A) — see data/README.md
+│   ├── source_documents/            # original PDFs, git-ignored, one folder per subject
+│   ├── extracted/<document_id>/     # pages.jsonl per processed book (AI-7B, git-ignored)
+│   ├── processed/<document_id>/     # chunks.jsonl + summary.json per book (AI-7B, git-ignored)
+│   └── document_registry.db         # SQLite registry (git-ignored, created on first run)
 ├── imnci_chart_booklet.pdf        # Sample clinical guideline used by the demo script
 ├── tests/                         # Mirrors app/ — one directory per pipeline stage
 ├── Dockerfile
@@ -219,9 +247,56 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | `LLM_TIMEOUT_SECONDS` | `30.0` | |
 | `LLM_MAX_RETRIES` | `2` | |
 | `LLM_CONTEXT_WINDOW` | *(unset)* | Optional — when set, `GenerationService` runs a prompt-budget pre-flight check against it |
+| `DOCUMENT_STORAGE_ROOT` | `./data/source_documents` | Root `LocalDocumentStorage` confines all reads to. Relative paths resolve against the `exobios-ai` project root, never the process's current working directory. |
+| `DOCUMENT_REGISTRY_DB_PATH` | `./data/document_registry.db` | SQLite file `SQLiteDocumentRegistry` persists to; created (including parent directories) automatically on first use. Resolved the same way as `DOCUMENT_STORAGE_ROOT`. |
+| `DOCUMENT_EXTRACTED_ROOT` | `./data/extracted` | Where `prepare_textbook.py` writes `pages.jsonl` per processed document. |
+| `DOCUMENT_PROCESSED_ROOT` | `./data/processed` | Where `prepare_textbook.py` writes `chunks.jsonl`/`summary.json` per processed document. |
+| `TEXTBOOK_CHUNK_TARGET_TOKENS` | `650` | Preferred chunk size; a chunk is flushed at a section/subsection boundary once at/over this. |
+| `TEXTBOOK_CHUNK_MAX_TOKENS` | `800` | Hard ceiling; forces a flush before this is exceeded (except a single block that alone exceeds it, which is sentence-split as a last resort). |
+| `TEXTBOOK_CHUNK_OVERLAP_TOKENS` | `100` | Trailing-text overlap carried into the next chunk for a target/max-triggered split — never applied across a chapter/unit boundary. |
+| `TEXTBOOK_MIN_CHUNK_TOKENS` | `20` | Below this (and short on alphabetic content), a finalized chunk is dropped as noise (e.g. a bare "Contents" heading) rather than emitted. |
 
 `.env` is loaded automatically in local development and is git-ignored. Never
 commit a real key — `.env.example` only ships placeholders.
+
+## Document storage & registry (AI-7A)
+
+Original textbook PDFs are never committed to this repo. The workflow:
+
+```text
+Google Drive
+  → manually download the approved textbook
+  → place the original PDF under data/source_documents/<subject>/
+  → python scripts/register_document.py register --file ... --subject ... --title ...
+  → (a later phase ingests it — chunking/embeddings/Qdrant are not run by this phase)
+```
+
+- **`data/source_documents/<subject>/`** — where originals live locally. Git-ignored (see `data/README.md`); only tracked via `.gitkeep` placeholders so the folder structure survives a fresh clone.
+- **`DocumentStorage`** (`app/storage/interface.py`) — read-only abstraction (`read`/`exists`/`list`) keyed by a portable logical key like `physiology/book.pdf`, not an absolute path. `LocalDocumentStorage` is the only implementation today, confined to `DOCUMENT_STORAGE_ROOT` with path-traversal protection; an object-storage-backed implementation (S3/R2/GCS/Azure/MinIO) can be added later by implementing the same interface, with no caller changes.
+- **`DocumentRegistry`** (`app/ingestion/registry/interface.py`) — unchanged abstraction, now with two implementations: `InMemoryDocumentRegistry` (process-local, used by tests and lightweight runs) and `SQLiteDocumentRegistry` (persists to `DOCUMENT_REGISTRY_DB_PATH`, survives restarts — the default for the textbook POC).
+- **`scripts/register_document.py`** — the manual registration workflow for the initial ~5 PDFs. Computes the checksum and generates the `document_id` itself; you only supply book metadata (subject, title, author, edition, publisher, publication year, approval status). See `--help` for the full flag list, or `data/README.md` for the end-to-end workflow.
+
+This phase registers metadata only — it does not parse, chunk, embed, or insert anything into Qdrant. That's later work.
+
+## Textbook extraction & chunking (AI-7B)
+
+Extracts and chunks a *registered* textbook — dry-run only, no embeddings, no Qdrant:
+
+```text
+document_id → DocumentRegistry → storage_key → DocumentStorage → StorageBackedFileLoader
+  → TextbookPageExtractor (PyMuPDF: pages, chapter/unit/heading detection, folio numbers)
+  → TextbookChunker (token-budgeted, boundary-preferring, never crosses a chapter)
+  → data/extracted/<document_id>/pages.jsonl, data/processed/<document_id>/{chunks.jsonl,summary.json}
+```
+
+```bash
+python scripts/prepare_textbook.py --document-id <uuid> --show-chunks 5
+python scripts/prepare_textbook.py --all-approved-poc
+```
+
+- **`TextbookPageExtractor`** — page-by-page PyMuPDF text extraction, preserving physical PDF page numbers. Chapter/unit headings are matched by keyword pattern ("Chapter 9", "UNIT III", "SECTION THREE"); finer section/subsection headings use a font-size-relative heuristic (no keyword prefix required). Both signals are best-effort and deterministic — never an LLM call. Running headers/footers and table-of-contents entries are filtered out before structure detection runs (see the module docstrings for the specific real-book edge cases this handles).
+- **`TextbookChunker`** — accumulates content toward `TEXTBOOK_CHUNK_TARGET_TOKENS`, preferring to break at chapter → section → subsection → paragraph boundaries in that order, falling back to sentence-splitting only for a single block that alone exceeds `TEXTBOOK_CHUNK_MAX_TOKENS`. Every chunk carries a short synthesized context prefix ("Chapter 9: Heart Muscle > The Cardiac Cycle") so it's meaningful in isolation once retrieved independently.
+- **Registry is never mutated by this phase** — a document stays exactly as AI-7A left it (`PENDING`, `chunk_count=0`); AI-7C decides what "ingested" means once embeddings actually run.
 
 ## Running the RAG pipeline demo
 

@@ -20,10 +20,16 @@ class SemanticRetriever(Retriever):
         self._vector_store = vector_store
 
     def search(
-        self, query_vector: list[float], top_k: int, min_score: float | None = None
+        self,
+        query_vector: list[float],
+        top_k: int,
+        min_score: float | None = None,
+        filters: dict[str, object] | None = None,
     ) -> SearchResult:
         try:
-            matches = self._vector_store.search(query_vector, top_k=top_k, min_score=min_score)
+            matches = self._vector_store.search(
+                query_vector, top_k=top_k, min_score=min_score, filters=filters
+            )
         except Exception as exc:
             raise SearchError(reason=str(exc)) from exc
 
@@ -36,6 +42,9 @@ class SemanticRetriever(Retriever):
         # Payload comes from an external system (Qdrant), so every field is
         # read defensively — a system boundary is exactly where that's
         # warranted, rather than trusting it matches what upsert_chunks wrote.
+        # The textbook-specific keys (subject through page_classification)
+        # are simply absent on clinical-guideline payloads, so .get()
+        # correctly leaves them None for that path.
         payload = match.payload
         return RetrievedChunk(
             document_id=payload["document_id"],
@@ -50,4 +59,16 @@ class SemanticRetriever(Retriever):
             tags=payload.get("tags") or [],
             version=payload["version"],
             source=payload["source"],
+            subject=payload.get("subject"),
+            title=payload.get("title"),
+            edition=payload.get("edition"),
+            unit_or_section=payload.get("unit_or_section"),
+            chapter_number=payload.get("chapter_number"),
+            chapter_title=payload.get("chapter_title"),
+            subsection_title=payload.get("subsection_title"),
+            pdf_page_start=payload.get("pdf_page_start"),
+            pdf_page_end=payload.get("pdf_page_end"),
+            printed_page_start=payload.get("printed_page_start"),
+            printed_page_end=payload.get("printed_page_end"),
+            page_classification=payload.get("page_classification"),
         )

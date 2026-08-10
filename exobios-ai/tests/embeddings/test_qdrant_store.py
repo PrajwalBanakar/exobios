@@ -195,3 +195,75 @@ def test_health_returns_false_when_client_unreachable(fake_qdrant_client):
     store = _store(fake_qdrant_client)
 
     assert store.health() is False
+
+
+def test_search_applies_filters_as_qdrant_filter(fake_qdrant_client):
+    fake_qdrant_client.query_result = []
+    store = _store(fake_qdrant_client)
+
+    store.search(query_vector=[0.1], top_k=5, filters={"subject": "PHYSIOLOGY"})
+
+    call = fake_qdrant_client.query_calls[0]
+    assert call["query_filter"] is not None
+    condition = call["query_filter"].must[0]
+    assert condition.key == "subject"
+    assert condition.match.value == "PHYSIOLOGY"
+
+
+def test_search_without_filters_sends_no_query_filter(fake_qdrant_client):
+    fake_qdrant_client.query_result = []
+    store = _store(fake_qdrant_client)
+
+    store.search(query_vector=[0.1], top_k=5)
+
+    assert fake_qdrant_client.query_calls[0]["query_filter"] is None
+
+
+def test_upsert_raw_sends_points_built_from_tuples(fake_qdrant_client):
+    store = _store(fake_qdrant_client)
+
+    store.upsert_raw([("id-1", [0.1, 0.2], {"document_id": "doc-1", "text": "hello"})])
+
+    assert len(fake_qdrant_client.upserted) == 1
+    collection_name, points = fake_qdrant_client.upserted[0]
+    assert collection_name == "exobios_chunks"
+    assert points[0].id == "id-1"
+    assert points[0].vector == [0.1, 0.2]
+    assert points[0].payload == {"document_id": "doc-1", "text": "hello"}
+
+
+def test_upsert_raw_skips_client_call_for_empty_list(fake_qdrant_client):
+    store = _store(fake_qdrant_client)
+
+    store.upsert_raw([])
+
+    assert fake_qdrant_client.upserted == []
+
+
+def test_upsert_raw_wraps_client_errors(fake_qdrant_client):
+    fake_qdrant_client.fail_with = RuntimeError("timeout")
+    store = _store(fake_qdrant_client)
+
+    with pytest.raises(VectorStoreError):
+        store.upsert_raw([("id-1", [0.1], {})])
+
+
+def test_count_for_document_returns_client_count(fake_qdrant_client):
+    fake_qdrant_client.count_result = 42
+    store = _store(fake_qdrant_client)
+    document_id = make_document_metadata().id
+
+    count = store.count_for_document(document_id)
+
+    assert count == 42
+    condition = fake_qdrant_client.count_calls[0].must[0]
+    assert condition.key == "document_id"
+    assert condition.match.value == str(document_id)
+
+
+def test_count_for_document_wraps_client_errors(fake_qdrant_client):
+    fake_qdrant_client.fail_with = RuntimeError("boom")
+    store = _store(fake_qdrant_client)
+
+    with pytest.raises(VectorStoreError):
+        store.count_for_document(make_document_metadata().id)

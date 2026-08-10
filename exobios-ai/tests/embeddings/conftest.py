@@ -40,6 +40,8 @@ class FakeQdrantClient:
         self.scroll_result: tuple[list, None] = ([], None)
         self.query_result: list = []
         self.query_calls: list[dict] = []
+        self.count_result: int = 0
+        self.count_calls: list[object] = []
         self.fail_with: Exception | None = None
 
     def get_collections(self):
@@ -69,7 +71,15 @@ class FakeQdrantClient:
             raise self.fail_with
         return self.scroll_result
 
-    def query_points(self, collection_name, query, limit, score_threshold=None, with_payload=True):
+    def query_points(
+        self,
+        collection_name,
+        query,
+        limit,
+        query_filter=None,
+        score_threshold=None,
+        with_payload=True,
+    ):
         if self.fail_with is not None:
             raise self.fail_with
         self.query_calls.append(
@@ -77,10 +87,17 @@ class FakeQdrantClient:
                 "collection_name": collection_name,
                 "query": query,
                 "limit": limit,
+                "query_filter": query_filter,
                 "score_threshold": score_threshold,
             }
         )
         return SimpleNamespace(points=self.query_result)
+
+    def count(self, collection_name, count_filter=None, exact=True):
+        if self.fail_with is not None:
+            raise self.fail_with
+        self.count_calls.append(count_filter)
+        return SimpleNamespace(count=self.count_result)
 
 
 @pytest.fixture

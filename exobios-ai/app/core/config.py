@@ -1,7 +1,15 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# app/core/config.py -> app/core -> app -> exobios-ai. Anchoring resolution
+# here (rather than leaving relative paths to resolve against whatever the
+# process's current working directory happens to be) means DOCUMENT_STORAGE_ROOT
+# and DOCUMENT_REGISTRY_DB_PATH behave the same whether the app is started from
+# exobios-ai/, from a script in scripts/, or by a test runner from anywhere else.
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 class Settings(BaseSettings):
@@ -57,6 +65,85 @@ class Settings(BaseSettings):
     # this is configured, since not every deployment wants to hardcode a
     # specific model's context window here.
     llm_context_window: int | None = Field(default=None, gt=0, alias="LLM_CONTEXT_WINDOW")
+
+    # ── Document storage + registry (AI-7A) ──────────────────────────────
+    # Relative paths are resolved against _PROJECT_ROOT (see
+    # document_storage_root_path / document_registry_db_path_resolved below),
+    # not the process's current working directory.
+    document_storage_root: str = Field(
+        default="./data/source_documents", alias="DOCUMENT_STORAGE_ROOT"
+    )
+    document_registry_db_path: str = Field(
+        default="./data/document_registry.db", alias="DOCUMENT_REGISTRY_DB_PATH"
+    )
+    document_extracted_root: str = Field(
+        default="./data/extracted", alias="DOCUMENT_EXTRACTED_ROOT"
+    )
+    document_processed_root: str = Field(
+        default="./data/processed", alias="DOCUMENT_PROCESSED_ROOT"
+    )
+
+    @property
+    def document_storage_root_path(self) -> Path:
+        path = Path(self.document_storage_root)
+        return path if path.is_absolute() else (_PROJECT_ROOT / path).resolve()
+
+    @property
+    def document_registry_db_path_resolved(self) -> Path:
+        path = Path(self.document_registry_db_path)
+        return path if path.is_absolute() else (_PROJECT_ROOT / path).resolve()
+
+    @property
+    def document_extracted_root_path(self) -> Path:
+        path = Path(self.document_extracted_root)
+        return path if path.is_absolute() else (_PROJECT_ROOT / path).resolve()
+
+    @property
+    def document_processed_root_path(self) -> Path:
+        path = Path(self.document_processed_root)
+        return path if path.is_absolute() else (_PROJECT_ROOT / path).resolve()
+
+    # ── Textbook chunking (AI-7B) ─────────────────────────────────────────
+    textbook_chunk_target_tokens: int = Field(
+        default=650, gt=0, alias="TEXTBOOK_CHUNK_TARGET_TOKENS"
+    )
+    textbook_chunk_max_tokens: int = Field(default=800, gt=0, alias="TEXTBOOK_CHUNK_MAX_TOKENS")
+    textbook_chunk_overlap_tokens: int = Field(
+        default=100, ge=0, alias="TEXTBOOK_CHUNK_OVERLAP_TOKENS"
+    )
+    textbook_min_chunk_tokens: int = Field(default=20, ge=0, alias="TEXTBOOK_MIN_CHUNK_TOKENS")
+
+    # ── Textbook RAG (AI-7C) ──────────────────────────────────────────────
+    # A separate collection from `qdrant_collection` (used by the existing
+    # IMNCI clinical-guideline demo) — deliberately isolated so textbook
+    # ingestion can never leak chunks into, or be searched by, that
+    # existing working pipeline. One collection for every subject (not one
+    # per subject) — subject is payload metadata, filtered at query time.
+    qdrant_textbook_collection: str = Field(
+        default="exobios_knowledge", alias="QDRANT_TEXTBOOK_COLLECTION"
+    )
+    # Plain string (not the GroundingMode enum) so config.py stays free of
+    # imports from app.textbook_qa — validated against the known set below;
+    # consumers convert via GroundingMode(settings.knowledge_grounding_mode).
+    # Only STRICT is actually implemented in this phase (see PART 11 of the
+    # AI-7C+ spec) — AUGMENTED/GENERAL are accepted here so the setting/enum
+    # shape doesn't need to change later, but selecting them today raises.
+    knowledge_grounding_mode: str = Field(default="STRICT", alias="KNOWLEDGE_GROUNDING_MODE")
+    # Chosen empirically against real retrieval score distributions — see
+    # the AI-7C completion report for the observed valid-vs-unrelated-query
+    # score gap this value was picked from.
+    textbook_min_retrieval_score: float = Field(
+        default=0.5, ge=0.0, le=1.0, alias="TEXTBOOK_MIN_RETRIEVAL_SCORE"
+    )
+
+    @field_validator("knowledge_grounding_mode")
+    @classmethod
+    def grounding_mode_must_be_known(cls, value: str) -> str:
+        allowed = {"STRICT", "AUGMENTED", "GENERAL"}
+        normalized = value.strip().upper()
+        if normalized not in allowed:
+            raise ValueError(f"KNOWLEDGE_GROUNDING_MODE must be one of {sorted(allowed)}")
+        return normalized
 
     @field_validator("ai_api_key")
     @classmethod

@@ -47,13 +47,13 @@ class FakeRetriever:
     ) -> None:
         self.result = result if result is not None else SearchResult(chunks=[])
         self.fail_with = fail_with
-        self.calls: list[tuple[list[float], int, float | None]] = []
+        self.calls: list[tuple[list[float], int, float | None, dict | None]] = []
         self.health_result = True
 
-    def search(self, query_vector, top_k, min_score=None) -> SearchResult:
+    def search(self, query_vector, top_k, min_score=None, filters=None) -> SearchResult:
         if self.fail_with is not None:
             raise self.fail_with
-        self.calls.append((query_vector, top_k, min_score))
+        self.calls.append((query_vector, top_k, min_score, filters))
         return self.result
 
     def health(self) -> bool:

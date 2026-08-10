@@ -1,6 +1,9 @@
+from uuid import uuid4
+
 import pytest
 
 from app.embeddings.exceptions import EmbeddingGenerationError
+from app.ingestion.models.document import Subject
 from app.retrieval.exceptions import RetrievalError, SearchError
 from app.retrieval.models.retrieval import SearchRequest, SearchResult
 from app.retrieval.services.retrieval_service import RetrievalService
@@ -45,7 +48,7 @@ def test_search_request_overrides_service_defaults():
 
     service.search(SearchRequest(query="q", top_k=3, min_score=0.75, max_returned_chunks=2))
 
-    _, top_k, min_score = retriever.calls[0]
+    _, top_k, min_score, _ = retriever.calls[0]
     assert top_k == 3
     assert min_score == 0.75
     assert reranker.calls[0][1] == 2
@@ -66,10 +69,37 @@ def test_search_uses_configured_defaults_when_request_omits_overrides():
 
     service.search(SearchRequest(query="q"))
 
-    _, top_k, min_score = retriever.calls[0]
+    _, top_k, min_score, _ = retriever.calls[0]
     assert top_k == 7
     assert min_score == 0.42
     assert reranker.calls[0][1] == 3
+
+
+def test_search_builds_filters_from_subject_and_document_id():
+    document_id = uuid4()
+    retriever = FakeRetriever(result=SearchResult(chunks=[]))
+    reranker = FakeReranker()
+    provider = FakeEmbeddingProvider()
+    service = RetrievalService(embedding_provider=provider, retriever=retriever, reranker=reranker)
+
+    service.search(
+        SearchRequest(query="cardiac cycle", subject=Subject.PHYSIOLOGY, document_id=document_id)
+    )
+
+    _, _, _, filters = retriever.calls[0]
+    assert filters == {"subject": "PHYSIOLOGY", "document_id": str(document_id)}
+
+
+def test_search_omits_filters_when_subject_and_document_id_are_unset():
+    retriever = FakeRetriever(result=SearchResult(chunks=[]))
+    reranker = FakeReranker()
+    provider = FakeEmbeddingProvider()
+    service = RetrievalService(embedding_provider=provider, retriever=retriever, reranker=reranker)
+
+    service.search(SearchRequest(query="cardiac cycle"))
+
+    _, _, _, filters = retriever.calls[0]
+    assert filters is None
 
 
 def test_search_propagates_embedding_generation_error():

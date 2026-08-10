@@ -59,6 +59,30 @@ class QdrantVectorStore(VectorStore):
         except Exception as exc:
             raise VectorStoreError(reason=str(exc)) from exc
 
+    def upsert_raw(self, points: list[tuple[str, list[float], dict[str, object]]]) -> None:
+        if not points:
+            return
+
+        qdrant_points = [
+            models.PointStruct(id=point_id, vector=vector, payload=payload)
+            for point_id, vector, payload in points
+        ]
+        try:
+            self._client.upsert(collection_name=self._collection_name, points=qdrant_points)
+        except Exception as exc:
+            raise VectorStoreError(reason=str(exc)) from exc
+
+    def count_for_document(self, document_id: UUID) -> int:
+        try:
+            result = self._client.count(
+                collection_name=self._collection_name,
+                count_filter=self._document_filter(document_id),
+                exact=True,
+            )
+        except Exception as exc:
+            raise VectorStoreError(reason=str(exc)) from exc
+        return result.count
+
     def delete_document(self, document_id: UUID) -> None:
         try:
             self._client.delete(
@@ -80,12 +104,18 @@ class QdrantVectorStore(VectorStore):
         return len(points) > 0
 
     def search(
-        self, query_vector: list[float], top_k: int, min_score: float | None = None
+        self,
+        query_vector: list[float],
+        top_k: int,
+        min_score: float | None = None,
+        filters: dict[str, object] | None = None,
     ) -> list[VectorMatch]:
+        query_filter = self._build_filter(filters) if filters else None
         try:
             response = self._client.query_points(
                 collection_name=self._collection_name,
                 query=query_vector,
+                query_filter=query_filter,
                 limit=top_k,
                 score_threshold=min_score,
                 with_payload=True,
@@ -111,6 +141,17 @@ class QdrantVectorStore(VectorStore):
                 models.FieldCondition(
                     key=_DOCUMENT_ID_KEY, match=models.MatchValue(value=str(document_id))
                 )
+            ]
+        )
+
+    def _build_filter(self, filters: dict[str, object]) -> models.Filter:
+        # Exact-match AND across every provided key — sufficient for
+        # subject/document_id filtering; extend here if a future caller
+        # genuinely needs OR/range conditions.
+        return models.Filter(
+            must=[
+                models.FieldCondition(key=key, match=models.MatchValue(value=value))
+                for key, value in filters.items()
             ]
         )
 
