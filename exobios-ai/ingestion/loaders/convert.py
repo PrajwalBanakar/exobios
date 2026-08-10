@@ -16,7 +16,7 @@ from schemas.step import StepResult, StepStatus
 logger = logging.getLogger(__name__)
 
 pipeline_options = PdfPipelineOptions()
-pipeline_options.do_ocr = False
+pipeline_options.do_ocr = True
 
 _converter = DocumentConverter(
     format_options={
