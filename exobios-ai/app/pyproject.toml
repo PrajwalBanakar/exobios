@@ -1,0 +1,27 @@
+[project]
+name = "app"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.141.1",
+    "fastembed>=0.8.0",
+    "groq>=1.6.0",
+    "langchain",
+    "langgraph>=1.2.10",
+    "langsmith>=0.10.15",
+    "pydantic-settings>=2.14.2",
+    "pymongo>=4.17.0",
+    "qdrant-client>=1.18.0",
+    "requests>=2.34.2",
+    "uvicorn[standard]>=0.52.1",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=8.4.2",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.16.1",
+]

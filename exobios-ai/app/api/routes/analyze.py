@@ -2,30 +2,29 @@ import logging
 
 from fastapi import APIRouter, Depends
 
-from app.api.dependencies import verify_api_key
-from app.schemas.analyze import AiRequest, AiResponse
-from app.services.analysis_service import generate_placeholder_response
+from api.dependencies import verify_api_key
+from core.logging_config import request_id_ctx
+from graph.builder import assessment_graph
+from repositories.persistence import persist_state
+from schemas.request import AiRequest
+from schemas.response import AssessmentResponse
+from schemas.state_object import AssessmentState
 
 router = APIRouter()
 logger = logging.getLogger("app.analyze")
 
 
-@router.post(
-    "/analyze",
-    response_model=AiResponse,
-    dependencies=[Depends(verify_api_key)],
-    tags=["analyze"],
-)
-async def analyze(payload: AiRequest) -> AiResponse:
-    # Safe subset only: never log complaint text, symptom descriptions,
-    # history, medications, allergies, or other patient-identifying details.
-    logger.info(
-        "assessment_id=%s complaint_category=%s symptom_count=%s vitals_provided=%s",
-        payload.assessment_id,
-        payload.complaint_category,
-        len(payload.symptoms),
-        payload.vitals is not None,
-    )
-    response = generate_placeholder_response(payload)
-    logger.info("assessment_id=%s response_status=%s", payload.assessment_id, response.status)
-    return response
+@router.post("/analyze", response_model=AssessmentResponse, dependencies=[Depends(verify_api_key)])
+def analyze(request: AiRequest) -> AssessmentResponse:
+    request_id_ctx.set(str(request.assessment_id))
+    logger.info(f"starting analysis for assessment_id={request.assessment_id}")
+
+    initial_state = AssessmentState(assessment_id=request.assessment_id, patient_input=request)
+
+    final_state_dict = assessment_graph.invoke(initial_state)
+    final_state = AssessmentState.model_validate(final_state_dict)
+
+    persist_state(final_state, "final")
+
+    logger.info(f"analysis complete for assessment_id={request.assessment_id}")
+    return AssessmentResponse.from_state(final_state)

@@ -1,0 +1,87 @@
+<!-- image -->
+
+## TREATMENT GUIDELINES
+
+## Treatment of Malaria (Guidelines for Clinicians)
+
+## Treatment Table
+
+[The Treatment Table is available in PDF format at http://www.cdc.gov/malaria/resources/pdf/treatmenttable.pdf](http://www.cdc.gov/malaria/resources/pdf/treatmenttable.pdf)
+
+## Reporting
+
+We encourage clinicians to report all cases of laboratory-confirmed malaria to help CDC's surveillance efforts. Refer to our information on the Malaria Case Surveillance Report Form (http://www.cdc.gov/malaria/report.html).
+
+## Evaluation and Diagnosis
+
+Because malaria cases are seen relatively rarely in North America, misdiagnosis by clinicians and laboratorians has been a commonly documented problem in published reports. However, malaria may be a common illness in areas where it is transmitted and therefore the diagnosis of malaria should routinely be considered for any febrile person who has traveled to an area with known malaria transmission in the past several months preceding symptom onset.
+
+Symptoms of malaria are generally non-specific and most commonly consist of fever, malaise, weakness, gastrointestinal complaints (nausea, vomiting, diarrhea), neurologic complaints (dizziness, confusion, disorientation, coma), headache, back pain, myalgia, chills, and/or cough. The diagnosis of malaria should also be considered in any person with fever of unknown origin regardless of travel history.
+
+Patients suspected of having malaria infection should be urgently evaluated. Treatment for malaria should not be initiated until the diagnosis has been confirmed by laboratory investigations. "Presumptive treatment" without the benefit of laboratory confirmation should be reserved for extreme circumstances (strong clinical suspicion, severe disease, impossibility of obtaining prompt laboratory confirmation, usually by microscopy).
+
+Laboratory diagnosis of malaria can be made through microscopic examination of thick and thin blood smears. Thick blood smears are more sensitive in detecting malaria parasites because the blood is more concentrated allowing for a greater volume of blood to be examined; however, thick smears are more difficult to read. Thin smears aid in parasite species identification and quantification. Blood films need to be read immediately; off-hours, qualified personnel who can perform this function should be on-call. A negative blood smear makes the diagnosis of malaria unlikely. However, because non-immune individuals may be symptomatic at very low parasite densities that initially may be undetectable by blood smear, blood smears should be repeated every 12-24 hours for a total of 3 sets. If all 3 are negative, the diagnosis of malaria has been essentially ruled out.
+
+After malaria parasites are detected on a blood smear, the parasite density should then be estimated. The parasite density can be estimated by looking at a monolayer of red blood cells (RBCs) on the thin smear using the oil immersion objective at 100x. The slide should be examined where the RBCs are more or less touching (approximately 400 RBCs per field). The parasite density can then be estimated from the percentage of infected RBCs, after counting 500 to 2000 RBCs.
+
+In addition to microscopy, other laboratory diagnostic tests are available. Several antigen detection tests (rapid diagnostic tests or RDTs) using a 'dipstick' or cassette format exist, but only one is approved for general diagnostic use in the United States. RDTs can more rapidly determine that the patient is infected with malaria, but they cannot confirm the species or the parasitemia. Laboratories that do not provide in-house on-the-spot microscopy services should maintain a stock of malaria RDTs so that they will be able to perform malaria diagnostic testing when urgently needed.
+
+Parasite nucleic acid detection using polymerase chain reaction (PCR) is more sensitive and specific than microscopy but can be performed only in reference laboratories and so results are not often available quickly enough for routine diagnosis. However, PCR is a very useful tool for confirmation of species and detecting of drug resistance mutations. CDC offers malaria drug resistance testing for all malaria diagnosed in the United States free of charge. Serologic tests, also performed in reference laboratories, can be used to assess past malaria experience but not current infection by malaria parasites. Your state health department or the CDC can be contacted for more information on utilizing one of these tests.
+
+## Treatment: General Approach
+
+It is preferable that treatment for malaria should not be initiated until the diagnosis has been established by laboratory investigations. "Presumptive treatment" without the benefit of laboratory confirmation should be reserved for extreme circumstances (strong clinical suspicion, severe disease, impossibility of obtaining prompt laboratory diagnosis).
+
+Once the diagnosis of malaria has been made, appropriate antimalarial treatment must be
+
+initiated immediately. Treatment should be guided by three main factors: · The infecting Plasmodium species · The clinical status of the patient · The drug susceptibility of the infecting parasites as determined by the geographic area
+
+- where the infection was acquired and the previous use of antimalarial medicines
+
+The infecting Plasmodium species : Determination of the infecting Plasmodium species for treatment purposes is important for three main reasons. Firstly, P. falciparum and P. knowlesi infections can cause rapidly progressive severe illness or death while the other species, P. vivax, P. ovale, or P. malariae, are less likely to cause severe manifestations. Secondly, P. vivax and P. ovale infections also require treatment for the hypnozoite forms that remain dormant in the liver and can cause a relapsing infection. Finally, P. falciparum and P. vivax species have different drug resistance patterns in differing geographic regions. For P. falciparum and P. knowlesi infections, the urgent initiation of appropriate therapy is especially critical.
+
+The clinical status of the patient : Patients diagnosed with malaria are generally categorized as having either uncomplicated or severe malaria. Patients diagnosed with uncomplicated malaria can be effectively treated with oral antimalarials. However, patients who have one or more of the following clinical criteria are considered to have manifestations mouth at 6, 24, and 48 hours after the initial dose for a total hydroxychloroquine dose of 1,550 mg base (=2,000 mg salt).
+
+In addition, any of the regimens listed below for the treatment of chloroquine-resistant malaria may be used for the treatment of chloroquine-sensitive malaria. Prompt initiation of an effective regimen is vitally important and so using any one of the effective regimens that readily at hand would be the preferred strategy.
+
+## P. falciparum or Species Not Identified - Acquired in Areas With Chloroquine Resistance
+
+For P. falciparum infections acquired in areas with chloroquine resistance, four treatment options are available. The first two treatment options are atovaquone-proguanil (Malarone) or artemether-lumefantrine (Coartem). These are fixed dose combination medicines that can be used for non-pregnant adult and pediatric patients. Both of these options are very efficacious. Quinine sulfate plus doxycycline, tetracycline, or clindamycin is the next treatment option. For the quinine sulfate combination options, quinine sulfate plus either doxycycline or tetracycline is generally preferred to quinine sulfate plus clindamycin because there are more data on the efficacy of quinine plus doxycycline or tetracycline. Quinine treatment should continue for 7 days for infections acquired in Southeast Asia and for 3 days for infections acquired in Africa or South America. The fourth option, mefloquine, is associated with rare but potentially severe neuropsychiatric reactions when used at treatment doses. We recommend this fourth option only when the other options cannot be used.
+
+For pediatric patients, the treatment options are the same as for adults except the drug dose is adjusted by patient weight. The pediatric dose should never exceed the recommended adult dose. Pediatric dosing may be difficult due to unavailability of noncapsule forms of quinine. If unable to provide pediatric doses of quinine, consider one of the other three options.
+
+If using a quinine-based regimen for children less than eight years old, doxycycline and tetracycline are generally not indicated; therefore, quinine can be given alone for a full 7 days regardless of where the infection was acquired or given in combination with clindamycin as recommended above. In rare instances, doxycycline or tetracycline can be used in combination with quinine in children less than eight years old if other treatment options are not available or are not tolerated, and the benefit of adding doxycycline or tetracycline is judged to outweigh the risk.
+
+If infections initially attributed to "species not identified" are subsequently diagnosed as being due to P. vivax or P. ovale , additional treatment with primaquine or tafenoquine should be administered (see P. vivax and P. ovale , below).
+
+## P. malariae and P. knowlesi
+
+There has been no widespread evidence of chloroquine resistance in P. malariae and P. knowlesi species; therefore, chloroquine (or hydroxychloroquine) may still be used for both of these infections. In addition, any of the regimens listed above for the treatment of chloroquine-resistant malaria may be used for the treatment of P. malariae and P. knowlesi infections.
+
+## P. vivax and P. ovale
+
+Chloroquine (or hydroxychloroquine) remains an effective choice for all P. vivax and P. ovale infections except for P. vivax infections acquired in Papua New Guinea or Indonesia. The regimens listed for the treatment of P. falciparum are also effective and may be used. Reports have confirmed a high prevalence of chloroquine-resistant P. vivax in these two specific areas. Rare cases of chloroquine-resistant P. vivax have also been documented in Burma (Myanmar), India, and Central and South America. Persons acquiring P. vivax infections from regions other than Papua New Guinea or Indonesia should initially be treated with chloroquine. If the patient does not respond to chloroquine, treatment should be changed to one of the two regimens recommended for chloroquine-resistant P. vivax infections, and your state health department and the CDC should be notified (CDC Malaria Hotline: (770) 488-7788 Monday-Friday 9am-5pm EST; (770) 488-7100 after hours, weekends, and holidays).
+
+Persons acquiring P. vivax infections in Papua New Guinea or Indonesia should initially be treated with a regimen recommended for chloroquine-resistant P. vivax infections. The three treatment regimens for chloroquine-resistant P. vivax infections are quinine sulfate plus doxycycline or tetracycline, or , Atovaquone-proguanil, or if other options are not available, mefloquine.
+
+In addition to requiring blood stage treatment, infections with P. vivax and P. ovale can relapse due to hypnozoites that remain dormant in the liver. To eradicate the hypnozoites, patients should be treated with either primaquine phosphate or tafenoquine. Tafenoquine can be used in those 16 years old and over, and is given as a single dose of 300 mg by mouth. If primaquine phosphate is used, CDC recommends a dose of 30 mg (base) by mouth daily for 14 days. Because both primaquine and tafenoquine can cause hemolytic anemia in persons with glucose-6-phosphate-dehydrogenase (G6PD) deficiency, persons must be tested for G6PD deficiency using a quantitative test prior to starting primaquine treatment. For persons with borderline G6PD deficiency or as an alternate to the above regimen, primaquine may be given at the dose of 45 mg (base) by mouth one time per week for 8 weeks; consultation with an expert in infectious disease and/or tropical medicine is advised if this alternative regimen is considered in G6PD-deficient persons. Primaquine and tafenoquine must not be used during pregnancy. Tafenoquine must not be used in children less than 16 years old, or in those with a history of a psychotic disorder.
+
+For pediatric patients greater than 8 years old, the treatment options, with the exception of tafenoquine, are the same as for adults except the drug dose is adjusted by patient weight. The pediatric dose should never exceed the recommended adult dose. For children less than 8 years old, doxycycline and tetracycline are generally not indicated; therefore other treatment options should be used. For pediatric patients &lt;5kg, mefloquine is the only option. If mefloquine is not available or is not being tolerated and if the treatment benefits outweigh the risks, atovaquone-proguanil or artemether-lumefantrine should be used instead. Primaquine should be given to pediatric patients only after they have been screened for G6PD deficiency.
+
+## Alternatives for Pregnant Women
+
+Malaria infection in pregnant women is associated with high risks of both maternal and perinatal morbidity and mortality. While the mechanism is poorly understood, pregnant women have a reduced immune response and therefore less effectively clear malaria infections. In addition, malaria parasites sequester and replicate in the placenta. Pregnant women are three times more likely to develop severe disease than non-pregnant women acquiring infections from the same area. Malaria infection during pregnancy can lead to miscarriage, premature delivery, low birth weight, congenital infection, and/or perinatal death.
+
+For pregnant women diagnosed with uncomplicated malaria caused by P. malariae, P. vivax, P. ovale, or chloroquine-sensitive P. falciparum infection, prompt treatment with chloroquine (treatment schedule as with non-pregnant adult patients) is recommended. Alternatively, hydroxychloroquine may be given instead. For women in their second or third trimesters, artemether-lumefantrine is an additional option. For pregnant women diagnosed with uncomplicated malaria caused by chloroquine-resistant P. falciparum infection, women in their second and third trimesters can be treated with artemther lumefantrine, and for all trimesters, mefloquine or a combination of quinine sulfate and clindamycin is recommended. Quinine treatment should continue for 7 days for infections acquired in Southeast Asia and for 3 days for infections acquired elsewhere; clindamycin treatment should continue for 7 days regardless of where the infection was acquired. For pregnant women diagnosed with uncomplicated malaria caused by chloroquine-resistant P. vivax infection, prompt treatment with artemether-lumefantrine (second and third trimesters) or mefloquine (all trimesters) is recommended.
+
+Doxycycline and tetracycline are generally not indicated for use in pregnant women. However, in rare instances, doxycycline or tetracycline can be used in combination with quinine if other treatment options are not available or are not being tolerated, and the benefit of adding doxycycline or tetracycline is judged to outweigh the risks.
+
+According to its U.S. labels, atovaquone/proguanil is not indicated for use in pregnant women because there are no adequate, well-controlled studies in pregnant women. However, for pregnant women diagnosed with uncomplicated malaria caused by chloroquine-resistant P. falciparum infection, atovaquone-proguanil may be used if other treatment options are not available or are not being tolerated, and if the potential benefit is judged to outweigh the potential risks.
+
+For P. vivax or P. ovale infections, primaquine phosphate and tafenoquine for radical treatment of hypnozoites should not be given during pregnancy. Pregnant patients with P. vivax or P. ovale infections should be maintained on chloroquine prophylaxis for the duration of their pregnancy. The chemoprophylactic dose of chloroquine phosphate is 300mg base (=500 mg salt) by mouth once per week. After delivery, pregnant patients with P. vivax or P. ovale infections who do not have G6PD deficiency, subsequent treatment with primaquine phosphate or tafenoquine is needed, but will depend on breastfeeding. If not breastfeeding, either drug can be used. For women who are breastfeeding infants with normal G6PD activity, primaquine phosphate can be given. Tafenoquine is not recommended during breastfeeding. Pregnant women diagnosed with severe malaria should be treated aggressively with parenteral antimalarial therapy as described below.
+
+## Treatment: Severe Malaria
+
+Patients who are considered to have manifestations of more severe disease should be treated aggressively with parenteral antimalarial therapy regardless of the species of malaria seen on the blood smear. If severe malaria is strongly suspected but a laboratory diagnosis cannot be made at that time, blood should be collected for diagnostic testing as soon as it is available and parenteral antimalarial drugs should be started.
+
+All patients with severe malaria, regardless of infecting species, should be treated with intravenous (IV) artesunate. Clinicians caring for patients with suspected severe malaria

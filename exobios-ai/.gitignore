@@ -24,25 +24,20 @@ htmlcov/
 .vscode/
 .idea/
 
-# ── Document storage (AI-7A) ────────────────────────────────────────────────
-# Client-supplied textbooks are copyrighted and must never reach GitHub.
-# Directory structure itself (and .gitkeep placeholders) stays tracked; only
-# the actual file contents dropped into these folders are ignored. New
-# subject subfolders under source_documents/ are covered automatically —
-# no .gitignore edit needed when a new subject is added.
-data/source_documents/*
-!data/source_documents/*/
-data/source_documents/*/*
-!data/source_documents/*/.gitkeep
-
-data/extracted/*
+# ── Local document storage (real PDFs / derived artifacts, never committed) ────
+data/source_documents/**
+!data/source_documents/**/.gitkeep
+data/extracted/**
 !data/extracted/.gitkeep
-
-data/processed/*
+data/processed/**
 !data/processed/.gitkeep
-
-# Local document registry database (POC) — holds real textbook metadata.
 data/document_registry.db
-data/document_registry.db-journal
-data/document_registry.db-wal
-data/document_registry.db-shm
+*.db
+
+# ── Ingestion project (its own local artifacts) ─────────────────────────────────
+ingestion/documents/*.pdf
+ingestion/ingestion.log
+
+# ── uv ───────────────────────────────────────────────────────────────────────
+app/.venv/
+ingestion/.venv/
