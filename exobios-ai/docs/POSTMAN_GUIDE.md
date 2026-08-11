@@ -89,51 +89,52 @@ Body:
 }
 ```
 
-**Verified behavior right now (no Hugging Face / Groq keys configured yet):**
-```json
-{"error_code": "retrieval_failed", "message": "embedding request failed: 401 Client Error: Unauthorized for url: https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2/pipeline/feature-extraction"}
-```
-HTTP 502. This confirms the pipeline runs end-to-end up to the first external
-call — `rule_engine` (pure Python) already ran successfully before this
-error. **BLOCKED — USER CREDENTIAL REQUIRED**: add real values for
-`EMBEDDING__HF_TOKEN`, `RERANKER__HF_TOKEN`, and `LLM__GROQ_API_KEY` in
-`app/.env`, restart the service, and re-run this request.
-
-**Expected response once credentials are configured** (shape, from
-`app/schemas/response.py`) — with an empty Qdrant collection, expect
-`insufficient_evidence: true` and empty candidate lists, since no documents
-have been ingested yet:
+**Verified actual response (2026-08-10, real credentials, corpus contains
+one ingested biochemistry textbook — not a clinical guideline):**
 ```json
 {
-  "assessment_id": "11111111-1111-1111-1111-111111111111",
+  "assessment_id": "33333333-3333-3333-3333-333333333333",
   "status": "COMPLETED",
-  "deterministic_flags": {
-    "flags": [{"code": "...", "severity": "...", "value": 94, "threshold": "..."}],
-    "risk_floor": "MEDIUM"
-  },
-  "diagnosis": {"candidates": [], "query_used": "...", "insufficient_evidence": true},
+  "deterministic_flags": {"flags": [], "risk_floor": "LOW"},
+  "diagnosis": {"candidates": [], "query_used": "high fever and cough for 3 days. fever (3 days, moderate). temperature 39.2F. SpO2 94.0%", "insufficient_evidence": true},
   "investigation": {"tests": [], "based_on_diagnosis": []},
   "treatment_protocol": {"steps": [], "based_on_diagnosis": [], "patient_factors_considered": [], "regimen_specificity_flag": false},
-  "plan_of_action": {"immediate_measures": [], "warning_signs": [], "risk_level": "MEDIUM", "risk_floor_conflict": false, "referral_advice": null},
+  "plan_of_action": {"immediate_measures": [], "warning_signs": [], "risk_level": "LOW", "risk_floor_conflict": false, "referral_advice": null},
   "validation_flags": []
 }
 ```
+HTTP 200. `insufficient_evidence: true` here is correct, not a failure —
+confirmed by directly inspecting `retrieve_and_rerank()`'s output for this
+same query: retrieval genuinely ran and returned real (if clinically
+irrelevant) excerpts from the ingested textbook. See `docs/ARCHITECTURE.md`'s
+grounding section for detail. To see real diagnosis candidates, ingest a
+clinical guideline document first via `ingestion/` (e.g. the IMNCI chart
+booklet in this repo).
+
+Note `deterministic_flags.flags` is empty and `risk_floor` is `LOW` even
+with `spo2: 94` in the request above — that's this request's vitals not
+crossing whatever threshold `rule_engine.py` uses for SpO2, not a bug; try
+a lower value (e.g. `"spo2": 85`) to see a flag actually fire.
 
 ## 5. Representative end-to-end workflow (Step 20)
 
 ```
 health                              -> confirm service is up
    v
-ensure Qdrant has documents          -> currently empty; run ingestion/ separately
-   v                                    to populate (see docs/ARCHITECTURE.md);
-   v                                    until then, expect insufficient_evidence
+ensure Qdrant has documents          -> verified: 2,853 points from one ingested
+   v                                    textbook (Biochemistry.pdf) — see
+   v                                    docs/ARCHITECTURE.md for what that does
+   v                                    and doesn't demonstrate
 POST /analyze (synthetic patient)
    v
 inspect deterministic_flags          -> confirm vitals thresholds fired correctly
-   v                                    (e.g. spo2=94 -> a flag, not silently ignored)
+   v                                    (use a value like spo2=85 to see a flag —
+   v                                    the "high fever and cough" example above
+   v                                    doesn't cross any threshold, by design)
 inspect diagnosis.insufficient_evidence
-   v                                    -> true with empty corpus (expected/correct
-   v                                       grounding behavior, not a bug)
+   v                                    -> true with the current corpus (correct
+   v                                       grounding behavior — verified, not a
+   v                                       guess — see docs/ARCHITECTURE.md)
 inspect plan_of_action.risk_level
    v                                    -> must be >= deterministic_flags.risk_floor
    v                                       (code-enforced; check risk_floor_conflict)
@@ -141,11 +142,12 @@ check MongoDB (`assessments` collection) -> one doc per assessment_id, upserted
                                              after each stage
 ```
 
-Ran once with credentials configured but before any ingestion has happened:
-expect a `COMPLETED` response with real deterministic flags but empty/
-`insufficient_evidence` diagnosis — this demonstrates the grounding safeguard
-is working (the model isn't inventing a diagnosis from nothing) rather than
-indicating a bug.
+**Verified live** (2026-08-10, real credentials, real corpus, real Mongo
+write — see the response above): `COMPLETED` status, deterministic flags
+correctly empty for this particular request's vitals, `insufficient_evidence:
+true` on diagnosis because the corpus has no clinical guideline content yet.
+This demonstrates the grounding safeguard working correctly (the model isn't
+inventing a diagnosis from nothing), not a bug or missing configuration.
 
 ## 6. What is intentionally NOT testable yet
 

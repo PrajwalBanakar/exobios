@@ -21,6 +21,36 @@ writes to it, `app` reads from it. Separate `.venv`s, separate `pyproject.toml`s
 
 ---
 
+## Current local status (verified, 2026-08-10)
+
+- `app/` runs and passes a full live `/analyze` round trip: rule_engine ->
+  Groq LLM calls -> Qdrant hybrid search -> MongoDB persistence, all real,
+  no mocks.
+- `ingestion/` has completed one real end-to-end run: `Biochemistry.pdf`
+  (800 pages) -> 2,853 chunks -> embedded -> stored in Qdrant, with metadata
+  written to Supabase. Collection `corpus` currently holds only this one
+  document, which is a general biochemistry textbook, **not** a clinical
+  diagnostic guideline — so `/analyze` correctly returns
+  `insufficient_evidence: true` for symptom-based queries right now. That's
+  the grounding safeguard working as intended, not a bug. Ingest an actual
+  clinical reference (e.g. the IMNCI chart booklet already in this repo) to
+  see real diagnosis candidates.
+- **Known non-blocking issue**: the reranker's configured model
+  (`cross-encoder/ms-marco-MiniLM-L-6-v2`) is no longer served by Hugging
+  Face's `hf-inference` provider (`"error":"Model not supported by provider
+  hf-inference"`, HTTP 400). `services/reranker_service.py`'s built-in
+  fallback handles this correctly — retrieval still works, just falls back
+  to unranked hybrid-search order. Needs a replacement model or provider,
+  not urgent.
+- Two real bugs found and fixed during the first ingestion run (see
+  `git log` on `ingestion/chunkers/chunker.py` and
+  `ingestion/embedder/embedder.py`): a debug `print()` loop that crashed on
+  non-cp1252 Unicode in OCR'd text, and no retry/validation across ~2,850
+  sequential embedding calls (one transient HF 500 used to abort the whole
+  document).
+
+---
+
 ## Prerequisites
 
 - Python 3.12+
@@ -64,36 +94,60 @@ cp .env.example .env   # fill in below
 
 ```env
 zeroshot_classification_token_hf=hf_...
-s3_bucket_name_parsed_doc=...
-s3_bucket_name_raw_doc=...
 supabase_url=https://your-project.supabase.co
-supabase_key=your-service-role-key
-aws_access_key_id=...
-aws_secret_access_key=...
-aws_default_region=...
+supabase_key=sb_secret_...            # secret key (bypasses RLS), NOT the publishable key
 qdrant_url=http://localhost:6333
-collection_name=clinical_corpus
-openai_api_key=...   # only if the classification/embedding step still calls OpenAI; see note below
+collection_name=corpus                # must match app/'s QDRANT__COLLECTION_NAME exactly
 ```
 
-Drop source PDFs/DOCX into `ingestion/documents/`, then:
+AWS S3 (`s3_bucket_name_parsed_doc`, `s3_bucket_name_raw_doc`, `aws_*`) and
+`openai_api_key` are defined in the ingestion Settings model but not
+required in practice — the S3 upload calls are commented out in
+`loaders/loader.py::run()`, and the OpenAI embedding path is fully
+commented out in `embedder/embedder.py` (HF is the only embedding provider
+actually used). Leave them unset unless you re-enable that code.
+
+**One-time Supabase schema setup** (required before the first ingestion
+run — `ingestion/services/upload.py::save_document_metadata()` will fail
+with a 404 until this exists): run
+[`ingestion/supabase/migrations/20260810120000_create_documents_table.sql`](ingestion/supabase/migrations/20260810120000_create_documents_table.sql)
+in your Supabase project's SQL Editor. It creates the `documents` table
+(insert-only, one row per ingested file), enables RLS with no policies
+(safe default — blocks the publishable key, unaffected by the secret key),
+and grants `service_role` explicit table privileges (Postgres does not
+grant these automatically on a new table — a missing grant here is the
+most likely first error you'll hit, surfacing as `permission denied for
+table documents` / `42501`).
+
+Drop source PDFs/DOCX into `ingestion/documents/` — note `load_documents()`
+processes **every file** in that folder with no filtering, so remove
+anything you don't want ingested in this run — then:
 
 ```bash
 uv run python -m scripts.main
 ```
+
+Each document takes a while: Docling OCR conversion alone took ~16-20
+minutes for an 800-page textbook on this machine (CPU only), plus several
+more minutes for per-chunk embedding calls (one sequential HTTP request per
+chunk to HF's hosted inference — ~2,850 chunks for that same textbook).
 
 Per-document flow: convert (Docling) → classify (HF zero-shot, category +
 role) → upload raw + parsed to S3 → write document metadata to Supabase →
 chunk (HybridChunker + tiktoken) → embed (dense, HF) + BM25 sparse vector →
 upsert to Qdrant.
 
-Logs: `logs/` (structured, one line per step via the shared `Reporter`).
+Logs: `ingestion.log` in `ingestion/` (structured JSON, one line per step via
+the shared `Reporter`) — check this file, not just the console, when
+diagnosing a failed run; some failure detail (e.g. the exact HTTP error
+body) only lands there.
 
-**Known limitation:** Docling's layout/OCR stage can throw `std::bad_alloc`
-on memory-constrained machines, especially on image/table-heavy pages —
-this is a compute ceiling, not a pipeline bug (see project notes). Affected
-pages are skipped; the document still ingests with whatever content
-survives. Re-run on higher-memory hardware for full-fidelity extraction.
+**If a run fails partway through**: `run()` generates a fresh `document_id`
+per file and per attempt, so a failed run typically leaves a Supabase
+`documents` row with no matching Qdrant points (the metadata write happens
+before chunking/embedding/storage). Delete that orphaned row before
+re-running, or you'll accumulate stale metadata pointing at nothing:
+`DELETE FROM public.documents WHERE document_id = '<the id from the log>';`
 
 ---
 
@@ -109,31 +163,31 @@ cp .env.example .env   # fill in below
 **`.env` (nested keys, `__` delimiter):**
 
 ```env
-AI_API_KEY=dummy-xai-api-key   # shared secret checked against incoming X-Api-Key from Spring Boot
+AI_API_KEY=local-dev-api-key   # shared secret checked against incoming X-Api-Key
 
 QDRANT__URL=http://localhost:6333
-QDRANT__COLLECTION_NAME=clinical_corpus
+QDRANT__COLLECTION_NAME=corpus        # must match ingestion/'s collection_name exactly
 
-EMBEDDING__HF_TOKEN=hf_...     # must match the model used in ingestion (all-MiniLM-L6-v2)
+EMBEDDING__HF_TOKEN=hf_...            # must match the model used in ingestion (all-MiniLM-L6-v2)
+EMBEDDING__EMBED_MODEL=sentence-transformers/all-MiniLM-L6-v2
+EMBEDDING__EMBED_URL=https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2/pipeline/feature-extraction
+EMBEDDING__VECTOR_SIZE=384
 
-RERANKER__HF_TOKEN=hf_...      # HF-hosted cross-encoder, no local model
+RERANKER__HF_TOKEN=hf_...             # HF-hosted cross-encoder, no local model — see known issue below
+RERANKER__RERANK_MODEL=cross-encoder/ms-marco-MiniLM-L-6-v2
 
-LLM__GEMINI_API_KEY=...        # or swap llm_service.py for the active provider — see note below
+LLM__GROQ_API_KEY=gsk_...             # services/llm_service.py already uses Groq natively, no swap needed
+LLM__MODEL=llama-3.3-70b-versatile
 
-MONGO__URI=mongodb+srv://user:pass@cluster.mongodb.net
+MONGO__URI=mongodb://localhost:27017  # local Docker Mongo for dev; Atlas URI for prod
 MONGO__DB_NAME=exobios
+MONGO__ASSESSMENTS_COLLECTION=assessments
 
-LANGSMITH__API_KEY=            # optional, enables tracing if set
+LANGSMITH__API_KEY=            # optional, enables tracing if set — do NOT rely on any default
+                                # here; a prior version of this file shipped a real key hardcoded
+                                # as the default, which has since been removed (see git log)
 LANGSMITH__PROJECT=exobios-ai
 ```
-
-**Generation provider note:** `services/llm_service.py` currently ships
-wired for Gemini. Since generation has been switched to Grok, update that
-file's client + `LLMSettings` in `config/settings.py` accordingly (Grok's
-API is OpenAI-compatible, so this is a small swap — same
-`generate_structured` interface, different client/base URL/model name).
-Nothing else in the pipeline needs to change; every node calls
-`llm_service.generate_structured(...)` generically.
 
 Run:
 
@@ -181,6 +235,14 @@ curl -X POST http://localhost:8000/analyze \
 Expect a full `AssessmentResponse` JSON back: deterministic flags,
 diagnosis candidates with citations, investigations, treatment protocol,
 plan of action. Check Mongo for a matching document under `assessment_id`.
+
+**Verified current behavior**: with only `Biochemistry.pdf` ingested (not a
+clinical guideline), expect `diagnosis.insufficient_evidence: true` and
+empty candidate/test/treatment lists for symptom-based queries — the
+pipeline runs correctly end to end, there's just no clinically-relevant
+evidence in the corpus yet to ground a diagnosis on. See
+[`docs/POSTMAN_GUIDE.md`](docs/POSTMAN_GUIDE.md) for a full real example
+response.
 
 ---
 

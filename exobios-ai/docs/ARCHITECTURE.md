@@ -91,11 +91,25 @@ reasonable simplification for later, not urgent now.
   `plan_of_action_node` and `validate_stage`, regardless of what the LLM
   says — this specific safety property **is** code-enforced (dual-layer), and
   is the strongest grounding guarantee in the system today.
-- With an empty Qdrant collection (no documents ingested yet, the current
-  local-dev state), every retrieval-backed node will correctly return
-  `insufficient_evidence: true` / empty citations — verified above via a live
-  `/analyze` call reaching the pipeline (it failed earlier at the HF auth
-  step, before evaluating evidence, since no HF token is configured yet).
+- **Verified live** (2026-08-10, real credentials, real corpus): with
+  `Biochemistry.pdf` ingested (2,853 chunks, a general biochemistry
+  textbook — not a clinical guideline), a `/analyze` call for "high fever
+  and cough for 3 days" correctly returned `insufficient_evidence: true`
+  with empty candidates. Direct inspection of `retrieve_and_rerank()`'s
+  output for that same query confirmed retrieval genuinely ran (Qdrant
+  hybrid search returned topically-adjacent excerpts — a case study
+  mentioning fever, a list of viral respiratory diseases) but the LLM
+  correctly judged none of it as actual diagnostic evidence and declined to
+  fabricate a diagnosis. This is the grounding safeguard working as
+  designed, not a retrieval failure.
+- **Known issue found during that same check**: the reranker's configured
+  model, `cross-encoder/ms-marco-MiniLM-L-6-v2`, is no longer served by
+  Hugging Face's `hf-inference` provider (`400: "Model not supported by
+  provider hf-inference"`). `reranker_service.py`'s try/except fallback
+  handled this correctly — it logged a warning and returned unranked
+  results rather than crashing retrieval — but reranking is currently a
+  no-op in practice. Needs a replacement model (or provider) to actually
+  improve result ordering again.
 - **Gap for later**: add a code-level check that rejects/flags any diagnosis
   candidate whose `citations` list is empty, independent of the LLM's own
   `insufficient_evidence` flag — this would make strict grounding mode a
