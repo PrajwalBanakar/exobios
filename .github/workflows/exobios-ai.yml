@@ -1,0 +1,77 @@
+name: exobios-ai CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "exobios-ai/**"
+      - ".github/workflows/exobios-ai.yml"
+  pull_request:
+    paths:
+      - "exobios-ai/**"
+      - ".github/workflows/exobios-ai.yml"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  app:
+    name: app (lint + test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.12.3"
+
+      - name: Sync dependencies
+        working-directory: exobios-ai/app
+        run: uv sync --frozen
+
+      - name: Lint (ruff)
+        working-directory: exobios-ai/app
+        run: uv run ruff check .
+
+      - name: Test
+        working-directory: exobios-ai
+        # Every external dependency (Qdrant/Mongo/HF/Groq) is mocked in
+        # tests/conftest.py — this needs no live services and no secrets.
+        run: uv run --project app pytest tests/ -v
+
+  ingestion:
+    name: ingestion (lint + test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.12.3"
+
+      - name: Sync dependencies
+        working-directory: exobios-ai/ingestion
+        run: uv sync --frozen
+
+      - name: Test
+        working-directory: exobios-ai/ingestion
+        # These tests are pure-logic (deterministic id derivation) and skip
+        # themselves via pytest.importorskip if docling isn't importable —
+        # no live Qdrant/Supabase/HF access needed or used.
+        run: uv run pytest tests/ -v
+
+  docker-build:
+    name: app (docker build)
+    runs-on: ubuntu-latest
+    needs: app
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image (not pushed)
+        uses: docker/build-push-action@v6
+        with:
+          context: exobios-ai/app
+          push: false
+          tags: exobios-ai-app:ci

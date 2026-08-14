@@ -36,7 +36,12 @@ from exceptions import EmbeddingException
 """
 switching to hf embedding model
 """
-HF_EMBED_URL = "https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2/pipeline/feature-extraction"
+# Named so store/qdrant_store.py can record it in the corpus compatibility
+# metadata (see EMBED_MODEL_NAME's usage there) — app/'s query-time
+# EmbeddingSettings.embed_model must match this exactly, or query vectors
+# and stored vectors won't live in the same space.
+EMBED_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+HF_EMBED_URL = f"https://router.huggingface.co/hf-inference/models/{EMBED_MODEL_NAME}/pipeline/feature-extraction"
 headers = {"Authorization": f"Bearer {settings.zeroshot_classification_token_hf}"}
 
 MAX_RETRIES = 4

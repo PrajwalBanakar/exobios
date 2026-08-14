@@ -16,7 +16,7 @@ public class VitalsDto {
     private UUID       id;
     private Integer    heartRate;
     private BigDecimal spo2;
-    private BigDecimal temperature;
+    private BigDecimal temperature; // Fahrenheit — see VitalsRequest.temperature
     private Integer    bloodPressureSystolic;
     private Integer    bloodPressureDiastolic;
     private Integer    respiratoryRate;

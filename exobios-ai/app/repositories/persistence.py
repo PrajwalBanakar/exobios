@@ -39,7 +39,7 @@ def persist_state(state: AssessmentState, stage_name: str) -> None:
             status=StepStatus.FAIL,
             error_message=str(e),
         ))
-        raise PersistenceException(str(e))
+        raise PersistenceException(str(e)) from e
 
 
 def _dump(obj) -> dict | None:

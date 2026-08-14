@@ -35,7 +35,12 @@ data/document_registry.db
 *.db
 
 # ── Ingestion project (its own local artifacts) ─────────────────────────────────
-ingestion/documents/*.pdf
+# Source PDFs and Docling-derived text may be copyrighted/licensed material and
+# must never be committed, regardless of where under ingestion/ they land.
+ingestion/*.pdf
+ingestion/documents/**/*.pdf
+ingestion/documents/docling_output/**
+!ingestion/documents/docling_output/.gitkeep
 ingestion/ingestion.log
 
 # ── uv ───────────────────────────────────────────────────────────────────────

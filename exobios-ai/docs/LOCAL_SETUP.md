@@ -105,7 +105,8 @@ uv run uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 ## 8. Verify
 
-- Health: http://localhost:8000/health → `{"status":"UP","service":"exobios-ai-app","version":"0.1.0"}`
+- Health: http://localhost:8000/health → `{"status":"UP","service":"exobios-ai","version":"0.1.0"}`
+- Readiness (checks Mongo + Qdrant connectivity): http://localhost:8000/health/ready → 200 with per-dependency status, or 503 if either is unreachable
 - Swagger UI: http://localhost:8000/docs
 - OpenAPI schema: http://localhost:8000/openapi.json
 
@@ -121,13 +122,21 @@ cd exobios-ai
 uv run --project app pytest tests/ -v
 ```
 
-**Known issue**: the top-level `tests/` currently fail to even collect
+**Fixed (2026-08-14)**: the top-level `tests/` used to fail to even collect
 (`ModuleNotFoundError: No module named 'api'`) because `tests/conftest.py`
-imports `from app.main import app`, which conflicts with `app/main.py`'s own
-unqualified-import style (see section 7). The tests also assert an older,
-now-superseded placeholder API contract. This is tracked as tech debt — see
-the integration report. Do not spend time trying to fix these without a
-larger rewrite; it's not required to run/test the service.
+imported `from app.main import app` while `app/main.py`'s own internal
+imports are unqualified (see section 7) — the root `pytest.ini`
+(`pythonpath = app`) now makes both resolve consistently, and every test
+file's internal imports were changed to the same unqualified style used by
+`app/` itself (see `tests/conftest.py`'s comment for why this matters —
+mixing `app.xxx` and `xxx` imports loads a module twice under two different
+identities, so instances built from one can fail pydantic validation against
+classes from the other). The suite also used to assert an older,
+now-superseded placeholder API contract; it now asserts the current
+`AssessmentResponse` contract, with a note pointing at the still-unresolved
+cross-service contract mismatch (see `app/README.md`). All external
+dependencies (Qdrant/Mongo/HF/Groq) are mocked in `conftest.py`, so the
+suite runs fully offline in well under a second.
 
 ## 10. Test through Postman
 

@@ -3,8 +3,17 @@ import logging
 import requests
 
 from config.settings import settings
+from core.retry import retry_with_backoff
 
 logger = logging.getLogger("app.reranker")
+
+
+def _is_retryable(e: Exception) -> bool:
+    if isinstance(e, (requests.exceptions.ConnectionError, requests.exceptions.Timeout, requests.exceptions.ChunkedEncodingError)):
+        return True
+    if isinstance(e, requests.exceptions.HTTPError) and e.response is not None:
+        return e.response.status_code in (429, 500, 502, 503, 504)
+    return False
 
 
 class RerankerService:
@@ -22,8 +31,13 @@ class RerankerService:
         if not candidates:
             return candidates
 
+        if not settings.reranker.enabled:
+            logger.info("reranking disabled (RERANKER__ENABLED=false) — using retrieval fusion order")
+            return candidates[:top_k]
+
         texts = [c["text"] for c in candidates]
-        try:
+
+        def _call():
             response = requests.post(
                 self.url,
                 headers=self.headers,
@@ -34,8 +48,19 @@ class RerankerService:
             scores = response.json()
             if not isinstance(scores, list) or len(scores) != len(candidates):
                 raise ValueError(f"unexpected rerank response shape: {scores}")
+            return scores
+
+        try:
+            scores = retry_with_backoff(_call, is_retryable=_is_retryable, op_name="reranker request")
         except Exception as e:
-            logger.warning(f"reranker unavailable, falling back to original order: {e}")
+            # `degraded_component` is a distinct, greppable field for log-based
+            # alerting — this is the one signal that reranking silently
+            # stopped improving result order for a request.
+            logger.warning(
+                f"reranker unavailable, falling back to original order: {e}",
+                exc_info=e,
+                extra={"degraded_component": "reranker"},
+            )
             return candidates[:top_k]
 
         ranked = sorted(zip(candidates, scores), key=lambda x: x[1], reverse=True)

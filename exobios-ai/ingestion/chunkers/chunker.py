@@ -33,7 +33,13 @@ chunker = HybridChunker(
 )
 
 
-def _build_chunk_metadata(chunk) -> ChunkMetadata:
+# Fixed namespace for deriving chunk ids — do not change; changing it would
+# make every future ingestion run generate different chunk ids for identical
+# documents/positions, defeating the idempotency this exists for.
+_CHUNK_ID_NAMESPACE = uuid.UUID("6f5b1f8a-7c2e-4e3a-9c1d-2f6b0a2d9e11")
+
+
+def _build_chunk_metadata(chunk, document_id: str, index: int) -> ChunkMetadata:
     headings = chunk.meta.headings if chunk.meta.headings else []
     heading = headings[-1] if headings else ""
     section = headings[0] if headings else ""
@@ -47,9 +53,16 @@ def _build_chunk_metadata(chunk) -> ChunkMetadata:
     page_start = min(pages) if pages else 0
     page_end = max(pages) if pages else 0
 
+    # Deterministic, not uuid4(): derived from (document_id, position in the
+    # document). Re-ingesting the same document — e.g. after a crash, or a
+    # deliberate re-run — reproduces the same chunk ids, so the Qdrant
+    # upsert in store/qdrant_store.py overwrites the existing points instead
+    # of creating duplicates alongside them.
+    chunk_id = uuid.uuid5(_CHUNK_ID_NAMESPACE, f"{document_id}:{index}")
+
     return ChunkMetadata(
         ingestion_version=settings.ingestion_version,
-        chunk_id=uuid.uuid4(),
+        chunk_id=chunk_id,
         page_start=page_start,
         page_end=page_end,
         content=chunk.text,
@@ -61,7 +74,7 @@ def _build_chunk_metadata(chunk) -> ChunkMetadata:
 def chunk_docling_document(docling_doc: DoclingDocument, document_id: str) -> List[ChunkMetadata]:
     try:
         raw_chunks = list(chunker.chunk(docling_doc))
-        enriched_chunks = [_build_chunk_metadata(c) for c in raw_chunks]
+        enriched_chunks = [_build_chunk_metadata(c, document_id, i) for i, c in enumerate(raw_chunks)]
 
     except ChunkingException as e:
         reporter.report(StepResult(

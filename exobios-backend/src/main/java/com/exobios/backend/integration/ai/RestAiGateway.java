@@ -45,6 +45,14 @@ public class RestAiGateway implements AiGateway {
                     log.debug("AI gateway responded for assessment {}", request.getAssessmentId());
                     return response;
                 }
+                // A 2xx with a null/empty body isn't a RestClientException, so it
+                // wasn't caught below — but `attempts` still has to advance here,
+                // or a null-body response makes this loop spin forever instead of
+                // retrying/falling through to the placeholder like any other
+                // failure mode does.
+                attempts++;
+                log.warn("AI gateway returned an empty body for assessment {} (attempt {}/{})",
+                        request.getAssessmentId(), attempts, maxRetries);
             } catch (RestClientException e) {
                 attempts++;
                 if (attempts > maxRetries) {

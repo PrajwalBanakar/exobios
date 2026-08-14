@@ -215,7 +215,9 @@ public class AssessmentService {
         long processingTimeMs = System.currentTimeMillis() - start;
 
         AiAssessmentResult result = new AiAssessmentResult();
-        result.setStatus(response.getStatus() != null ? response.getStatus() : AiResultStatus.PENDING);
+        // A null status here means something built an AiResponse without setting
+        // one — not "not yet processed" (PENDING); treat it the same as a failure.
+        result.setStatus(response.getStatus() != null ? response.getStatus() : AiResultStatus.FAILED);
         result.setSummary(response.getSummary());
         result.setRiskLevel(response.getRiskLevel());
         result.setConfidenceScore(response.getConfidenceScore());
