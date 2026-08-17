@@ -1,11 +1,11 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from core.exceptions import PersistenceException
 from core.reporting import reporter
 from repositories import assesment
 from schemas.state_object import AssessmentState
 from schemas.step import StepResult, StepStatus
-from .assesment import upsert_assessment
+
 
 def persist_state(state: AssessmentState, stage_name: str) -> None:
     """One Mongo document per assessment (per user's decision — unstructured,
@@ -25,7 +25,7 @@ def persist_state(state: AssessmentState, stage_name: str) -> None:
                 "plan_of_action": _dump(state.plan_of_action),
                 "validation_flags": state.validation_flags,
                 "last_stage": stage_name,
-                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(UTC).isoformat(),
             },
         )
         reporter.report(StepResult(
@@ -39,7 +39,7 @@ def persist_state(state: AssessmentState, stage_name: str) -> None:
             status=StepStatus.FAIL,
             error_message=str(e),
         ))
-        raise PersistenceException(str(e))
+        raise PersistenceException(str(e)) from e
 
 
 def _dump(obj) -> dict | None:

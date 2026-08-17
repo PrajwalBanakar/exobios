@@ -14,13 +14,14 @@ texts per call, so we batch to cut down on API round trips), and pair
 each vector with its chunk to build a VectorRecord.
 """
 
+import time
 from typing import List
 
 from openai import OpenAI
 
 from config.settings import settings
 from core.reporting import reporter
-from schemas.step import StepResult, StepStatus
+from schemas.step_result import StepResult, StepStatus
 
 from schemas.chunk_schema import ChunkMetadata, ChunkPayload
 from schemas.chunk_schema import VectorRecord
@@ -35,8 +36,38 @@ from exceptions import EmbeddingException
 """
 switching to hf embedding model
 """
-HF_EMBED_URL = "https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2/pipeline/feature-extraction"
+# Named so store/qdrant_store.py can record it in the corpus compatibility
+# metadata (see EMBED_MODEL_NAME's usage there) — app/'s query-time
+# EmbeddingSettings.embed_model must match this exactly, or query vectors
+# and stored vectors won't live in the same space.
+EMBED_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+HF_EMBED_URL = f"https://router.huggingface.co/hf-inference/models/{EMBED_MODEL_NAME}/pipeline/feature-extraction"
 headers = {"Authorization": f"Bearer {settings.zeroshot_classification_token_hf}"}
+
+MAX_RETRIES = 4
+RETRY_BACKOFF_SECONDS = 2  # doubles each attempt: 2s, 4s, 8s
+
+
+def _embed_one(text: str) -> list:
+    # HF's shared hosted-inference endpoint occasionally returns a transient
+    # 500/503 (e.g. on model cold start) instead of a vector — over ~2800
+    # sequential calls for a single textbook, hitting at least one of these
+    # is likely, not an edge case, so this retries instead of aborting the
+    # whole document on one flaky response.
+    last_error: Exception | None = None
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            response = requests.post(HF_EMBED_URL, headers=headers, json={"inputs": text}, timeout=30)
+            response.raise_for_status()
+            vector = response.json()
+            if not isinstance(vector, list) or not vector or isinstance(vector[0], list):
+                raise ValueError(f"unexpected embedding response shape: {type(vector)}")
+            return vector
+        except Exception as e:
+            last_error = e
+            if attempt < MAX_RETRIES:
+                time.sleep(RETRY_BACKOFF_SECONDS * (2 ** (attempt - 1)))
+    raise EmbeddingException(reason=f"embedding failed after {MAX_RETRIES} attempts: {last_error}")
 
 
 def embed_chunks(chunks: List[ChunkMetadata]) -> List[VectorRecord]:
@@ -67,17 +98,16 @@ def embed_chunks(chunks: List[ChunkMetadata]) -> List[VectorRecord]:
     
     for chunk in chunks:
         try:
-            response = requests.post(HF_EMBED_URL, headers=headers, json={"inputs": chunk.content})
-            vector = response.json()
-            print(len(vector))
+            vector = _embed_one(chunk.content)
             vector_records.append(VectorRecord(id=str(chunk.chunk_id), vector=vector))
         except Exception as e:
             reporter.report(StepResult(
                 step_name="embedding",
                 status=StepStatus.FAIL,
+                data={"chunks_embedded_before_failure": len(vector_records)},
                 error_message=str(e),
             ))
-            raise EmbeddingException(reason = str(e))
+            raise EmbeddingException(reason=str(e))
         
 
     reporter.report(StepResult(

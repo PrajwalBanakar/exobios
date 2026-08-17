@@ -1,4 +1,4 @@
-from langgraph.graph import StateGraph, END
+from langgraph.graph import END, StateGraph
 
 from graph.nodes.diagnosis import diagnosis_node
 from graph.nodes.investigation import investigation_node

@@ -15,7 +15,7 @@ import time
 from typing import List
 from docling_core.types.doc import DoclingDocument
 from exceptions import DocumentClassificationError
-from schemas.step import StepResult, StepStatus
+from schemas.step_result import StepResult, StepStatus
 
 from config.settings import settings
 from core.reporting import reporter

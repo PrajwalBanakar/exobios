@@ -222,7 +222,13 @@ class AssessmentServiceTest {
 
         assertThat(assessment.getStatus()).isEqualTo(AssessmentStatus.SUBMITTED);
         assertThat(assessment.getAiResult()).isNotNull();
-        assertThat(assessment.getAiResult().getStatus()).isEqualTo(AiResultStatus.PENDING);
+        // FAILED, not PENDING: submitAssessment calls the gateway synchronously,
+        // so there is no later async moment this could still resolve in — see
+        // AiResponse.placeholder()'s doc comment. An assessment must never look
+        // like it's awaiting an AI result that will never arrive.
+        assertThat(assessment.getAiResult().getStatus()).isEqualTo(AiResultStatus.FAILED);
+        assertThat(assessment.getAiResult().getRiskLevel()).isNull();
+        assertThat(assessment.getAiResult().getConfidenceScore()).isNull();
     }
 
     @Test

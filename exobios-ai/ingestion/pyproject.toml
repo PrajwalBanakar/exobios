@@ -18,4 +18,5 @@ dependencies = [
 [dependency-groups]
 dev = [
     "boto3-stubs[s3]>=1.43.59",
+    "pytest>=8.4.2",
 ]
