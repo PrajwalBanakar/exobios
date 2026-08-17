@@ -31,26 +31,29 @@ async function renderPatients() {
 describe('PatientsView — search & filter', () => {
   beforeEach(() => { localStorage.clear() })
 
+  // The desktop table and mobile card list both render in jsdom at once (CSS media
+  // queries aren't evaluated), so each visible patient's name appears twice — once
+  // per layout. Assertions below check for that count rather than a single match.
   it('lists all seed patients by default', async () => {
     await renderPatients()
-    expect(screen.getByText('Priya Sharma')).toBeTruthy()
-    expect(screen.getByText('Rajesh Kumar')).toBeTruthy()
+    expect(screen.getAllByText('Priya Sharma').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Rajesh Kumar').length).toBeGreaterThan(0)
   })
 
   it('filters the list by name without crashing on patients that lack a top-level location field', async () => {
     const { container } = await renderPatients()
     const search = container.querySelector('input[type="text"]')
     await fireEvent.update(search, 'priya')
-    expect(screen.getByText('Priya Sharma')).toBeTruthy()
-    expect(screen.queryByText('Rajesh Kumar')).toBeNull()
+    expect(screen.getAllByText('Priya Sharma').length).toBeGreaterThan(0)
+    expect(screen.queryAllByText('Rajesh Kumar').length).toBe(0)
   })
 
   it('filters the list by village (nested address field)', async () => {
     const { container } = await renderPatients()
     const search = container.querySelector('input[type="text"]')
     await fireEvent.update(search, 'Sitapur')
-    expect(screen.getByText('Rajesh Kumar')).toBeTruthy()
-    expect(screen.queryByText('Priya Sharma')).toBeNull()
+    expect(screen.getAllByText('Rajesh Kumar').length).toBeGreaterThan(0)
+    expect(screen.queryAllByText('Priya Sharma').length).toBe(0)
   })
 
   it('shows the empty state when a search matches nothing', async () => {
@@ -64,8 +67,8 @@ describe('PatientsView — search & filter', () => {
     await renderPatients()
     // "High Risk" also appears as a stat-card label (a <div>) — scope to the tab <button>.
     await fireEvent.click(screen.getByRole('button', { name: 'High Risk' }))
-    expect(screen.getByText('Priya Sharma')).toBeTruthy() // High risk
-    expect(screen.queryByText('Rajesh Kumar')).toBeNull() // Moderate risk
+    expect(screen.getAllByText('Priya Sharma').length).toBeGreaterThan(0) // High risk
+    expect(screen.queryAllByText('Rajesh Kumar').length).toBe(0) // Moderate risk
   })
 
   it('sorting by location does not crash for seed patients without a top-level location field', async () => {
@@ -78,13 +81,18 @@ describe('PatientsView — search & filter', () => {
 describe('PatientsView — delete flow', () => {
   beforeEach(() => { localStorage.clear() })
 
-  it('shows an inline confirmation before deleting, and cancel keeps the patient', async () => {
+  async function openDeleteConfirm() {
+    const menuButtons = screen.getAllByRole('button', { name: /more actions for/i })
+    await fireEvent.click(menuButtons[0])
+    await fireEvent.click(await screen.findByRole('menuitem', { name: /delete patient/i }))
+  }
+
+  it('shows a confirmation dialog before deleting, and cancel keeps the patient', async () => {
     await renderPatients()
     const store = usePatientsStore()
     const before = store.patients.length
 
-    const deleteButtons = screen.getAllByTitle('Delete')
-    await fireEvent.click(deleteButtons[0])
+    await openDeleteConfirm()
     expect(await screen.findByText('Cancel')).toBeTruthy()
 
     await fireEvent.click(screen.getByText('Cancel'))
@@ -97,9 +105,8 @@ describe('PatientsView — delete flow', () => {
     const before = store.patients.length
     const firstName = store.patients[0].name
 
-    const deleteButtons = screen.getAllByTitle('Delete')
-    await fireEvent.click(deleteButtons[0])
-    await fireEvent.click(await screen.findByText('Yes, Delete'))
+    await openDeleteConfirm()
+    await fireEvent.click(await screen.findByRole('button', { name: 'Delete' }))
 
     expect(store.patients.length).toBe(before - 1)
     expect(store.patients.find(p => p.name === firstName)).toBeUndefined()

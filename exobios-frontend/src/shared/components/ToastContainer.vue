@@ -32,7 +32,7 @@ const iconMap = {
         <div
           v-for="t in toasts"
           :key="t.id"
-          :class="['flex items-start gap-3 px-4 py-3 rounded-xl shadow-lg text-white text-sm font-medium cursor-pointer select-none', colorMap[t.type] || 'bg-gray-800']"
+          :class="['flex items-start gap-3 px-4 py-3 rounded-xl shadow-lg text-white text-sm font-medium cursor-pointer select-none', colorMap[t.type] || 'bg-slate-800']"
           @click="removeToast(t.id)"
         >
           <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">

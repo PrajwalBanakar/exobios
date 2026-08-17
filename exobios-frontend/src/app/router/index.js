@@ -103,12 +103,6 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
-    path: '/system-updates',
-    name: 'SystemUpdates',
-    component: () => import('@/features/notifications/views/SystemUpdatesView.vue'),
-    meta: { requiresAuth: true },
-  },
-  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/features/settings/views/ProfileView.vue'),

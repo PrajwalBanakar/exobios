@@ -34,7 +34,7 @@ const colorClass = (key) => (COLOR_MAP[props.color] || COLOR_MAP.teal)[key]
   <div :class="['grid gap-2', columns]">
     <label v-for="opt in options" :key="optValue(opt)"
       :class="['flex items-center gap-2 px-3 py-2.5 rounded-lg border cursor-pointer transition text-sm',
-        modelValue.includes(optValue(opt)) ? colorClass('selected') : 'border-gray-200 text-gray-700 hover:bg-gray-50']">
+        modelValue.includes(optValue(opt)) ? colorClass('selected') : 'border-slate-200 text-slate-700 hover:bg-slate-50']">
       <input type="checkbox" :checked="modelValue.includes(optValue(opt))" @change="toggle(optValue(opt))"
         :class="['w-4 h-4 rounded flex-shrink-0', colorClass('accent')]"/>
       <span>{{ optLabel(opt) }}</span>

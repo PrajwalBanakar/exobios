@@ -160,8 +160,8 @@ async function savePatient() {
   }
 }
 
-const IC = 'w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500'
-const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
+const IC = 'w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500'
+const LC = 'block text-xs font-medium text-slate-600 mb-1.5'
 </script>
 
 <template>
@@ -178,7 +178,7 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
           Back
         </button>
         <transition enter-active-class="transition-all duration-300" enter-from-class="opacity-0 scale-95">
-          <div v-if="savedOffline" class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-xs font-medium">
+          <div v-if="savedOffline" class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-xl text-xs font-medium">
             <span class="w-1.5 h-1.5 rounded-full bg-amber-400"/>
             Saved offline — will sync when connected
           </div>
@@ -188,14 +188,14 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
       <div class="max-w-3xl space-y-5">
 
         <!-- SECTION 1: Personal Information -->
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm">
-          <div class="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
+        <div class="bg-white rounded-xl border border-slate-100 shadow-sm">
+          <div class="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
             <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
               <span class="text-sm font-bold text-blue-600">1</span>
             </div>
             <div>
-              <h2 class="font-semibold text-gray-800">Personal Information</h2>
-              <p class="text-xs text-gray-400">Basic identification details</p>
+              <h2 class="font-semibold text-slate-800">Personal Information</h2>
+              <p class="text-xs text-slate-400">Basic identification details</p>
             </div>
           </div>
           <div class="px-5 py-5 space-y-4">
@@ -203,11 +203,11 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
             <div class="flex items-start gap-5">
               <div class="flex-shrink-0 text-center">
                 <label class="cursor-pointer group" title="Tap to capture or upload photo">
-                  <div class="w-20 h-20 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 group-hover:border-blue-400 flex items-center justify-center overflow-hidden transition">
+                  <div class="w-20 h-20 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 group-hover:border-blue-400 flex items-center justify-center overflow-hidden transition">
                     <img v-if="form.photo" :src="form.photo" class="w-full h-full object-cover rounded-full" alt="Patient photo"/>
                     <div v-else class="text-center p-2">
-                      <svg class="w-6 h-6 text-gray-300 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M3 20c0-4 3.582-7 8-7h2c4.418 0 8 3 8 7"/></svg>
-                      <span class="text-[9px] text-gray-400 mt-1 block leading-tight">Tap to<br>add photo</span>
+                      <svg class="w-6 h-6 text-slate-300 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M3 20c0-4 3.582-7 8-7h2c4.418 0 8 3 8 7"/></svg>
+                      <span class="text-[9px] text-slate-400 mt-1 block leading-tight">Tap to<br>add photo</span>
                     </div>
                   </div>
                   <input type="file" accept="image/*" capture="environment" class="hidden" @change="handlePhoto"/>
@@ -287,14 +287,14 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
         </div>
 
         <!-- SECTION 2: Address -->
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm">
-          <div class="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
+        <div class="bg-white rounded-xl border border-slate-100 shadow-sm">
+          <div class="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
             <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
               <span class="text-sm font-bold text-purple-600">2</span>
             </div>
             <div>
-              <h2 class="font-semibold text-gray-800">Address</h2>
-              <p class="text-xs text-gray-400">Patient's residential address</p>
+              <h2 class="font-semibold text-slate-800">Address</h2>
+              <p class="text-xs text-slate-400">Patient's residential address</p>
             </div>
           </div>
           <div class="px-5 py-5 space-y-3">
@@ -334,14 +334,14 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
         </div>
 
         <!-- SECTION 3: Family Details -->
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm">
-          <div class="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
+        <div class="bg-white rounded-xl border border-slate-100 shadow-sm">
+          <div class="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
             <div class="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
               <span class="text-sm font-bold text-teal-600">3</span>
             </div>
             <div>
-              <h2 class="font-semibold text-gray-800">Family Details</h2>
-              <p class="text-xs text-gray-400">Marital status, spouse, children, and household</p>
+              <h2 class="font-semibold text-slate-800">Family Details</h2>
+              <p class="text-xs text-slate-400">Marital status, spouse, children, and household</p>
             </div>
           </div>
           <div class="px-5 py-5 space-y-4">
@@ -351,7 +351,7 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
               <div class="flex flex-wrap gap-2">
                 <button v-for="opt in ['Married', 'Unmarried', 'Widowed', 'Divorced']" :key="opt"
                   type="button"
-                  :class="['px-4 py-2 rounded-lg text-sm border transition', form.family.maritalStatus === opt ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-600 hover:border-blue-300 bg-white']"
+                  :class="['px-4 py-2 rounded-xl text-sm border transition', form.family.maritalStatus === opt ? 'bg-blue-600 text-white border-blue-600' : 'border-slate-200 text-slate-600 hover:border-blue-300 bg-white']"
                   @click="form.family.maritalStatus = opt">
                   {{ opt }}
                 </button>
@@ -364,10 +364,10 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
                 <label :class="LC">Spouses</label>
                 <div class="space-y-2 mb-2">
                   <div v-for="(s, i) in form.family.spouses" :key="i"
-                    class="flex items-center gap-2 bg-white rounded-lg px-3 py-2 text-sm border border-blue-100">
-                    <span class="text-xs text-gray-500 font-semibold w-5">{{ i + 1 }}.</span>
-                    <span class="flex-1 text-gray-700">{{ s.name }}</span>
-                    <span class="text-gray-400 text-xs">{{ s.age }} yrs</span>
+                    class="flex items-center gap-2 bg-white rounded-xl px-3 py-2 text-sm border border-blue-100">
+                    <span class="text-xs text-slate-500 font-semibold w-5">{{ i + 1 }}.</span>
+                    <span class="flex-1 text-slate-700">{{ s.name }}</span>
+                    <span class="text-slate-400 text-xs">{{ s.age }} yrs</span>
                     <button type="button" @click="removeSpouse(i)" class="ml-2 text-red-400 hover:text-red-600" :aria-label="`Remove ${s.name}`">
                       <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
                     </button>
@@ -375,8 +375,8 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
                 </div>
                 <div class="flex gap-2">
                   <input v-model="newSpouse.name" type="text" placeholder="Spouse's full name" :class="IC"/>
-                  <input v-model="newSpouse.age" type="number" min="0" max="120" placeholder="Age" class="w-20 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-                  <button type="button" @click="addSpouse" class="px-3 py-2 bg-blue-50 text-blue-600 text-sm rounded-lg hover:bg-blue-100 transition flex-shrink-0 font-medium">+ Add</button>
+                  <input v-model="newSpouse.age" type="number" min="0" max="120" placeholder="Age" class="w-20 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                  <button type="button" @click="addSpouse" class="px-3 py-2 bg-blue-50 text-blue-600 text-sm rounded-xl hover:bg-blue-100 transition flex-shrink-0 font-medium">+ Add</button>
                 </div>
               </div>
 
@@ -385,10 +385,10 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
                 <label :class="LC">Children</label>
                 <div class="space-y-2 mb-2">
                   <div v-for="(c, i) in form.family.children" :key="i"
-                    class="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 text-sm">
-                    <span class="text-xs text-gray-500 font-semibold w-5">{{ i + 1 }}.</span>
-                    <span class="flex-1 text-gray-700">{{ c.name }}</span>
-                    <span class="text-gray-400 text-xs">{{ c.age }} yrs</span>
+                    class="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2 text-sm">
+                    <span class="text-xs text-slate-500 font-semibold w-5">{{ i + 1 }}.</span>
+                    <span class="flex-1 text-slate-700">{{ c.name }}</span>
+                    <span class="text-slate-400 text-xs">{{ c.age }} yrs</span>
                     <button type="button" @click="removeChild(i)" class="ml-2 text-red-400 hover:text-red-600" :aria-label="`Remove ${c.name}`">
                       <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
                     </button>
@@ -396,8 +396,8 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
                 </div>
                 <div class="flex gap-2">
                   <input v-model="newChild.name" type="text" placeholder="Child's name" :class="IC"/>
-                  <input v-model="newChild.age" type="number" min="0" max="30" placeholder="Age" class="w-20 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-                  <button type="button" @click="addChild" class="px-3 py-2 bg-blue-50 text-blue-600 text-sm rounded-lg hover:bg-blue-100 transition flex-shrink-0 font-medium">+ Add</button>
+                  <input v-model="newChild.age" type="number" min="0" max="30" placeholder="Age" class="w-20 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                  <button type="button" @click="addChild" class="px-3 py-2 bg-blue-50 text-blue-600 text-sm rounded-xl hover:bg-blue-100 transition flex-shrink-0 font-medium">+ Add</button>
                 </div>
               </div>
             </template>
@@ -408,10 +408,10 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
                 <label :class="LC">Deceased Spouse(s) / Widows</label>
                 <div class="space-y-2 mb-2">
                   <div v-for="(w, i) in form.family.widows" :key="i"
-                    class="flex items-center gap-2 bg-white rounded-lg px-3 py-2 text-sm border border-purple-100">
-                    <span class="text-xs text-gray-500 font-semibold w-5">{{ i + 1 }}.</span>
-                    <span class="flex-1 text-gray-700">{{ w.name }}</span>
-                    <span class="text-gray-400 text-xs">{{ w.age }} yrs</span>
+                    class="flex items-center gap-2 bg-white rounded-xl px-3 py-2 text-sm border border-purple-100">
+                    <span class="text-xs text-slate-500 font-semibold w-5">{{ i + 1 }}.</span>
+                    <span class="flex-1 text-slate-700">{{ w.name }}</span>
+                    <span class="text-slate-400 text-xs">{{ w.age }} yrs</span>
                     <button type="button" @click="removeWidow(i)" class="ml-2 text-red-400 hover:text-red-600" :aria-label="`Remove ${w.name}`">
                       <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
                     </button>
@@ -419,8 +419,8 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
                 </div>
                 <div class="flex gap-2">
                   <input v-model="newWidow.name" type="text" placeholder="Deceased spouse's name" :class="IC"/>
-                  <input v-model="newWidow.age" type="number" min="0" max="120" placeholder="Age" class="w-20 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-                  <button type="button" @click="addWidow" class="px-3 py-2 bg-purple-50 text-purple-600 text-sm rounded-lg hover:bg-purple-100 transition flex-shrink-0 font-medium">+ Add</button>
+                  <input v-model="newWidow.age" type="number" min="0" max="120" placeholder="Age" class="w-20 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                  <button type="button" @click="addWidow" class="px-3 py-2 bg-purple-50 text-purple-600 text-sm rounded-xl hover:bg-purple-100 transition flex-shrink-0 font-medium">+ Add</button>
                 </div>
               </div>
 
@@ -429,10 +429,10 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
                 <label :class="LC">Children</label>
                 <div class="space-y-2 mb-2">
                   <div v-for="(c, i) in form.family.children" :key="i"
-                    class="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 text-sm">
-                    <span class="text-xs text-gray-500 font-semibold w-5">{{ i + 1 }}.</span>
-                    <span class="flex-1 text-gray-700">{{ c.name }}</span>
-                    <span class="text-gray-400 text-xs">{{ c.age }} yrs</span>
+                    class="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2 text-sm">
+                    <span class="text-xs text-slate-500 font-semibold w-5">{{ i + 1 }}.</span>
+                    <span class="flex-1 text-slate-700">{{ c.name }}</span>
+                    <span class="text-slate-400 text-xs">{{ c.age }} yrs</span>
                     <button type="button" @click="removeChild(i)" class="ml-2 text-red-400 hover:text-red-600" :aria-label="`Remove ${c.name}`">
                       <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
                     </button>
@@ -440,8 +440,8 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
                 </div>
                 <div class="flex gap-2">
                   <input v-model="newChild.name" type="text" placeholder="Child's name" :class="IC"/>
-                  <input v-model="newChild.age" type="number" min="0" max="30" placeholder="Age" class="w-20 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-                  <button type="button" @click="addChild" class="px-3 py-2 bg-blue-50 text-blue-600 text-sm rounded-lg hover:bg-blue-100 transition flex-shrink-0 font-medium">+ Add</button>
+                  <input v-model="newChild.age" type="number" min="0" max="30" placeholder="Age" class="w-20 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                  <button type="button" @click="addChild" class="px-3 py-2 bg-blue-50 text-blue-600 text-sm rounded-xl hover:bg-blue-100 transition flex-shrink-0 font-medium">+ Add</button>
                 </div>
               </div>
             </template>
@@ -450,7 +450,7 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
             <template v-if="form.family.maritalStatus === 'Divorced'">
               <div class="p-4 bg-orange-50/40 rounded-xl border border-orange-100">
                 <label :class="LC">Year of Divorce</label>
-                <input v-model="form.family.divorceYear" type="number" min="1950" :max="new Date().getFullYear()" placeholder="e.g. 2020" class="w-40 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                <input v-model="form.family.divorceYear" type="number" min="1950" :max="new Date().getFullYear()" placeholder="e.g. 2020" class="w-40 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
               </div>
 
               <!-- Children -->
@@ -458,10 +458,10 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
                 <label :class="LC">Children</label>
                 <div class="space-y-2 mb-2">
                   <div v-for="(c, i) in form.family.children" :key="i"
-                    class="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 text-sm">
-                    <span class="text-xs text-gray-500 font-semibold w-5">{{ i + 1 }}.</span>
-                    <span class="flex-1 text-gray-700">{{ c.name }}</span>
-                    <span class="text-gray-400 text-xs">{{ c.age }} yrs</span>
+                    class="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2 text-sm">
+                    <span class="text-xs text-slate-500 font-semibold w-5">{{ i + 1 }}.</span>
+                    <span class="flex-1 text-slate-700">{{ c.name }}</span>
+                    <span class="text-slate-400 text-xs">{{ c.age }} yrs</span>
                     <button type="button" @click="removeChild(i)" class="ml-2 text-red-400 hover:text-red-600" :aria-label="`Remove ${c.name}`">
                       <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
                     </button>
@@ -469,8 +469,8 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
                 </div>
                 <div class="flex gap-2">
                   <input v-model="newChild.name" type="text" placeholder="Child's name" :class="IC"/>
-                  <input v-model="newChild.age" type="number" min="0" max="30" placeholder="Age" class="w-20 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-                  <button type="button" @click="addChild" class="px-3 py-2 bg-blue-50 text-blue-600 text-sm rounded-lg hover:bg-blue-100 transition flex-shrink-0 font-medium">+ Add</button>
+                  <input v-model="newChild.age" type="number" min="0" max="30" placeholder="Age" class="w-20 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                  <button type="button" @click="addChild" class="px-3 py-2 bg-blue-50 text-blue-600 text-sm rounded-xl hover:bg-blue-100 transition flex-shrink-0 font-medium">+ Add</button>
                 </div>
               </div>
             </template>
@@ -499,11 +499,11 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
 
             <!-- Household Members -->
             <div>
-              <label :class="LC">Other Household Members <span class="text-gray-400 font-normal">(optional)</span></label>
+              <label :class="LC">Other Household Members <span class="text-slate-400 font-normal">(optional)</span></label>
               <div class="space-y-2 mb-2">
                 <div v-for="(m, i) in form.family.householdMembers" :key="i"
-                  class="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 text-sm">
-                  <span class="flex-1 text-gray-700">{{ m.name }} <span class="text-gray-400">({{ m.relation }}, {{ m.age }} yrs)</span></span>
+                  class="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2 text-sm">
+                  <span class="flex-1 text-slate-700">{{ m.name }} <span class="text-slate-400">({{ m.relation }}, {{ m.age }} yrs)</span></span>
                   <button type="button" @click="removeMember(i)" class="text-red-400 hover:text-red-600" :aria-label="`Remove ${m.name}`">
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
                   </button>
@@ -512,7 +512,7 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
               <div class="flex flex-wrap gap-1.5 mb-2">
                 <button v-for="rel in ['Spouse', 'Widow', 'Son', 'Daughter', 'Parent', 'Sibling']" :key="rel"
                   type="button"
-                  :class="['px-2.5 py-1 rounded-md text-xs border transition', newMember.relation === rel ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-500 hover:border-blue-300 bg-white']"
+                  :class="['px-2.5 py-1 rounded-md text-xs border transition', newMember.relation === rel ? 'bg-blue-600 text-white border-blue-600' : 'border-slate-200 text-slate-500 hover:border-blue-300 bg-white']"
                   @click="newMember.relation = newMember.relation === rel ? '' : rel">
                   {{ rel }}
                 </button>
@@ -521,8 +521,8 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
                 <input v-model="newMember.name" type="text" placeholder="Name" :class="IC"/>
                 <input v-model="newMember.relation" type="text" placeholder="Relation (e.g. Uncle)" :class="IC"/>
                 <div class="flex gap-2">
-                  <input v-model="newMember.age" type="number" min="0" placeholder="Age" class="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-                  <button type="button" @click="addMember" class="px-3 py-2 bg-blue-50 text-blue-600 text-sm rounded-lg hover:bg-blue-100 transition font-medium">+</button>
+                  <input v-model="newMember.age" type="number" min="0" placeholder="Age" class="flex-1 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                  <button type="button" @click="addMember" class="px-3 py-2 bg-blue-50 text-blue-600 text-sm rounded-xl hover:bg-blue-100 transition font-medium">+</button>
                 </div>
               </div>
             </div>
@@ -531,11 +531,11 @@ const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
 
         <!-- Bottom action bar -->
         <div class="flex items-center justify-end gap-3 py-2">
-          <button type="button" @click="router.back()" class="px-5 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition">
+          <button type="button" @click="router.back()" class="px-5 py-2.5 border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-50 transition">
             Cancel
           </button>
           <button type="button" @click="savePatient" :disabled="saving"
-            class="flex items-center gap-2 px-8 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-semibold rounded-lg transition">
+            class="flex items-center gap-2 px-8 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition">
             <svg v-if="saving" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v8H4z"/>

@@ -21,8 +21,8 @@ const subtitle = computed(() => route.meta.subtitle || 'This feature is under de
           <circle cx="12" cy="12" r="10"/><path d="M12 7v5l3 3"/>
         </svg>
       </div>
-      <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ title }}</h1>
-      <p class="text-gray-500 text-sm max-w-xs mb-6 leading-relaxed">
+      <h1 class="text-2xl font-bold text-slate-900 mb-2">{{ title }}</h1>
+      <p class="text-slate-500 text-sm max-w-xs mb-6 leading-relaxed">
         Coming Soon... We're working on bringing this feature to Exobios. Check back later.
       </p>
       <button @click="router.push('/dashboard')" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition">

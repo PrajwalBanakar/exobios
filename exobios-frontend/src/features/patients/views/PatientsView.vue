@@ -2,12 +2,21 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AppShell from '@/shared/components/AppShell.vue'
+import StatCard from '@/shared/components/StatCard.vue'
+import RiskBadge from '@/shared/components/RiskBadge.vue'
+import PatientAvatar from '@/shared/components/PatientAvatar.vue'
+import PatientActionsMenu from '@/shared/components/PatientActionsMenu.vue'
+import EmptyState from '@/shared/components/EmptyState.vue'
+import ConfirmModal from '@/shared/components/ConfirmModal.vue'
 import { usePatientsStore } from '@/features/patients/stores/patients'
 import { useI18n } from '@/i18n'
+import { useToast } from '@/shared/composables/useToast'
+import { formatPatientId } from '@/shared/utils/format'
 
 const router = useRouter()
 const store  = usePatientsStore()
 const { t }  = useI18n()
+const { showToast } = useToast()
 
 const search      = ref('')
 const riskFilter  = ref('All')
@@ -29,12 +38,6 @@ const riskOptionLabel = (r) => {
   if (r === 'Moderate') return t('risk.moderate')
   if (r === 'Low')      return t('risk.low')
   return r
-}
-
-const riskClasses = {
-  High:     'bg-red-100 text-red-600',
-  Moderate: 'bg-orange-100 text-orange-600',
-  Low:      'bg-green-100 text-green-600',
 }
 
 const RISK_ORDER = { High: 0, Moderate: 1, Low: 2 }
@@ -65,7 +68,14 @@ const paged      = computed(() => filtered.value.slice((currentPage.value - 1) *
 function goToPage(p) { currentPage.value = Math.max(1, Math.min(p, totalPages.value)) }
 
 const deleteConfirmId = ref(null)
-function doDelete(id) { store.remove(id); deleteConfirmId.value = null }
+function doDelete() {
+  const id = deleteConfirmId.value
+  const name = store.patients.find(p => p.id === id)?.name || 'Patient'
+  store.remove(id)
+  deleteConfirmId.value = null
+  if (currentPage.value > totalPages.value) currentPage.value = totalPages.value
+  showToast(`${name} removed`, 'success')
+}
 
 const counts = computed(() => ({
   total: store.patients.length,
@@ -74,10 +84,13 @@ const counts = computed(() => ({
   low:   store.patients.filter(p => p.risk === 'Low').length,
 }))
 
+function openPatient(id) { router.push(`/patients/${id}`) }
+function goEdit(id)      { router.push(`/patients/${id}/edit`) }
+function goAssess(id)    { router.push(`/assessment/new?patientId=${id}`) }
+
 // Sortable column header helper — renders the up/down chevron pair
 const sortArrows = (key) => ({
   active: sortKey.value === key,
-  asc:    sortKey.value === key && sortDir.value === 'asc',
 })
 </script>
 
@@ -88,163 +101,197 @@ const sortArrows = (key) => ({
 
     <template #topbar-left>
       <div class="flex items-center gap-3">
+        <h1 class="truncate text-sm font-semibold text-slate-900 md:hidden">{{ t('nav.patients') }}</h1>
         <div class="relative hidden md:block">
-          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input v-model="search" type="text" :placeholder="t('patients.searchPlaceholder')"
-            class="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-64 rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm transition focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40"
             @input="currentPage = 1"/>
         </div>
       </div>
     </template>
 
-    <div class="p-6 space-y-5">
-      <!-- Summary stat cards -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div v-for="c in [
-          { val: counts.total, labelKey: 'dashboard.totalPatients', color: 'bg-blue-600'   },
-          { val: counts.high,  labelKey: 'risk.high',               color: 'bg-red-500'    },
-          { val: counts.mod,   labelKey: 'risk.moderate',           color: 'bg-orange-400' },
-          { val: counts.low,   labelKey: 'risk.low',                color: 'bg-green-500'  },
-        ]" :key="c.labelKey"
-          class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
-          <div :class="[c.color, 'w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0']">
-            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-          </div>
-          <div>
-            <div class="text-xl font-bold text-gray-900">{{ c.val }}</div>
-            <div class="text-xs text-gray-500">{{ t(c.labelKey) }}</div>
-          </div>
-        </div>
+    <div class="space-y-5 p-4 md:p-6">
+      <!-- Mobile search -->
+      <div class="relative md:hidden">
+        <svg class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input v-model="search" type="search" :placeholder="t('patients.searchPlaceholder')"
+          class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+          @input="currentPage = 1"/>
       </div>
 
-      <div class="bg-white rounded-xl border border-gray-100 shadow-sm">
+      <!-- Summary stat cards -->
+      <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard :label="t('dashboard.totalPatients')" :value="counts.total" tone="blue">
+          <template #icon>
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          </template>
+        </StatCard>
+        <StatCard :label="t('risk.high')" :value="counts.high" tone="red">
+          <template #icon>
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </template>
+        </StatCard>
+        <StatCard :label="t('risk.moderate')" :value="counts.mod" tone="amber">
+          <template #icon>
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </template>
+        </StatCard>
+        <StatCard :label="t('risk.low')" :value="counts.low" tone="green">
+          <template #icon>
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M20 6L9 17l-5-5"/></svg>
+          </template>
+        </StatCard>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 bg-white">
         <!-- Table toolbar -->
-        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 gap-3 flex-wrap">
-          <h2 class="font-semibold text-gray-900">{{ t('nav.patients') }}</h2>
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+          <h2 class="font-semibold text-slate-900">{{ t('nav.patients') }}</h2>
           <div class="flex items-center gap-3">
             <!-- Risk filter tabs -->
-            <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+            <div class="flex items-center gap-1 rounded-lg bg-slate-100 p-1">
               <button v-for="r in riskOptions" :key="r"
-                :class="['px-3 py-1 text-xs font-medium rounded-md transition', riskFilter === r ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700']"
+                :class="['rounded-md px-3 py-1 text-xs font-medium transition', riskFilter === r ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700']"
                 @click="riskFilter = r; currentPage = 1">{{ riskOptionLabel(r) }}</button>
             </div>
             <button @click="router.push('/patients/new')"
-              class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition">
-              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+              class="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-blue-700">
+              <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
               {{ t('nav.addPatient') }}
             </button>
           </div>
         </div>
 
-        <!-- Empty state -->
-        <div v-if="!filtered.length" class="py-16 text-center">
-          <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-          <p class="text-sm text-gray-500">{{ t('patients.noResults') }}</p>
-        </div>
+        <!-- Empty states -->
+        <EmptyState v-if="store.patients.length === 0" icon="users" :title="t('dashboard.noPatientsYet')" :message="t('dashboard.noPatientsYetDesc')">
+          <button @click="router.push('/patients/new')" class="mt-4 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700">
+            {{ t('nav.addPatient') }}
+          </button>
+        </EmptyState>
+        <EmptyState v-else-if="!filtered.length" icon="search" :title="t('dashboard.noResults')" :message="t('patients.noResults')"/>
 
-        <!-- Sortable table -->
-        <div v-else class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="border-b border-gray-100 bg-gray-50/50">
-                <th v-for="col in [
-                  { key: 'name',     label: t('table.patientName') },
-                  { key: 'age',      label: t('table.ageGender') },
-                  { key: null,       label: t('common.phone') },
-                  { key: 'location', label: t('common.location') },
-                  { key: 'risk',     label: t('table.risk') },
-                  { key: 'date',     label: t('common.date') },
-                  { key: null,       label: t('common.actions') },
-                ]" :key="col.label" class="text-left px-4 py-3 first:px-5">
-                  <button v-if="col.key" @click="toggleSort(col.key)"
-                    class="flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-gray-800 group">
-                    {{ col.label }}
-                    <span :class="['flex flex-col leading-none', sortArrows(col.key).active ? 'text-blue-600' : 'opacity-50 group-hover:opacity-100']">
-                      <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 10 6"><path d="M5 0L10 6H0z"/></svg>
-                      <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 10 6"><path d="M5 6L0 0h10z"/></svg>
-                    </span>
-                  </button>
-                  <span v-else class="text-xs font-semibold text-gray-500">{{ col.label }}</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <template v-for="p in paged" :key="p.id">
-                <!-- Normal row -->
-                <tr v-if="deleteConfirmId !== p.id"
-                  class="border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors"
-                  @click="router.push(`/patients/${p.id}`)">
-                  <td class="px-5 py-3">
+        <template v-else>
+          <!-- Desktop table -->
+          <div class="hidden overflow-x-auto md:block">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-slate-100 bg-slate-50/50">
+                  <th v-for="col in [
+                    { key: 'name',     label: t('table.patientName') },
+                    { key: 'age',      label: t('table.ageGender') },
+                    { key: null,       label: t('common.phone') },
+                    { key: 'location', label: t('common.location') },
+                    { key: 'risk',     label: t('table.risk') },
+                    { key: 'date',     label: t('common.date') },
+                    { key: null,       label: t('common.actions') },
+                  ]" :key="col.label" scope="col" class="px-4 py-3 text-left first:px-5 last:text-right">
+                    <button v-if="col.key" @click="toggleSort(col.key)"
+                      class="group flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-800">
+                      {{ col.label }}
+                      <span :class="['flex flex-col leading-none', sortArrows(col.key).active ? 'text-blue-600' : 'opacity-50 group-hover:opacity-100']">
+                        <svg class="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 10 6"><path d="M5 0L10 6H0z"/></svg>
+                        <svg class="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 10 6"><path d="M5 6L0 0h10z"/></svg>
+                      </span>
+                    </button>
+                    <span v-else class="text-xs font-semibold text-slate-500">{{ col.label }}</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="p in paged" :key="p.id"
+                  class="cursor-pointer border-b border-slate-50 transition-colors hover:bg-slate-50"
+                  @click="openPatient(p.id)">
+                  <td class="px-5 py-3.5">
                     <div class="flex items-center gap-2.5">
-                      <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs font-semibold text-blue-600 flex-shrink-0">
-                        {{ p.name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase() }}
-                      </div>
+                      <PatientAvatar :name="p.name" size="sm"/>
                       <div>
-                        <div class="font-medium text-gray-800 text-sm">{{ p.name }}</div>
-                        <div class="text-xs text-gray-400">PT-2025-{{ String(p.id).padStart(6,'0') }}</div>
+                        <div class="text-sm font-medium text-slate-800">{{ p.name }}</div>
+                        <div class="text-xs text-slate-400">{{ formatPatientId(p.id) }}</div>
                       </div>
                     </div>
                   </td>
-                  <td class="px-4 py-3 text-gray-600 text-sm">{{ p.age }} / {{ p.gender }}</td>
-                  <td class="px-4 py-3 text-gray-600 text-sm">{{ p.phone }}</td>
-                  <td class="px-4 py-3 text-gray-600 text-sm max-w-[160px] truncate">{{ p.address?.village || p.location || '—' }}</td>
-                  <td class="px-4 py-3">
-                    <span :class="[riskClasses[p.risk] || 'bg-gray-100 text-gray-600', 'px-2.5 py-1 rounded-full text-xs font-semibold']">{{ riskOptionLabel(p.risk) }}</span>
-                  </td>
-                  <td class="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{{ p.date }}</td>
-                  <td class="px-4 py-3">
-                    <div class="flex items-center gap-1">
-                      <button @click.stop="router.push(`/assessment/new?patientId=${p.id}`)" title="New Assessment" class="p-1.5 text-green-600 hover:bg-green-50 rounded transition">
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-3-3v6m9-6a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+                  <td class="px-4 py-3.5 text-sm text-slate-600">{{ p.age }} / {{ p.gender }}</td>
+                  <td class="px-4 py-3.5 text-sm text-slate-600">{{ p.phone }}</td>
+                  <td class="max-w-[160px] truncate px-4 py-3.5 text-sm text-slate-600">{{ p.address?.village || p.location || '—' }}</td>
+                  <td class="px-4 py-3.5"><RiskBadge :risk="p.risk"/></td>
+                  <td class="whitespace-nowrap px-4 py-3.5 text-xs text-slate-500">{{ p.date }}</td>
+                  <td class="px-4 py-3.5">
+                    <div class="flex items-center justify-end gap-1.5" @click.stop>
+                      <button @click="openPatient(p.id)" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
+                        {{ t('dashboard.viewPatient') }}
                       </button>
-                      <button @click.stop="router.push(`/patients/${p.id}`)" :title="t('common.viewAll')" class="p-1.5 text-gray-400 hover:bg-gray-100 rounded transition">
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                      </button>
-                      <button @click.stop="router.push(`/patients/${p.id}/edit`)" :title="t('common.edit')" class="p-1.5 text-blue-500 hover:bg-blue-50 rounded transition">
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                      </button>
-                      <button @click.stop="deleteConfirmId = p.id" :title="t('common.delete')" class="p-1.5 text-red-400 hover:bg-red-50 rounded transition">
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-                      </button>
+                      <PatientActionsMenu :patient-name="p.name"
+                        @view="openPatient(p.id)" @assess="goAssess(p.id)" @edit="goEdit(p.id)" @delete="deleteConfirmId = p.id"/>
                     </div>
                   </td>
                 </tr>
-                <!-- Delete confirmation row -->
-                <tr v-else class="border-b border-red-100 bg-red-50">
-                  <td colspan="7" class="px-5 py-3">
-                    <div class="flex items-center justify-between">
-                      <span class="text-sm text-red-700 font-medium">{{ t('common.delete') }} <strong>{{ p.name }}</strong>? {{ t('patients.deleteConfirm') }}</span>
-                      <div class="flex gap-2">
-                        <button @click.stop="deleteConfirmId = null" class="px-3 py-1.5 text-xs border border-gray-300 text-gray-600 rounded-lg hover:bg-white">{{ t('common.cancel') }}</button>
-                        <button @click.stop="doDelete(p.id)" class="px-3 py-1.5 text-xs bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg">{{ t('common.yesDelete') }}</button>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              </template>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Pagination -->
-        <div class="flex items-center justify-between px-5 py-4">
-          <span class="text-xs text-gray-500">
-            {{ t('patients.showing') }} {{ Math.min((currentPage-1)*perPage+1, filtered.length) }}–{{ Math.min(currentPage*perPage, filtered.length) }} {{ t('patients.of') }} {{ filtered.length }} {{ t('patients.patients') }}
-          </span>
-          <div class="flex items-center gap-1">
-            <button :disabled="currentPage === 1" @click="goToPage(currentPage - 1)" aria-label="Previous page" class="w-7 h-7 flex items-center justify-center text-gray-400 hover:bg-gray-100 rounded disabled:opacity-40">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-            </button>
-            <button v-for="pg in Math.min(totalPages, 5)" :key="pg"
-              :class="['w-7 h-7 flex items-center justify-center text-xs rounded transition', currentPage === pg ? 'bg-blue-600 text-white font-semibold' : 'text-gray-600 hover:bg-gray-100']"
-              :aria-label="`Page ${pg}`" :aria-current="currentPage === pg ? 'page' : undefined"
-              @click="goToPage(pg)">{{ pg }}</button>
-            <button :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)" aria-label="Next page" class="w-7 h-7 flex items-center justify-center text-gray-400 hover:bg-gray-100 rounded disabled:opacity-40">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-            </button>
+              </tbody>
+            </table>
           </div>
-        </div>
+
+          <!-- Mobile patient cards -->
+          <div class="divide-y divide-slate-100 md:hidden">
+            <div v-for="p in paged" :key="p.id" class="p-4" @click="openPatient(p.id)">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex min-w-0 items-center gap-3">
+                  <PatientAvatar :name="p.name"/>
+                  <div class="min-w-0">
+                    <div class="truncate font-semibold text-slate-800">{{ p.name }}</div>
+                    <div class="text-xs text-slate-400">{{ formatPatientId(p.id) }}</div>
+                  </div>
+                </div>
+                <div @click.stop>
+                  <PatientActionsMenu :patient-name="p.name"
+                    @view="openPatient(p.id)" @assess="goAssess(p.id)" @edit="goEdit(p.id)" @delete="deleteConfirmId = p.id"/>
+                </div>
+              </div>
+              <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+                <span>{{ p.age }} · {{ p.gender }}</span>
+                <span class="truncate">{{ p.address?.village || p.location || '—' }}</span>
+                <span>{{ p.phone }}</span>
+              </div>
+              <div class="mt-3 flex items-center justify-between">
+                <RiskBadge :risk="p.risk"/>
+                <span class="text-xs text-slate-500">{{ p.date }}</span>
+              </div>
+              <button @click.stop="openPatient(p.id)"
+                class="mt-3 w-full rounded-lg border border-slate-200 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
+                {{ t('dashboard.viewPatient') }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Pagination -->
+          <div class="flex items-center justify-between px-5 py-4">
+            <span class="text-xs text-slate-500">
+              {{ t('patients.showing') }} {{ Math.min((currentPage-1)*perPage+1, filtered.length) }}–{{ Math.min(currentPage*perPage, filtered.length) }} {{ t('patients.of') }} {{ filtered.length }} {{ t('patients.patients') }}
+            </span>
+            <div class="flex items-center gap-1">
+              <button :disabled="currentPage === 1" @click="goToPage(currentPage - 1)" aria-label="Previous page" class="flex h-7 w-7 items-center justify-center rounded text-slate-400 hover:bg-slate-100 disabled:opacity-40">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <button v-for="pg in Math.min(totalPages, 5)" :key="pg"
+                :class="['flex h-7 w-7 items-center justify-center rounded text-xs transition', currentPage === pg ? 'bg-blue-600 font-semibold text-white' : 'text-slate-600 hover:bg-slate-100']"
+                :aria-label="`Page ${pg}`" :aria-current="currentPage === pg ? 'page' : undefined"
+                @click="goToPage(pg)">{{ pg }}</button>
+              <button :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)" aria-label="Next page" class="flex h-7 w-7 items-center justify-center rounded text-slate-400 hover:bg-slate-100 disabled:opacity-40">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+            </div>
+          </div>
+        </template>
       </div>
     </div>
+
+    <ConfirmModal
+      :show="!!deleteConfirmId"
+      :title="t('dashboard.deletePatient')"
+      :message="`Remove ${store.patients.find(p => p.id === deleteConfirmId)?.name || 'this patient'}? This cannot be undone.`"
+      :confirm-text="t('common.delete')"
+      :danger="true"
+      @confirm="doDelete"
+      @cancel="deleteConfirmId = null"
+    />
   </AppShell>
 </template>

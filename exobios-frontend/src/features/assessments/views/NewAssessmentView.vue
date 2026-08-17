@@ -16,6 +16,7 @@ import CNSExam from '@/features/assessments/components/examination/systemic/CNSE
 import { addToQueue } from '@/shared/offline/syncQueue'
 import { isOnline } from '@/shared/offline/network'
 import { useToast } from '@/shared/composables/useToast'
+import { formatPatientId } from '@/shared/utils/format'
 
 const router = useRouter()
 const route  = useRoute()
@@ -39,6 +40,29 @@ const linkedPatient   = computed(() => linkedPatientId.value ? store.getById(lin
 // ── Section visibility ────────────────────────────────────────────────────────
 const sections = ref({ basic: true, complaints: false, pastHistory: false, familyHistory: false, examination: false })
 function toggleSection(key) { sections.value[key] = !sections.value[key] }
+
+// Progress steps shown in the sticky-ish header ribbon — "complete" is derived from
+// whether the section actually has data, not just whether it was expanded, so the
+// worker can see real progress at a glance rather than a stale checklist.
+const STEP_DEFS = [
+  { key: 'basic',         label: 'Basic Info' },
+  { key: 'complaints',    label: 'Complaints' },
+  { key: 'pastHistory',   label: 'Past History' },
+  { key: 'familyHistory', label: 'Family & Docs' },
+  { key: 'examination',   label: 'Exam & Vitals' },
+]
+const stepComplete = computed(() => ({
+  basic:         !!(form.fullName.trim() && form.age && form.gender),
+  complaints:    selectedComplaintIds.value.length > 0,
+  pastHistory:   pastHistory.hasSimilar || pastHistory.alcohol.present || pastHistory.tobacco.present ||
+                 Object.values(pastHistory.conditions).some(c => Array.isArray(c) ? c.length > 0 : c.present),
+  familyHistory: familyHistory.sameHouseComplaints.present || Object.values(familyHistory.diseases).some(d => Array.isArray(d) ? d.length > 0 : d.present),
+  examination:   !!(examForm.height || examForm.weight || vitals.bpSystolic || vitals.heartRate || vitals.temperature),
+}))
+function goToStep(key) {
+  sections.value[key] = true
+  document.getElementById(`section-${key}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
 
 // ── Basic Info ────────────────────────────────────────────────────────────────
 const form = reactive({
@@ -401,9 +425,9 @@ async function runAnalysis() {
 }
 
 // ── Style constants ───────────────────────────────────────────────────────────
-const IC  = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500'
-const TC  = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none'
-const LC  = 'block text-xs font-medium text-gray-600 mb-1.5'
+const IC  = 'w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500'
+const TC  = 'w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none'
+const LC  = 'block text-xs font-medium text-slate-600 mb-1.5'
 const SEL = ' bg-white'
 </script>
 
@@ -435,8 +459,8 @@ const SEL = ' bg-white'
         </div>
         <div class="flex-1 min-w-0">
           <div class="text-xs text-green-600 font-semibold uppercase tracking-wide mb-0.5">Patient Registered</div>
-          <div class="text-sm font-semibold text-gray-800">{{ linkedPatient.name }} · {{ linkedPatient.age }} yrs · {{ linkedPatient.gender }}</div>
-          <div class="text-xs text-gray-500">{{ linkedPatient.phone }} · {{ linkedPatient.address?.village || linkedPatient.location }}</div>
+          <div class="text-sm font-semibold text-slate-800">{{ linkedPatient.name }} · {{ linkedPatient.age }} yrs · {{ linkedPatient.gender }}</div>
+          <div class="text-xs text-slate-500">{{ linkedPatient.phone }} · {{ linkedPatient.address?.village || linkedPatient.location }}</div>
         </div>
         <button @click="router.push('/patients')" class="text-xs text-green-700 underline">View All Patients</button>
       </div>
@@ -460,36 +484,56 @@ const SEL = ' bg-white'
         <div class="flex-1 min-w-0 space-y-4">
 
           <!-- Header strip -->
-          <div class="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 flex items-center gap-6 flex-wrap">
+          <div class="bg-white rounded-xl border border-slate-100 shadow-sm px-5 py-4 flex items-center gap-6 flex-wrap">
             <div class="flex items-center gap-3">
               <div class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center">
                 <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               </div>
               <div>
-                <div class="text-xs text-gray-500">Patient ID</div>
-                <div class="text-sm font-semibold text-gray-800">
-                  {{ isEdit ? `PT-2025-${String(patientId).padStart(6,'0')}` : linkedPatientId ? `PT-2025-${String(linkedPatientId).padStart(6,'0')}` : 'Auto-assigned on save' }}
+                <div class="text-xs text-slate-500">Patient ID</div>
+                <div class="text-sm font-semibold text-slate-800">
+                  {{ isEdit ? formatPatientId(patientId) : linkedPatientId ? formatPatientId(linkedPatientId) : 'Auto-assigned on save' }}
                 </div>
               </div>
             </div>
-            <div class="ml-auto text-right text-xs text-gray-500">
-              <div class="font-medium text-gray-700">Date &amp; Time</div>
+            <div class="ml-auto text-right text-xs text-slate-500">
+              <div class="font-medium text-slate-700">Date &amp; Time</div>
               <div>{{ new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) }}, {{ new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) }}</div>
             </div>
             <div class="text-right text-xs">
-              <div class="text-gray-500 mb-1">Type</div>
+              <div class="text-slate-500 mb-1">Type</div>
               <span class="px-2.5 py-1 bg-blue-50 text-blue-600 border border-blue-200 text-xs font-medium rounded-md">{{ isEdit ? 'Edit' : 'New' }}</span>
             </div>
           </div>
 
+          <!-- Step progress ribbon -->
+          <div class="bg-white rounded-xl border border-slate-100 shadow-sm px-5 py-4 overflow-x-auto">
+            <div class="flex items-center gap-1 min-w-max">
+              <template v-for="(step, i) in STEP_DEFS" :key="step.key">
+                <button type="button" @click="goToStep(step.key)"
+                  class="flex items-center gap-2 rounded-lg px-2.5 py-1.5 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40">
+                  <span :class="[
+                    'flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold',
+                    stepComplete[step.key] ? 'bg-blue-600 text-white' : sections[step.key] ? 'border-2 border-blue-400 text-blue-600' : 'border-2 border-slate-200 text-slate-400',
+                  ]">
+                    <svg v-if="stepComplete[step.key]" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+                    <template v-else>{{ i + 1 }}</template>
+                  </span>
+                  <span :class="['text-xs font-medium whitespace-nowrap', stepComplete[step.key] || sections[step.key] ? 'text-slate-800' : 'text-slate-400']">{{ step.label }}</span>
+                </button>
+                <div v-if="i < STEP_DEFS.length - 1" class="h-px w-4 flex-shrink-0 bg-slate-200"/>
+              </template>
+            </div>
+          </div>
+
           <!-- ① Basic Patient Info -->
-          <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div id="section-basic" class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
             <button class="w-full flex items-center justify-between px-5 py-4" @click="toggleSection('basic')">
               <div class="flex items-center gap-3">
                 <svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                <span class="font-semibold text-gray-800">{{ t('assessment.basicInfo') }}</span>
+                <span class="font-semibold text-slate-800">{{ t('assessment.basicInfo') }}</span>
               </div>
-              <svg :class="['w-5 h-5 text-gray-400 transition-transform', sections.basic ? 'rotate-180' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>
+              <svg :class="['w-5 h-5 text-slate-400 transition-transform', sections.basic ? 'rotate-180' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>
             </button>
             <div v-if="sections.basic" class="px-5 pb-5 space-y-4">
               <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -532,23 +576,23 @@ const SEL = ' bg-white'
           </div>
 
           <!-- ② Chief Complaints -->
-          <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div id="section-complaints" class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
             <button class="w-full flex items-center justify-between px-5 py-4" @click="toggleSection('complaints')">
               <div class="flex items-center gap-3">
                 <svg class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-                <span class="font-semibold text-gray-800">Patient Complaints</span>
+                <span class="font-semibold text-slate-800">Patient Complaints</span>
                 <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium">Select all that apply</span>
               </div>
               <div class="flex items-center gap-2">
                 <span v-if="selectedComplaintIds.length" class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold">{{ selectedComplaintIds.length }} selected</span>
-                <svg :class="['w-5 h-5 text-gray-400 transition-transform', sections.complaints ? 'rotate-180' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>
+                <svg :class="['w-5 h-5 text-slate-400 transition-transform', sections.complaints ? 'rotate-180' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>
               </div>
             </button>
 
             <div v-if="sections.complaints" class="px-5 pb-5 space-y-5">
               <!-- Complaint selector grid -->
               <div>
-                <p class="text-xs text-gray-500 mb-3">Tap a complaint to select it. Selected complaints expand for detailed assessment below.</p>
+                <p class="text-xs text-slate-500 mb-3">Tap a complaint to select it. Selected complaints expand for detailed assessment below.</p>
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                   <button
                     v-for="def in COMPLAINTS_DEF" :key="def.id"
@@ -557,8 +601,8 @@ const SEL = ' bg-white'
                     :class="['flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition text-sm font-medium',
                       selectedComplaintIds.includes(def.id)
                         ? (COMPLAINT_COLOR_MAP[def.color]?.selected + ' ' + COMPLAINT_COLOR_MAP[def.color]?.text)
-                        : 'border-gray-200 text-gray-700 hover:bg-gray-50']">
-                    <span :class="['w-2 h-2 rounded-full flex-shrink-0', selectedComplaintIds.includes(def.id) ? 'bg-current' : 'bg-gray-300']"></span>
+                        : 'border-slate-200 text-slate-700 hover:bg-slate-50']">
+                    <span :class="['w-2 h-2 rounded-full flex-shrink-0', selectedComplaintIds.includes(def.id) ? 'bg-current' : 'bg-slate-300']"></span>
                     {{ def.label }}
                   </button>
                 </div>
@@ -566,14 +610,14 @@ const SEL = ' bg-white'
 
               <!-- Detail panels for each selected complaint -->
               <div v-if="selectedComplaintIds.length" class="space-y-4">
-                <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide border-t border-gray-100 pt-4">Complaint Details</div>
+                <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide border-t border-slate-100 pt-4">Complaint Details</div>
 
                 <div v-for="id in selectedComplaintIds" :key="id"
                   :class="['border rounded-xl overflow-hidden', COMPLAINT_COLOR_MAP[getComplaintDef(id)?.color]?.border]">
                   <!-- Panel header -->
                   <div :class="['px-4 py-3 flex items-center gap-2', COMPLAINT_COLOR_MAP[getComplaintDef(id)?.color]?.bg]">
                     <span :class="['text-sm font-semibold', COMPLAINT_COLOR_MAP[getComplaintDef(id)?.color]?.text]">{{ getComplaintDef(id)?.label }}</span>
-                    <button @click="toggleComplaint(id)" class="ml-auto text-gray-400 hover:text-red-500 transition">
+                    <button @click="toggleComplaint(id)" class="ml-auto text-slate-400 hover:text-red-500 transition">
                       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
                     </button>
                   </div>
@@ -591,7 +635,7 @@ const SEL = ' bg-white'
                       <div class="flex flex-wrap gap-2">
                         <label v-for="opt in getComplaintDef(id).onsetOptions" :key="opt"
                           :class="['flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition text-sm',
-                            complaintDetails[id].onset === opt ? 'bg-blue-50 border-blue-400 text-blue-800' : 'border-gray-200 text-gray-700 hover:bg-gray-50']">
+                            complaintDetails[id].onset === opt ? 'bg-blue-50 border-blue-400 text-blue-800' : 'border-slate-200 text-slate-700 hover:bg-slate-50']">
                           <input type="radio" v-model="complaintDetails[id].onset" :value="opt" class="w-3.5 h-3.5 text-blue-600 accent-blue-600"/>
                           {{ opt }}
                         </label>
@@ -599,7 +643,7 @@ const SEL = ' bg-white'
                     </div>
                     <div v-else-if="(getComplaintDef(id)?.onsetOptions?.length || 0) === 1">
                       <label :class="LC">Onset</label>
-                      <span class="text-sm text-gray-700 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 inline-block">{{ getComplaintDef(id).onsetOptions[0] }}</span>
+                      <span class="text-sm text-slate-700 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 inline-block">{{ getComplaintDef(id).onsetOptions[0] }}</span>
                     </div>
 
                     <!-- Duration -->
@@ -608,7 +652,7 @@ const SEL = ' bg-white'
                       <div class="flex flex-wrap gap-2">
                         <label v-for="opt in getComplaintDef(id)?.durationOptions" :key="opt.label"
                           :class="['flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition text-sm',
-                            complaintDetails[id].duration === opt.label ? 'bg-blue-50 border-blue-400 text-blue-800' : 'border-gray-200 text-gray-700 hover:bg-gray-50']">
+                            complaintDetails[id].duration === opt.label ? 'bg-blue-50 border-blue-400 text-blue-800' : 'border-slate-200 text-slate-700 hover:bg-slate-50']">
                           <input type="radio" v-model="complaintDetails[id].duration" :value="opt.label" class="w-3.5 h-3.5 text-blue-600 accent-blue-600"/>
                           <span>{{ opt.label }}</span>
                           <span v-if="opt.flag" class="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded font-medium">AI Flag</span>
@@ -624,12 +668,12 @@ const SEL = ' bg-white'
                           :class="['flex items-start gap-2 p-3 rounded-lg border cursor-pointer transition',
                             complaintDetails[id].severity === opt.label
                               ? (opt.label === 'Severe' ? 'bg-red-50 border-red-400' : opt.label === 'Moderate' ? 'bg-yellow-50 border-yellow-400' : 'bg-green-50 border-green-400')
-                              : 'border-gray-200 hover:bg-gray-50']">
+                              : 'border-slate-200 hover:bg-slate-50']">
                           <input type="radio" v-model="complaintDetails[id].severity" :value="opt.label"
                             :class="['w-3.5 h-3.5 mt-0.5 flex-shrink-0', opt.label === 'Severe' ? 'accent-red-600' : opt.label === 'Moderate' ? 'accent-yellow-600' : 'accent-green-600']"/>
                           <div>
                             <div :class="['text-sm font-semibold', opt.label === 'Severe' ? 'text-red-700' : opt.label === 'Moderate' ? 'text-yellow-700' : 'text-green-700']">{{ opt.label }}</div>
-                            <div v-if="opt.description" class="text-xs text-gray-500 mt-0.5">{{ opt.description }}</div>
+                            <div v-if="opt.description" class="text-xs text-slate-500 mt-0.5">{{ opt.description }}</div>
                           </div>
                         </label>
                       </div>
@@ -643,7 +687,7 @@ const SEL = ' bg-white'
                           :class="['flex items-start gap-2 px-3 py-2.5 rounded-lg border cursor-pointer transition text-sm',
                             complaintDetails[id].symptoms?.includes(sym)
                               ? 'bg-blue-50 border-blue-300 text-blue-800'
-                              : 'border-gray-200 text-gray-700 hover:bg-gray-50']">
+                              : 'border-slate-200 text-slate-700 hover:bg-slate-50']">
                           <input type="checkbox" v-model="complaintDetails[id].symptoms" :value="sym" class="w-4 h-4 rounded text-blue-600 accent-blue-600 mt-0.5 flex-shrink-0"/>
                           <span>{{ sym }}</span>
                         </label>
@@ -665,28 +709,28 @@ const SEL = ' bg-white'
                 </div>
               </div>
 
-              <div v-if="!selectedComplaintIds.length" class="text-center py-8 text-gray-400 text-sm border-2 border-dashed border-gray-200 rounded-xl">
+              <div v-if="!selectedComplaintIds.length" class="text-center py-8 text-slate-400 text-sm border-2 border-dashed border-slate-200 rounded-xl">
                 No complaints selected. Tap complaint cards above to begin.
               </div>
             </div>
           </div>
 
           <!-- ③ Past History -->
-          <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div id="section-pastHistory" class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
             <button class="w-full flex items-center justify-between px-5 py-4" @click="toggleSection('pastHistory')">
               <div class="flex items-center gap-3">
                 <svg class="w-5 h-5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                <span class="font-semibold text-gray-800">Past History</span>
+                <span class="font-semibold text-slate-800">Past History</span>
               </div>
-              <svg :class="['w-5 h-5 text-gray-400 transition-transform', sections.pastHistory ? 'rotate-180' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>
+              <svg :class="['w-5 h-5 text-slate-400 transition-transform', sections.pastHistory ? 'rotate-180' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>
             </button>
             <div v-if="sections.pastHistory" class="px-5 pb-5 space-y-5">
 
               <!-- Similar complaints in past 2 years -->
               <div class="p-4 bg-orange-50/40 border border-orange-100 rounded-xl space-y-3">
                 <label class="flex items-center gap-3 cursor-pointer">
-                  <input v-model="pastHistory.hasSimilar" type="checkbox" class="w-4 h-4 rounded border-gray-300 text-blue-600 accent-blue-600"/>
-                  <span class="text-sm font-medium text-gray-700">History of similar complaints in the past 2 years</span>
+                  <input v-model="pastHistory.hasSimilar" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-blue-600 accent-blue-600"/>
+                  <span class="text-sm font-medium text-slate-700">History of similar complaints in the past 2 years</span>
                 </label>
                 <div v-if="pastHistory.hasSimilar" class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                   <div>
@@ -705,10 +749,10 @@ const SEL = ' bg-white'
               </div>
 
               <!-- Alcohol -->
-              <div class="border border-gray-100 rounded-xl overflow-hidden">
-                <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition">
-                  <input v-model="pastHistory.alcohol.present" type="checkbox" class="w-4 h-4 rounded border-gray-300 text-blue-600 accent-blue-600"/>
-                  <span class="text-sm font-medium text-gray-700 flex-1">History of Alcohol consumption</span>
+              <div class="border border-slate-100 rounded-xl overflow-hidden">
+                <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 transition">
+                  <input v-model="pastHistory.alcohol.present" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-blue-600 accent-blue-600"/>
+                  <span class="text-sm font-medium text-slate-700 flex-1">History of Alcohol consumption</span>
                 </label>
                 <div v-if="pastHistory.alcohol.present" class="px-4 pb-4 pt-0 grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
@@ -737,10 +781,10 @@ const SEL = ' bg-white'
               </div>
 
               <!-- Tobacco -->
-              <div class="border border-gray-100 rounded-xl overflow-hidden">
-                <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition">
-                  <input v-model="pastHistory.tobacco.present" type="checkbox" class="w-4 h-4 rounded border-gray-300 text-blue-600 accent-blue-600"/>
-                  <span class="text-sm font-medium text-gray-700 flex-1">History of Tobacco consumption</span>
+              <div class="border border-slate-100 rounded-xl overflow-hidden">
+                <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 transition">
+                  <input v-model="pastHistory.tobacco.present" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-blue-600 accent-blue-600"/>
+                  <span class="text-sm font-medium text-slate-700 flex-1">History of Tobacco consumption</span>
                 </label>
                 <div v-if="pastHistory.tobacco.present" class="px-4 pb-4 pt-0 grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
@@ -770,7 +814,7 @@ const SEL = ' bg-white'
 
               <!-- Known Conditions -->
               <div>
-                <h4 class="text-sm font-semibold text-gray-700 mb-3">Known Conditions</h4>
+                <h4 class="text-sm font-semibold text-slate-700 mb-3">Known Conditions</h4>
                 <div class="space-y-3">
                   <!-- Reusable condition sub-fields template -->
                   <template v-for="[key, label] in [
@@ -780,10 +824,10 @@ const SEL = ' bg-white'
                     ['highCholesterol', 'High Cholesterol (Dyslipidaemia)'],
                     ['allergy',      'Known Allergies'],
                   ]" :key="key">
-                    <div class="border border-gray-100 rounded-xl overflow-hidden">
-                      <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition">
-                        <input v-model="pastHistory.conditions[key].present" type="checkbox" class="w-4 h-4 rounded border-gray-300 text-blue-600 accent-blue-600"/>
-                        <span class="text-sm font-medium text-gray-700 flex-1">{{ label }}</span>
+                    <div class="border border-slate-100 rounded-xl overflow-hidden">
+                      <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 transition">
+                        <input v-model="pastHistory.conditions[key].present" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-blue-600 accent-blue-600"/>
+                        <span class="text-sm font-medium text-slate-700 flex-1">{{ label }}</span>
                       </label>
                       <div v-if="pastHistory.conditions[key].present" class="px-4 pb-4 pt-1 space-y-3">
                         <!-- Diabetes type -->
@@ -828,12 +872,12 @@ const SEL = ' bg-white'
                   </template>
 
                   <!-- Other diseases -->
-                  <div class="border border-gray-100 rounded-xl overflow-hidden p-4">
+                  <div class="border border-slate-100 rounded-xl overflow-hidden p-4">
                     <label :class="LC">Other Diseases / Conditions</label>
                     <div class="space-y-2 mb-2">
-                      <div v-for="(d, i) in pastHistory.conditions.otherDiseases" :key="i" class="border border-gray-100 rounded-lg p-3 bg-gray-50/50 space-y-2">
+                      <div v-for="(d, i) in pastHistory.conditions.otherDiseases" :key="i" class="border border-slate-100 rounded-lg p-3 bg-slate-50/50 space-y-2">
                         <div class="flex items-center gap-2">
-                          <span class="text-sm font-medium text-gray-700 flex-1">{{ d.name }}</span>
+                          <span class="text-sm font-medium text-slate-700 flex-1">{{ d.name }}</span>
                           <button @click="removeOtherDisease(i)" class="text-red-400 hover:text-red-600">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
                           </button>
@@ -879,31 +923,31 @@ const SEL = ' bg-white'
           </div>
 
           <!-- ④ Family History + Documents -->
-          <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div id="section-familyHistory" class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
             <button class="w-full flex items-center justify-between px-5 py-4" @click="toggleSection('familyHistory')">
               <div class="flex items-center gap-3">
                 <svg class="w-5 h-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                <span class="font-semibold text-gray-800">Family History &amp; Documents</span>
+                <span class="font-semibold text-slate-800">Family History &amp; Documents</span>
               </div>
-              <svg :class="['w-5 h-5 text-gray-400 transition-transform', sections.familyHistory ? 'rotate-180' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>
+              <svg :class="['w-5 h-5 text-slate-400 transition-transform', sections.familyHistory ? 'rotate-180' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>
             </button>
             <div v-if="sections.familyHistory" class="px-5 pb-5 space-y-4">
 
               <!-- Same-house complaints -->
               <div class="p-4 bg-purple-50/40 border border-purple-100 rounded-xl space-y-3">
                 <label class="flex items-center gap-3 cursor-pointer">
-                  <input v-model="familyHistory.sameHouseComplaints.present" type="checkbox" class="w-4 h-4 rounded border-gray-300 text-blue-600 accent-blue-600"/>
-                  <span class="text-sm font-medium text-gray-700">Similar complaints in other family members residing in the same house</span>
+                  <input v-model="familyHistory.sameHouseComplaints.present" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-blue-600 accent-blue-600"/>
+                  <span class="text-sm font-medium text-slate-700">Similar complaints in other family members residing in the same house</span>
                 </label>
                 <div v-if="familyHistory.sameHouseComplaints.present" class="space-y-3">
                   <div>
-                    <label :class="LC">Which complaints <span class="text-gray-400 font-normal">(select all that apply)</span></label>
+                    <label :class="LC">Which complaints <span class="text-slate-400 font-normal">(select all that apply)</span></label>
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1">
                       <label v-for="def in COMPLAINTS_DEF.filter(c => !c.isOpenEnded)" :key="def.id"
                         :class="['flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition text-xs',
                           familyHistory.sameHouseComplaints.complaints.includes(def.label)
                             ? 'bg-purple-50 border-purple-300 text-purple-800'
-                            : 'border-gray-200 text-gray-700 hover:bg-gray-50']">
+                            : 'border-slate-200 text-slate-700 hover:bg-slate-50']">
                         <input type="checkbox" :checked="familyHistory.sameHouseComplaints.complaints.includes(def.label)" @change="toggleSameHouseComplaint(def.label)" class="w-3.5 h-3.5 rounded accent-purple-600"/>
                         {{ def.label }}
                       </label>
@@ -923,21 +967,21 @@ const SEL = ' bg-white'
 
               <!-- Major family diseases -->
               <div>
-                <h4 class="text-sm font-semibold text-gray-700 mb-3">Major Diseases in Immediate Family</h4>
+                <h4 class="text-sm font-semibold text-slate-700 mb-3">Major Diseases in Immediate Family</h4>
                 <div class="space-y-3">
                   <div v-for="[key, label] in [
                     ['hypertension','Hypertension'],['diabetes','Diabetes'],['tb','Tuberculosis (TB)'],
                     ['highCholesterol','High Cholesterol'],['thyroid','Thyroid Disease'],
-                  ]" :key="key" class="border border-gray-100 rounded-xl overflow-hidden">
-                    <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition">
-                      <input v-model="familyHistory.diseases[key].present" type="checkbox" class="w-4 h-4 rounded border-gray-300 text-blue-600 accent-blue-600"/>
-                      <span class="text-sm font-medium text-gray-700 flex-1">{{ label }}</span>
+                  ]" :key="key" class="border border-slate-100 rounded-xl overflow-hidden">
+                    <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 transition">
+                      <input v-model="familyHistory.diseases[key].present" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-blue-600 accent-blue-600"/>
+                      <span class="text-sm font-medium text-slate-700 flex-1">{{ label }}</span>
                     </label>
                     <div v-if="familyHistory.diseases[key].present" class="px-4 pb-3 pt-0">
                       <label :class="LC">Affected family members</label>
                       <div class="flex flex-wrap gap-2">
                         <button v-for="rel in FAMILY_RELATIONS" :key="rel" type="button"
-                          :class="['px-3 py-1.5 rounded-lg text-xs border transition', familyHistory.diseases[key].relations.includes(rel) ? 'bg-purple-600 text-white border-purple-600' : 'border-gray-200 text-gray-600 hover:border-purple-300 bg-white']"
+                          :class="['px-3 py-1.5 rounded-lg text-xs border transition', familyHistory.diseases[key].relations.includes(rel) ? 'bg-purple-600 text-white border-purple-600' : 'border-slate-200 text-slate-600 hover:border-purple-300 bg-white']"
                           @click="toggleFamilyRelation(key, rel)">
                           {{ rel }}
                         </button>
@@ -946,12 +990,12 @@ const SEL = ' bg-white'
                   </div>
 
                   <!-- Other family diseases -->
-                  <div class="border border-gray-100 rounded-xl p-4">
+                  <div class="border border-slate-100 rounded-xl p-4">
                     <label :class="LC">Other Diseases in Family</label>
                     <div class="space-y-2 mb-2">
-                      <div v-for="(d, i) in familyHistory.diseases.others" :key="i" class="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 text-sm">
-                        <span class="flex-1 text-gray-700">{{ d.name }}</span>
-                        <span class="text-gray-400 text-xs">{{ d.relation }}</span>
+                      <div v-for="(d, i) in familyHistory.diseases.others" :key="i" class="flex items-center gap-2 bg-slate-50 rounded-lg px-3 py-2 text-sm">
+                        <span class="flex-1 text-slate-700">{{ d.name }}</span>
+                        <span class="text-slate-400 text-xs">{{ d.relation }}</span>
                         <button @click="familyHistory.diseases.others.splice(i,1)" class="text-red-400 hover:text-red-600">
                           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
                         </button>
@@ -976,16 +1020,16 @@ const SEL = ' bg-white'
                   <div v-for="(doc, i) in attachedDocs" :key="i"
                     class="flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
                     <svg class="w-4 h-4 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                    <span class="text-sm text-gray-700 flex-1 truncate">{{ doc.name }}</span>
-                    <span class="text-xs text-gray-400">{{ (doc.size / 1024).toFixed(1) }} KB</span>
+                    <span class="text-sm text-slate-700 flex-1 truncate">{{ doc.name }}</span>
+                    <span class="text-xs text-slate-400">{{ (doc.size / 1024).toFixed(1) }} KB</span>
                     <button @click="removeDoc(i)" class="text-red-400 hover:text-red-600">
                       <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
                     </button>
                   </div>
                 </div>
-                <label class="cursor-pointer flex items-center gap-2 px-4 py-3 border-2 border-dashed border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50/30 transition">
-                  <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                  <span class="text-sm text-gray-500">Click to attach photos or PDF documents</span>
+                <label class="cursor-pointer flex items-center gap-2 px-4 py-3 border-2 border-dashed border-slate-200 rounded-xl hover:border-blue-300 hover:bg-blue-50/30 transition">
+                  <svg class="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <span class="text-sm text-slate-500">Click to attach photos or PDF documents</span>
                   <input type="file" accept="image/*,application/pdf" multiple class="hidden" @change="handleDocAttach" capture="environment"/>
                 </label>
               </div>
@@ -993,19 +1037,19 @@ const SEL = ' bg-white'
           </div>
 
           <!-- ⑤ Examination + Vitals -->
-          <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div id="section-examination" class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
             <button class="w-full flex items-center justify-between px-5 py-4" @click="toggleSection('examination')">
               <div class="flex items-center gap-3">
                 <svg class="w-5 h-5 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                <span class="font-semibold text-gray-800">Examination &amp; Vitals</span>
+                <span class="font-semibold text-slate-800">Examination &amp; Vitals</span>
               </div>
-              <svg :class="['w-5 h-5 text-gray-400 transition-transform', sections.examination ? 'rotate-180' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>
+              <svg :class="['w-5 h-5 text-slate-400 transition-transform', sections.examination ? 'rotate-180' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>
             </button>
             <div v-if="sections.examination" class="px-5 pb-5 space-y-5">
 
               <!-- Anthropometry -->
               <div>
-                <h4 class="text-sm font-semibold text-gray-700 mb-3">Anthropometry</h4>
+                <h4 class="text-sm font-semibold text-slate-700 mb-3">Anthropometry</h4>
                 <div class="grid grid-cols-2 gap-4">
                   <div>
                     <label :class="LC">Height (cm)</label>
@@ -1020,7 +1064,7 @@ const SEL = ' bg-white'
 
               <!-- General Examination (role-based: Paramedic vs Doctor module) -->
               <div>
-                <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <h4 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
                   <span>{{ examRole === 'DOCTOR' ? 'Doctor General Physical Examination' : examRole === 'PARAMEDIC' ? 'Paramedic General Examination' : 'General Examination' }}</span>
                   <span v-if="examRole" class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-teal-50 text-teal-600 border border-teal-200">
                     {{ examRole === 'DOCTOR' ? 'Doctor Module' : 'Paramedic Module' }}
@@ -1037,9 +1081,9 @@ const SEL = ' bg-white'
                     { key: 'dehydration',       label: 'Dehydration' },
                   ]" :key="field.key"
                     :class="['flex items-center gap-2 rounded-lg px-3 py-2.5 cursor-pointer transition text-sm border',
-                      examForm[field.key] ? 'bg-teal-50 border-teal-300' : 'bg-gray-50 border-gray-200 hover:bg-teal-50/40']">
+                      examForm[field.key] ? 'bg-teal-50 border-teal-300' : 'bg-slate-50 border-slate-200 hover:bg-teal-50/40']">
                     <input v-model="examForm[field.key]" type="checkbox" class="w-4 h-4 rounded text-teal-600 accent-teal-600"/>
-                    <span class="text-gray-700 text-xs">{{ field.label }}</span>
+                    <span class="text-slate-700 text-xs">{{ field.label }}</span>
                   </label>
                 </div>
 
@@ -1051,22 +1095,22 @@ const SEL = ' bg-white'
 
               <!-- Systemic Examination (Doctor module only) -->
               <div v-if="examRole === 'DOCTOR'">
-                <h4 class="text-sm font-semibold text-gray-700 mb-3">Systemic Examination</h4>
+                <h4 class="text-sm font-semibold text-slate-700 mb-3">Systemic Examination</h4>
                 <div class="space-y-4">
-                  <div class="border border-gray-100 rounded-xl p-4">
-                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Respiratory System</div>
+                  <div class="border border-slate-100 rounded-xl p-4">
+                    <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Respiratory System</div>
                     <RespiratoryExam :exam="examForm.generalExam.systemicExam.respiratory"/>
                   </div>
-                  <div class="border border-gray-100 rounded-xl p-4">
-                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Cardiovascular System</div>
+                  <div class="border border-slate-100 rounded-xl p-4">
+                    <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Cardiovascular System</div>
                     <CVSExam :exam="examForm.generalExam.systemicExam.cvs"/>
                   </div>
-                  <div class="border border-gray-100 rounded-xl p-4">
-                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Gastrointestinal System</div>
+                  <div class="border border-slate-100 rounded-xl p-4">
+                    <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Gastrointestinal System</div>
                     <GIExam :exam="examForm.generalExam.systemicExam.gi"/>
                   </div>
-                  <div class="border border-gray-100 rounded-xl p-4">
-                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Central Nervous System</div>
+                  <div class="border border-slate-100 rounded-xl p-4">
+                    <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Central Nervous System</div>
                     <CNSExam :exam="examForm.generalExam.systemicExam.cns"/>
                   </div>
                 </div>
@@ -1077,19 +1121,19 @@ const SEL = ' bg-white'
                 <label :class="LC">Examination Photo (optional)</label>
                 <div class="flex items-center gap-4">
                   <label class="cursor-pointer">
-                    <div class="w-20 h-20 rounded-xl bg-gray-50 border-2 border-dashed border-gray-200 hover:border-teal-400 flex items-center justify-center overflow-hidden transition">
+                    <div class="w-20 h-20 rounded-xl bg-slate-50 border-2 border-dashed border-slate-200 hover:border-teal-400 flex items-center justify-center overflow-hidden transition">
                       <img v-if="examForm.examPhoto" :src="examForm.examPhoto" class="w-full h-full object-cover rounded-xl" alt="Examination photo"/>
-                      <svg v-else class="w-6 h-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                      <svg v-else class="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                     </div>
                     <input type="file" accept="image/*" capture="environment" class="hidden" @change="handleExamPhoto"/>
                   </label>
-                  <p class="text-xs text-gray-400">Tap to capture using camera</p>
+                  <p class="text-xs text-slate-400">Tap to capture using camera</p>
                 </div>
               </div>
 
               <!-- Vital Parameters -->
               <div>
-                <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <h4 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
                   <svg class="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                   Vital Parameters
                 </h4>
@@ -1097,9 +1141,9 @@ const SEL = ' bg-white'
                   <div class="col-span-2 sm:col-span-1">
                     <label :class="LC">Blood Pressure (mmHg)</label>
                     <div class="flex items-center gap-2">
-                      <input v-model="vitals.bpSystolic" type="number" placeholder="Systolic" class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-                      <span class="text-gray-400 font-semibold">/</span>
-                      <input v-model="vitals.bpDiastolic" type="number" placeholder="Diastolic" class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                      <input v-model="vitals.bpSystolic" type="number" placeholder="Systolic" class="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                      <span class="text-slate-400 font-semibold">/</span>
+                      <input v-model="vitals.bpDiastolic" type="number" placeholder="Diastolic" class="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                     </div>
                   </div>
                   <div v-for="f in [
@@ -1110,7 +1154,7 @@ const SEL = ' bg-white'
                     { key: 'rbs',             label: 'Blood Glucose (RBS)', unit: 'mg/dL', ph: '110' },
                   ]" :key="f.key">
                     <div>
-                      <label :class="LC">{{ f.label }} <span class="text-gray-400 font-normal">({{ f.unit }})</span></label>
+                      <label :class="LC">{{ f.label }} <span class="text-slate-400 font-normal">({{ f.unit }})</span></label>
                       <input v-model="vitals[f.key]" type="number" :placeholder="f.ph" :class="IC"/>
                     </div>
                   </div>
@@ -1122,12 +1166,12 @@ const SEL = ' bg-white'
 
         <!-- ── Right: Sidebar ── -->
         <div class="w-64 flex-shrink-0 space-y-4 hidden lg:block">
-          <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sticky top-4 space-y-4">
+          <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-4 sticky top-4 space-y-4">
             <!-- Vitals preview -->
             <div>
               <div class="flex items-center gap-2 mb-3">
                 <svg class="w-4 h-4 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                <h3 class="font-semibold text-gray-800 text-sm">Vitals Summary</h3>
+                <h3 class="font-semibold text-slate-800 text-sm">Vitals Summary</h3>
               </div>
               <div class="space-y-2">
                 <div v-for="[label, val, unit] in [
@@ -1138,15 +1182,15 @@ const SEL = ' bg-white'
                   ['SpO₂', vitals.spo2 || '—', '%'],
                   ['RBS', vitals.rbs || '—', 'mg/dL'],
                 ]" :key="label" class="flex items-center justify-between text-xs">
-                  <span class="text-gray-500">{{ label }}</span>
-                  <span class="font-semibold text-gray-800">{{ val }} <span class="font-normal text-gray-400">{{ unit }}</span></span>
+                  <span class="text-slate-500">{{ label }}</span>
+                  <span class="font-semibold text-slate-800">{{ val }} <span class="font-normal text-slate-400">{{ unit }}</span></span>
                 </div>
               </div>
             </div>
 
             <!-- Complaints summary -->
-            <div v-if="selectedComplaintIds.length" class="border-t border-gray-100 pt-4">
-              <div class="text-xs font-semibold text-gray-500 mb-2">Complaints ({{ selectedComplaintIds.length }})</div>
+            <div v-if="selectedComplaintIds.length" class="border-t border-slate-100 pt-4">
+              <div class="text-xs font-semibold text-slate-500 mb-2">Complaints ({{ selectedComplaintIds.length }})</div>
               <div class="flex flex-wrap gap-1.5">
                 <span v-for="id in selectedComplaintIds" :key="id"
                   :class="['text-[11px] px-2 py-1 rounded-full font-medium', COMPLAINT_COLOR_MAP[getComplaintDef(id)?.color]?.badge]">
@@ -1156,7 +1200,7 @@ const SEL = ' bg-white'
             </div>
 
             <!-- AI Flags summary -->
-            <div v-if="activeFlags.length" class="border-t border-gray-100 pt-4">
+            <div v-if="activeFlags.length" class="border-t border-slate-100 pt-4">
               <div class="text-xs font-semibold text-red-600 mb-2">AI Flags ({{ activeFlags.length }})</div>
               <div class="space-y-1.5">
                 <div v-for="(flag, i) in activeFlags" :key="i"
@@ -1167,21 +1211,21 @@ const SEL = ' bg-white'
             </div>
 
             <!-- AI hint -->
-            <div class="border-t border-gray-100 pt-4">
+            <div class="border-t border-slate-100 pt-4">
               <div class="flex items-center gap-2 mb-2">
                 <svg class="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                <h3 class="font-semibold text-gray-800 text-sm">AI Assistant</h3>
+                <h3 class="font-semibold text-slate-800 text-sm">AI Assistant</h3>
               </div>
-              <p class="text-xs text-gray-400">Fill in the assessment and click Analyze to get AI-powered clinical suggestions.</p>
+              <p class="text-xs text-slate-400">Fill in the assessment and click Analyze to get AI-powered clinical suggestions.</p>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Bottom action bar -->
-      <div class="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+      <div class="flex items-center justify-between mt-6 pt-4 border-t border-slate-200">
         <div class="flex items-center gap-3">
-          <button @click="router.back()" class="px-5 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition">{{ t('common.cancel') }}</button>
+          <button @click="router.back()" class="px-5 py-2.5 border border-slate-200 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition">{{ t('common.cancel') }}</button>
           <button @click="saveDraft"
             class="flex items-center gap-2 px-5 py-2.5 border border-blue-200 text-blue-600 text-sm font-medium rounded-lg hover:bg-blue-50 transition">
             <svg v-if="savingDraft" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v8H4z"/></svg>

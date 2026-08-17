@@ -41,11 +41,11 @@ describe('LoginView — Login flow', () => {
 
   it('shows an error for invalid credentials', async () => {
     const { container } = await renderLogin()
-    await fireEvent.update(screen.getByPlaceholderText('Login ID'), 'nobody')
-    await fireEvent.update(screen.getByPlaceholderText('Password'), 'wrongpass')
+    await fireEvent.update(screen.getByPlaceholderText('Phone number or worker ID'), 'nobody')
+    await fireEvent.update(screen.getByPlaceholderText('Enter your password'), 'wrongpass')
     await fireEvent.submit(container.querySelector('form'))
     await vi.advanceTimersByTimeAsync(700)
-    expect(await screen.findByText(/invalid credentials/i)).toBeTruthy()
+    expect(await screen.findByText(/incorrect login id or password/i)).toBeTruthy()
   })
 
   it('logs in a registered user and navigates to the dashboard', async () => {
@@ -58,8 +58,8 @@ describe('LoginView — Login flow', () => {
     await router.push('/')
     const { container } = render(LoginView, { global: { plugins: [pinia, router] } })
 
-    await fireEvent.update(screen.getByPlaceholderText('Login ID'), '9876500001')
-    await fireEvent.update(screen.getByPlaceholderText('Password'), 'secret1')
+    await fireEvent.update(screen.getByPlaceholderText('Phone number or worker ID'), '9876500001')
+    await fireEvent.update(screen.getByPlaceholderText('Enter your password'), 'secret1')
     await fireEvent.submit(container.querySelector('form'))
     await vi.advanceTimersByTimeAsync(700)
 
@@ -75,11 +75,11 @@ describe('LoginView — Login flow', () => {
     await router.push('/')
     const { container } = render(LoginView, { global: { plugins: [pinia, router] } })
 
-    await fireEvent.update(screen.getByPlaceholderText('Login ID'), '9000000011')
-    await fireEvent.update(screen.getByPlaceholderText('Password'), 'pw1234')
+    await fireEvent.update(screen.getByPlaceholderText('Phone number or worker ID'), '9000000011')
+    await fireEvent.update(screen.getByPlaceholderText('Enter your password'), 'pw1234')
     await fireEvent.submit(container.querySelector('form'))
 
-    expect(screen.getByText(/logging in/i).closest('button').disabled).toBe(true)
+    expect(screen.getByText(/signing in/i).closest('button').disabled).toBe(true)
     await vi.advanceTimersByTimeAsync(700)
   })
 })
@@ -95,7 +95,7 @@ describe('LoginView — Signup flow', () => {
   // ASHA ID, Password, Confirm Password — matching the on-screen field order.
   async function openSignup() {
     const { container } = await renderLogin()
-    await fireEvent.click(screen.getByText('Sign Up'))
+    await fireEvent.click(screen.getByText('Create account'))
     return { container }
   }
 
@@ -157,7 +157,7 @@ describe('LoginView — Signup flow', () => {
     const router = makeRouter()
     await router.push('/')
     const { container } = render(LoginView, { global: { plugins: [pinia, router] } })
-    await fireEvent.click(screen.getByText('Sign Up'))
+    await fireEvent.click(screen.getByText('Create account'))
 
     const f = signupInputs(container)
     await fireEvent.update(f.name, 'Duplicate')
@@ -180,7 +180,7 @@ describe('LoginView — Forgot password flow', () => {
 
   it('rejects an unregistered phone number', async () => {
     const { container } = await renderLogin()
-    await fireEvent.click(screen.getByText('Forgot Password?'))
+    await fireEvent.click(screen.getByText('Forgot password?'))
     await fireEvent.update(screen.getByPlaceholderText('10-digit mobile number'), '9999999999')
     await fireEvent.click(screen.getByText('Send OTP'))
     await vi.advanceTimersByTimeAsync(900)
@@ -196,7 +196,7 @@ describe('LoginView — Forgot password flow', () => {
     await router.push('/')
     const { container } = render(LoginView, { global: { plugins: [pinia, router] } })
 
-    await fireEvent.click(screen.getByText('Forgot Password?'))
+    await fireEvent.click(screen.getByText('Forgot password?'))
     await fireEvent.update(screen.getByPlaceholderText('10-digit mobile number'), '9876500005')
     await fireEvent.click(screen.getByText('Send OTP'))
     await vi.advanceTimersByTimeAsync(900)
@@ -232,7 +232,7 @@ describe('LoginView — Forgot password flow', () => {
     await router.push('/')
     const { container } = render(LoginView, { global: { plugins: [pinia, router] } })
 
-    await fireEvent.click(screen.getByText('Forgot Password?'))
+    await fireEvent.click(screen.getByText('Forgot password?'))
     await fireEvent.update(screen.getByPlaceholderText('10-digit mobile number'), '9876500006')
     await fireEvent.click(screen.getByText('Send OTP'))
     await vi.advanceTimersByTimeAsync(900)

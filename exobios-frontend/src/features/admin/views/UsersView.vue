@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import AppShell from '@/shared/components/AppShell.vue'
+import EmptyState from '@/shared/components/EmptyState.vue'
 import { useI18n } from '@/i18n'
 import { PARAMEDIC_ROLES, DOCTOR_ROLES, ADMIN_ROLES } from '@/features/auth/stores/auth'
 
@@ -27,7 +28,7 @@ function roleColor(r) {
   if (ADMIN_ROLES.includes(r)) return 'bg-red-100 text-red-600'
   if (DOCTOR_ROLES.includes(r)) return 'bg-purple-100 text-purple-600'
   if (PARAMEDIC_ROLES.includes(r)) return 'bg-blue-100 text-blue-600'
-  return 'bg-gray-100 text-gray-600'
+  return 'bg-slate-100 text-slate-600'
 }
 
 const filtered = computed(() => {
@@ -68,9 +69,9 @@ const summaryStats = computed(() => [
 
     <template #topbar-left>
       <div class="relative hidden md:block">
-        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <input v-model="search" type="text" :placeholder="t('users.searchPlaceholder')"
-          class="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+          class="pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
       </div>
     </template>
 
@@ -82,61 +83,63 @@ const summaryStats = computed(() => [
 
       <!-- Summary stats -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div v-for="s in summaryStats" :key="s.labelKey" class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+        <div v-for="s in summaryStats" :key="s.labelKey" class="bg-white rounded-xl border border-slate-100 shadow-sm p-4 flex items-center gap-3">
           <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
             <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           </div>
           <div>
-            <div class="text-xl font-bold text-gray-900">{{ s.val }}</div>
-            <div class="text-xs text-gray-500">{{ t(s.labelKey) }}</div>
+            <div class="text-xl font-bold text-slate-900">{{ s.val }}</div>
+            <div class="text-xs text-slate-500">{{ t(s.labelKey) }}</div>
           </div>
         </div>
       </div>
 
       <!-- Users table -->
-      <div class="bg-white rounded-xl border border-gray-100 shadow-sm">
-        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <h2 class="font-semibold text-gray-900">{{ t('users.allUsers') }}</h2>
-          <button @click="showAddModal = true" class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition">
+      <div class="bg-white rounded-xl border border-slate-100 shadow-sm">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+          <h2 class="font-semibold text-slate-900">{{ t('users.allUsers') }}</h2>
+          <button @click="showAddModal = true" class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 transition">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
             {{ t('users.addUser') }}
           </button>
         </div>
-        <div class="overflow-x-auto">
+        <EmptyState v-if="filtered.length === 0" icon="users" title="No users found" message="Try a different search term."/>
+
+        <div v-else class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
-              <tr class="border-b border-gray-100 bg-gray-50/50">
-                <th class="text-left text-xs font-semibold text-gray-500 px-5 py-3">{{ t('common.name') }}</th>
-                <th class="text-left text-xs font-semibold text-gray-500 px-4 py-3">{{ t('users.role') }}</th>
-                <th class="text-left text-xs font-semibold text-gray-500 px-4 py-3">{{ t('users.area') }}</th>
-                <th class="text-left text-xs font-semibold text-gray-500 px-4 py-3">{{ t('common.phone') }}</th>
-                <th class="text-left text-xs font-semibold text-gray-500 px-4 py-3">{{ t('users.patients') }}</th>
-                <th class="text-left text-xs font-semibold text-gray-500 px-4 py-3">{{ t('users.lastActive') }}</th>
-                <th class="text-left text-xs font-semibold text-gray-500 px-4 py-3">{{ t('users.status') }}</th>
-                <th class="text-left text-xs font-semibold text-gray-500 px-4 py-3">{{ t('common.actions') }}</th>
+              <tr class="border-b border-slate-100 bg-slate-50/50">
+                <th class="text-left text-xs font-semibold text-slate-500 px-5 py-3">{{ t('common.name') }}</th>
+                <th class="text-left text-xs font-semibold text-slate-500 px-4 py-3">{{ t('users.role') }}</th>
+                <th class="text-left text-xs font-semibold text-slate-500 px-4 py-3">{{ t('users.area') }}</th>
+                <th class="text-left text-xs font-semibold text-slate-500 px-4 py-3">{{ t('common.phone') }}</th>
+                <th class="text-left text-xs font-semibold text-slate-500 px-4 py-3">{{ t('users.patients') }}</th>
+                <th class="text-left text-xs font-semibold text-slate-500 px-4 py-3">{{ t('users.lastActive') }}</th>
+                <th class="text-left text-xs font-semibold text-slate-500 px-4 py-3">{{ t('users.status') }}</th>
+                <th class="text-left text-xs font-semibold text-slate-500 px-4 py-3">{{ t('common.actions') }}</th>
               </tr>
             </thead>
             <tbody>
               <template v-for="u in filtered" :key="u.id">
-                <tr v-if="deleteConfirmId !== u.id" class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                <tr v-if="deleteConfirmId !== u.id" class="border-b border-slate-50 hover:bg-slate-50 transition-colors">
                   <td class="px-5 py-3">
                     <div class="flex items-center gap-2.5">
                       <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs font-semibold text-blue-600 flex-shrink-0">
                         {{ u.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase() }}
                       </div>
-                      <span class="font-medium text-gray-800">{{ u.name }}</span>
+                      <span class="font-medium text-slate-800">{{ u.name }}</span>
                     </div>
                   </td>
                   <td class="px-4 py-3">
                     <span :class="[roleColor(u.role), 'px-2.5 py-1 rounded-full text-xs font-semibold']">{{ u.role }}</span>
                   </td>
-                  <td class="px-4 py-3 text-gray-600 text-sm">{{ u.area }}</td>
-                  <td class="px-4 py-3 text-gray-600 text-sm">{{ u.phone }}</td>
-                  <td class="px-4 py-3 text-center font-semibold text-gray-700">{{ u.patients }}</td>
-                  <td class="px-4 py-3 text-gray-500 text-xs">{{ u.lastActive }}</td>
+                  <td class="px-4 py-3 text-slate-600 text-sm">{{ u.area }}</td>
+                  <td class="px-4 py-3 text-slate-600 text-sm">{{ u.phone }}</td>
+                  <td class="px-4 py-3 text-center font-semibold text-slate-700">{{ u.patients }}</td>
+                  <td class="px-4 py-3 text-slate-500 text-xs">{{ u.lastActive }}</td>
                   <td class="px-4 py-3">
                     <button @click="toggleStatus(u)"
-                      :class="['px-2.5 py-1 rounded-full text-xs font-semibold transition', u.status==='Active' ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200']">
+                      :class="['px-2.5 py-1 rounded-full text-xs font-semibold transition', u.status==='Active' ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200']">
                       {{ statusLabel(u.status) }}
                     </button>
                   </td>
@@ -157,8 +160,8 @@ const summaryStats = computed(() => [
                     <div class="flex items-center justify-between">
                       <span class="text-sm text-red-700 font-medium">{{ t('common.delete') }} <strong>{{ u.name }}</strong>?</span>
                       <div class="flex gap-2">
-                        <button @click="deleteConfirmId = null" class="px-3 py-1.5 text-xs border border-gray-300 text-gray-600 rounded-lg hover:bg-white">{{ t('common.cancel') }}</button>
-                        <button @click="doDelete(u.id)" class="px-3 py-1.5 text-xs bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg">{{ t('common.yesDelete') }}</button>
+                        <button @click="deleteConfirmId = null" class="px-3 py-1.5 text-xs border border-slate-300 text-slate-600 rounded-xl hover:bg-white">{{ t('common.cancel') }}</button>
+                        <button @click="doDelete(u.id)" class="px-3 py-1.5 text-xs bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl">{{ t('common.yesDelete') }}</button>
                       </div>
                     </div>
                   </td>
@@ -173,34 +176,34 @@ const summaryStats = computed(() => [
     <!-- Add User Modal (no teleport — intentionally uses fixed overlay) -->
     <div v-if="showAddModal" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" @click.self="showAddModal = false">
       <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h3 class="font-semibold text-gray-800">{{ t('users.addNewUser') }}</h3>
-          <button @click="showAddModal = false" class="text-gray-400 hover:text-gray-600" aria-label="Close">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <h3 class="font-semibold text-slate-800">{{ t('users.addNewUser') }}</h3>
+          <button @click="showAddModal = false" class="text-slate-400 hover:text-slate-600" aria-label="Close">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
         </div>
         <div class="px-6 py-5 space-y-4">
           <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ t('users.fullName') }} <span class="text-red-500">*</span></label>
-            <input v-model="newUser.name" type="text" :placeholder="t('users.fullNamePlaceholder')" class="w-full border border-gray-200 rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+            <label class="block text-xs font-medium text-slate-600 mb-1.5">{{ t('users.fullName') }} <span class="text-red-500">*</span></label>
+            <input v-model="newUser.name" type="text" :placeholder="t('users.fullNamePlaceholder')" class="w-full border border-slate-200 rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ t('users.role') }}</label>
-            <select v-model="newUser.role" class="w-full border border-gray-200 rounded-xl px-3.5 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <label class="block text-xs font-medium text-slate-600 mb-1.5">{{ t('users.role') }}</label>
+            <select v-model="newUser.role" class="w-full border border-slate-200 rounded-xl px-3.5 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option v-for="r in ROLE_OPTIONS" :key="r" :value="r">{{ r }}</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ t('users.area') }}</label>
-            <input v-model="newUser.area" type="text" :placeholder="t('users.areaPlaceholder')" class="w-full border border-gray-200 rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+            <label class="block text-xs font-medium text-slate-600 mb-1.5">{{ t('users.area') }}</label>
+            <input v-model="newUser.area" type="text" :placeholder="t('users.areaPlaceholder')" class="w-full border border-slate-200 rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ t('login.phoneNumber') }} <span class="text-red-500">*</span></label>
-            <input v-model="newUser.phone" type="tel" :placeholder="t('users.phonePlaceholder')" class="w-full border border-gray-200 rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+            <label class="block text-xs font-medium text-slate-600 mb-1.5">{{ t('login.phoneNumber') }} <span class="text-red-500">*</span></label>
+            <input v-model="newUser.phone" type="tel" :placeholder="t('users.phonePlaceholder')" class="w-full border border-slate-200 rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
           </div>
         </div>
-        <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
-          <button @click="showAddModal = false" class="px-5 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50">{{ t('common.cancel') }}</button>
+        <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
+          <button @click="showAddModal = false" class="px-5 py-2.5 border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-50">{{ t('common.cancel') }}</button>
           <button @click="addUser" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl">{{ t('users.addUser') }}</button>
         </div>
       </div>

@@ -8,7 +8,7 @@ defineProps({
   exam: { type: Object, required: true },
 })
 
-const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
+const LC = 'block text-xs font-medium text-slate-600 mb-1.5'
 
 const MENTAL_STATUS_OPTIONS = ['Alert', 'Confused', 'Drowsy']
 const POWER_OPTIONS         = ['Normal', 'Reduced', 'Absent']
@@ -24,7 +24,7 @@ const NORMAL_ABNORMAL       = ['Normal', 'Abnormal']
     </div>
 
     <div>
-      <div class="text-xs font-semibold text-gray-500 mb-2">Motor</div>
+      <div class="text-xs font-semibold text-slate-500 mb-2">Motor</div>
       <div class="space-y-3">
         <div>
           <label :class="LC">Power</label>

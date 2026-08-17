@@ -6,10 +6,10 @@ defineProps({
   exam: { type: Object, required: true },
 })
 
-const LC  = 'block text-xs font-medium text-gray-600 mb-1.5'
-const SEL = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500'
-const IC  = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500'
-const TC  = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500'
+const LC  = 'block text-xs font-medium text-slate-600 mb-1.5'
+const SEL = 'w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500'
+const IC  = 'w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500'
+const TC  = 'w-full border border-slate-200 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500'
 
 const CONSCIOUSNESS_OPTIONS = ['Alert', 'Drowsy', 'Confused', 'Unconscious']
 const PRESENT_ABSENT        = ['Present', 'Absent']
@@ -78,17 +78,17 @@ const GCS_MOTOR = [
       <label :class="LC">General Signs</label>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div v-for="[key, label] in GENERAL_SIGNS" :key="key">
-          <div class="text-xs text-gray-500 mb-1">{{ label }}</div>
+          <div class="text-xs text-slate-500 mb-1">{{ label }}</div>
           <RadioGroup v-model="exam.generalSigns[key]" :options="PRESENT_ABSENT" color="blue" columns="flex gap-2"/>
         </div>
       </div>
     </div>
 
     <!-- C. Lymphadenopathy -->
-    <div class="border border-gray-100 rounded-xl overflow-hidden">
-      <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition">
-        <input v-model="exam.lymphadenopathy.present" type="checkbox" class="w-4 h-4 rounded border-gray-300 text-blue-600 accent-blue-600"/>
-        <span class="text-sm font-medium text-gray-700 flex-1">Lymphadenopathy Present</span>
+    <div class="border border-slate-100 rounded-xl overflow-hidden">
+      <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 transition">
+        <input v-model="exam.lymphadenopathy.present" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-blue-600 accent-blue-600"/>
+        <span class="text-sm font-medium text-slate-700 flex-1">Lymphadenopathy Present</span>
       </label>
       <div v-if="exam.lymphadenopathy.present" class="px-4 pb-4 pt-0 space-y-3">
         <div>
@@ -103,10 +103,10 @@ const GCS_MOTOR = [
     </div>
 
     <!-- D. Edema -->
-    <div class="border border-gray-100 rounded-xl overflow-hidden">
-      <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition">
-        <input v-model="exam.edema.present" type="checkbox" class="w-4 h-4 rounded border-gray-300 text-blue-600 accent-blue-600"/>
-        <span class="text-sm font-medium text-gray-700 flex-1">Edema Present</span>
+    <div class="border border-slate-100 rounded-xl overflow-hidden">
+      <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 transition">
+        <input v-model="exam.edema.present" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-blue-600 accent-blue-600"/>
+        <span class="text-sm font-medium text-slate-700 flex-1">Edema Present</span>
       </label>
       <div v-if="exam.edema.present" class="px-4 pb-4 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
@@ -124,10 +124,10 @@ const GCS_MOTOR = [
     </div>
 
     <!-- E. Skin Lesions -->
-    <div class="border border-gray-100 rounded-xl overflow-hidden">
-      <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition">
-        <input v-model="exam.skinLesions.present" type="checkbox" class="w-4 h-4 rounded border-gray-300 text-blue-600 accent-blue-600"/>
-        <span class="text-sm font-medium text-gray-700 flex-1">Skin Lesions Present</span>
+    <div class="border border-slate-100 rounded-xl overflow-hidden">
+      <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 transition">
+        <input v-model="exam.skinLesions.present" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-blue-600 accent-blue-600"/>
+        <span class="text-sm font-medium text-slate-700 flex-1">Skin Lesions Present</span>
       </label>
       <div v-if="exam.skinLesions.present" class="px-4 pb-4 pt-0">
         <label :class="LC">Description</label>

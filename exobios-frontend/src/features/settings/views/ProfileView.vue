@@ -102,7 +102,7 @@ function saveProfile() {
       </button>
 
       <!-- Photo banner card -->
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div class="h-24 md:h-28" style="background: linear-gradient(135deg, #1d4ed8 0%, #0ea5e9 100%)"/>
         <div class="px-5 md:px-8 pb-6 relative">
           <div class="relative w-24 h-24 -mt-12 mb-4">
@@ -118,46 +118,46 @@ function saveProfile() {
           </div>
           <div class="flex items-start justify-between flex-wrap gap-3">
             <div>
-              <h2 class="text-xl font-bold text-gray-900">{{ form.name }}</h2>
-              <p class="text-sm text-gray-500">{{ form.role }} · {{ form.area }}</p>
+              <h2 class="text-xl font-bold text-slate-900">{{ form.name }}</h2>
+              <p class="text-sm text-slate-500">{{ form.role }} · {{ form.area }}</p>
             </div>
             <div class="flex items-center gap-2">
-              <button v-if="profilePhoto" @click="removePhoto" class="text-xs text-red-500 hover:text-red-700 border border-red-200 px-3 py-1.5 rounded-lg transition">Remove Photo</button>
-              <button @click="triggerPhotoUpload" class="text-xs text-blue-600 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition">{{ t('profile.changePhoto') }}</button>
+              <button v-if="profilePhoto" @click="removePhoto" class="text-xs text-red-500 hover:text-red-700 border border-red-200 px-3 py-1.5 rounded-xl transition">Remove Photo</button>
+              <button @click="triggerPhotoUpload" class="text-xs text-blue-600 border border-blue-200 px-3 py-1.5 rounded-xl hover:bg-blue-50 transition">{{ t('profile.changePhoto') }}</button>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Edit form -->
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 md:p-8">
-        <h3 class="font-semibold text-gray-800 mb-6 text-base">Personal Information</h3>
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 md:p-8">
+        <h3 class="font-semibold text-slate-800 mb-6 text-base">Personal Information</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
-            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">{{ t('profile.fullName') }}</label>
-            <input v-model="form.name" type="text" class="w-full border border-gray-200 rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"/>
+            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{{ t('profile.fullName') }}</label>
+            <input v-model="form.name" type="text" class="w-full border border-slate-200 rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"/>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">{{ t('profile.role') }}</label>
-            <select v-model="form.role" class="w-full border border-gray-200 rounded-xl px-3.5 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{{ t('profile.role') }}</label>
+            <select v-model="form.role" class="w-full border border-slate-200 rounded-xl px-3.5 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
               <option v-for="r in roleOptions" :key="r">{{ r }}</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">{{ t('profile.phone') }}</label>
-            <input v-model="form.phone" type="tel" class="w-full border border-gray-200 rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"/>
+            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{{ t('profile.phone') }}</label>
+            <input v-model="form.phone" type="tel" class="w-full border border-slate-200 rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"/>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">{{ t('profile.ashaId') }}</label>
-            <input v-model="form.ashaId" type="text" class="w-full border border-gray-200 rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"/>
+            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{{ t('profile.ashaId') }}</label>
+            <input v-model="form.ashaId" type="text" class="w-full border border-slate-200 rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"/>
           </div>
           <div class="md:col-span-2">
-            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">{{ t('profile.area') }}</label>
-            <input v-model="form.area" type="text" class="w-full border border-gray-200 rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"/>
+            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{{ t('profile.area') }}</label>
+            <input v-model="form.area" type="text" class="w-full border border-slate-200 rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"/>
           </div>
           <div class="md:col-span-2">
-            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">{{ t('profile.email') }}</label>
-            <input v-model="form.email" type="email" class="w-full border border-gray-200 rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"/>
+            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{{ t('profile.email') }}</label>
+            <input v-model="form.email" type="email" class="w-full border border-slate-200 rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"/>
           </div>
         </div>
         <div class="mt-8 flex items-center gap-3">
@@ -166,32 +166,24 @@ function saveProfile() {
             <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
             {{ saved ? t('profile.saved') : t('profile.saveChanges') }}
           </button>
-          <button @click="router.push('/dashboard')" class="px-5 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition">{{ t('common.cancel') }}</button>
+          <button @click="router.push('/dashboard')" class="px-5 py-2.5 border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-50 transition">{{ t('common.cancel') }}</button>
         </div>
       </div>
 
       <!-- ID Information -->
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 md:p-8">
-        <h3 class="font-semibold text-gray-800 mb-4 text-base">ID Information</h3>
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 md:p-8">
+        <h3 class="font-semibold text-slate-800 mb-4 text-base">ID Information</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="bg-gray-50 rounded-xl p-4">
-            <div class="text-xs text-gray-500 mb-1">ASHA Worker ID</div>
-            <div class="text-sm font-bold text-gray-800 font-mono">{{ form.ashaId }}</div>
+          <div class="bg-slate-50 rounded-xl p-4">
+            <div class="text-xs text-slate-500 mb-1">ASHA Worker ID</div>
+            <div class="text-sm font-bold text-slate-800 font-mono">{{ form.ashaId || '—' }}</div>
           </div>
-          <div class="bg-gray-50 rounded-xl p-4">
-            <div class="text-xs text-gray-500 mb-1">Account Status</div>
+          <div class="bg-slate-50 rounded-xl p-4">
+            <div class="text-xs text-slate-500 mb-1">Account Status</div>
             <div class="flex items-center gap-2">
               <span class="w-2 h-2 rounded-full bg-green-500"/>
               <span class="text-sm font-semibold text-green-600">Active</span>
             </div>
-          </div>
-          <div class="bg-gray-50 rounded-xl p-4">
-            <div class="text-xs text-gray-500 mb-1">Joined</div>
-            <div class="text-sm font-semibold text-gray-800">January 2023</div>
-          </div>
-          <div class="bg-gray-50 rounded-xl p-4">
-            <div class="text-xs text-gray-500 mb-1">Last Login</div>
-            <div class="text-sm font-semibold text-gray-800">Today, 9:45 AM</div>
           </div>
         </div>
       </div>

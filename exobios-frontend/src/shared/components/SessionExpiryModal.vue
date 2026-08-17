@@ -48,12 +48,12 @@ function logoutNow() {
               <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
           </div>
-          <h3 class="font-bold text-gray-900 text-lg mb-1">Session Expiring Soon</h3>
-          <p class="text-sm text-gray-500 mb-4">
+          <h3 class="font-bold text-slate-900 text-lg mb-1">Session Expiring Soon</h3>
+          <p class="text-sm text-slate-500 mb-4">
             Your session will expire in <span class="font-bold text-amber-600">{{ mm }}:{{ ss }}</span>. Stay logged in?
           </p>
           <div class="flex gap-3">
-            <button @click="logoutNow" class="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50 transition font-medium">
+            <button @click="logoutNow" class="flex-1 py-2.5 border border-slate-200 text-slate-600 text-sm rounded-xl hover:bg-slate-50 transition font-medium">
               Log Out
             </button>
             <button @click="stayLoggedIn" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-xl transition font-semibold">
@@ -73,8 +73,8 @@ function logoutNow() {
               <circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>
             </svg>
           </div>
-          <h3 class="font-bold text-gray-900 text-lg mb-1">Session Expired</h3>
-          <p class="text-sm text-gray-500 mb-5">Your session has expired for security. Please log in again to continue.</p>
+          <h3 class="font-bold text-slate-900 text-lg mb-1">Session Expired</h3>
+          <p class="text-sm text-slate-500 mb-5">Your session has expired for security. Please log in again to continue.</p>
           <button @click="logoutNow" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-xl transition font-semibold">
             Back to Login
           </button>

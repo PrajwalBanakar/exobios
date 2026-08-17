@@ -28,7 +28,7 @@ defineEmits(['update:modelValue'])
 
 <template>
   <div class="flex flex-col gap-1">
-    <label v-if="label" class="text-xs font-medium text-gray-600">
+    <label v-if="label" class="text-xs font-medium text-slate-600">
       {{ label }}
       <span v-if="required" class="text-red-500 ml-0.5">*</span>
     </label>
@@ -40,16 +40,16 @@ defineEmits(['update:modelValue'])
       :disabled="disabled"
       @input="$emit('update:modelValue', $event.target.value)"
       :class="[
-        'w-full border rounded-lg px-3 py-2 text-sm text-gray-800 placeholder-gray-400',
+        'w-full border rounded-lg px-3 py-2 text-sm text-slate-800 placeholder-slate-400',
         'focus:outline-none focus:ring-2 transition',
         error
           ? 'border-red-400 focus:ring-red-400'
-          : 'border-gray-200 focus:ring-blue-500',
-        disabled && 'bg-gray-50 cursor-not-allowed',
+          : 'border-slate-200 focus:ring-blue-500',
+        disabled && 'bg-slate-50 cursor-not-allowed',
       ]"
     />
 
     <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
-    <p v-else-if="helper" class="text-xs text-gray-400">{{ helper }}</p>
+    <p v-else-if="helper" class="text-xs text-slate-400">{{ helper }}</p>
   </div>
 </template>

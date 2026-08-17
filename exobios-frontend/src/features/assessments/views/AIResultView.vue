@@ -10,6 +10,8 @@ import { DOCTOR_TIER, getDoctorsByTier } from '@/shared/constants/doctors'
 import { computeActiveFlags } from '@/features/assessments/constants/complaintsDef'
 import { MOCK_DIFFERENTIAL_DIAGNOSIS } from '@/features/assessments/constants/mockDiagnosis'
 import { useI18n } from '@/i18n'
+import RiskBadge from '@/shared/components/RiskBadge.vue'
+import { formatPatientId } from '@/shared/utils/format'
 
 const router     = useRouter()
 const route      = useRoute()
@@ -28,10 +30,17 @@ const assessment  = computed(() => {
   return history[historyIdx.value] || null
 })
 
-// ── Differential Diagnosis — shared with FullAnalysisView so the two screens agree ──
+// ── Differential Diagnosis ──────────────────────────────────────────────────
+// The ranked probability list and narrative summary only exist for the seeded demo
+// records today — the live assessment flow (NewAssessmentView) doesn't yet call a
+// real AI/FastAPI endpoint, so a freshly submitted assessment has no aiDiagnosis on
+// it. Rather than showing the same mock Dengue analysis for every patient, this page
+// only renders AI output when the assessment actually carries it, and shows an
+// honest "pending" state otherwise. (Backend dependency: wiring the AI service into
+// the assessment-submission flow so every assessment gets real analysis.)
+const hasAiData = computed(() => !!assessment.value?.aiDiagnosis)
 const conditions = MOCK_DIFFERENTIAL_DIAGNOSIS
-
-const aiSummary = 'Based on the symptoms, examination findings, and vital parameters, the presentation is most consistent with Dengue Fever (72%). The combination of high fever, severe body pain, and thrombocytopenia is characteristic. Malaria should be ruled out with a rapid test.'
+const aiSummary  = computed(() => assessment.value?.aiSummary || '')
 
 // ── Warning Signs — derived from the same AI flags NewAssessmentView computes,
 // re-applied here to the saved assessment's complaints (no new flag logic). ───────
@@ -154,40 +163,40 @@ function printResult() { window.print() }
     <div class="p-4 md:p-6 space-y-5">
 
       <!-- Patient header strip -->
-      <div class="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 flex items-center gap-5 flex-wrap">
+      <div class="bg-white rounded-xl border border-slate-100 shadow-sm px-5 py-4 flex items-center gap-5 flex-wrap">
         <div class="flex items-center gap-3">
           <div class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center">
             <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           </div>
           <div>
-            <div class="text-xs text-gray-500">{{ t('result.patientName') }}</div>
-            <div class="text-sm font-semibold text-gray-800">{{ patient.name }}</div>
+            <div class="text-xs text-slate-500">{{ t('result.patientName') }}</div>
+            <div class="text-sm font-semibold text-slate-800">{{ patient.name }}</div>
           </div>
         </div>
-        <div><div class="text-xs text-gray-500">Patient ID</div><div class="text-sm font-semibold text-gray-800">PT-2025-{{ String(patientId).padStart(6,'0') }}</div></div>
-        <div><div class="text-xs text-gray-500">{{ t('result.ageGender') }}</div><div class="text-sm font-semibold text-gray-800">{{ patient.age }} / {{ patient.gender }}</div></div>
-        <div><div class="text-xs text-gray-500">{{ t('result.location') }}</div><div class="text-sm font-semibold text-gray-800">{{ patient.address?.village || patient.location || '—' }}</div></div>
+        <div><div class="text-xs text-slate-500">Patient ID</div><div class="text-sm font-semibold text-slate-800">{{ formatPatientId(patientId) }}</div></div>
+        <div><div class="text-xs text-slate-500">{{ t('result.ageGender') }}</div><div class="text-sm font-semibold text-slate-800">{{ patient.age }} / {{ patient.gender }}</div></div>
+        <div><div class="text-xs text-slate-500">{{ t('result.location') }}</div><div class="text-sm font-semibold text-slate-800">{{ patient.address?.village || patient.location || '—' }}</div></div>
         <!-- Show which assessment this is -->
         <div v-if="assessment">
-          <div class="text-xs text-gray-500">Assessment Date</div>
-          <div class="text-sm font-semibold text-gray-800">{{ assessment.date }}, {{ assessment.time }}</div>
+          <div class="text-xs text-slate-500">Assessment Date</div>
+          <div class="text-sm font-semibold text-slate-800">{{ assessment.date }}, {{ assessment.time }}</div>
         </div>
         <div v-if="(patient.assessmentHistory || []).length > 1" class="text-xs">
-          <div class="text-gray-400 mb-0.5">Viewing</div>
+          <div class="text-slate-400 mb-0.5">Viewing</div>
           <div class="font-semibold text-blue-600">
             {{ historyIdx === 0 ? 'Latest' : `#${historyIdx + 1} of ${patient.assessmentHistory.length}` }}
           </div>
         </div>
         <div class="ml-auto flex items-center gap-2 flex-wrap">
-          <button @click="router.push(`/patients/${patientId}`)" class="flex items-center gap-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-medium rounded-lg transition">
+          <button @click="router.push(`/patients/${patientId}`)" class="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium rounded-xl transition">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
             All Assessments
           </button>
-          <button @click="router.push(`/assessment/new?patientId=${patientId}`)" class="flex items-center gap-1.5 px-3 py-2 border border-gray-200 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-50 transition">
+          <button @click="router.push(`/assessment/new?patientId=${patientId}`)" class="flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-600 text-xs font-medium rounded-xl hover:bg-slate-50 transition">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
             New Assessment
           </button>
-          <button @click="printResult" class="flex items-center gap-1.5 px-3 py-2 border border-gray-200 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-50 transition">
+          <button @click="printResult" class="flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-600 text-xs font-medium rounded-xl hover:bg-slate-50 transition">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
             Print
           </button>
@@ -195,80 +204,92 @@ function printResult() { window.print() }
       </div>
 
       <!-- Historical assessment banner (not viewing latest) -->
-      <div v-if="historyIdx > 0" class="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 flex items-center gap-3 text-sm">
+      <div v-if="historyIdx > 0" class="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 flex items-center gap-3 text-sm">
         <svg class="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         <span class="text-amber-700">Viewing historical assessment from <strong>{{ assessment?.date }}</strong>.</span>
         <button @click="router.push(`/assessment/${patientId}/result`)" class="ml-auto text-xs text-amber-700 underline font-semibold whitespace-nowrap">View Latest →</button>
       </div>
 
       <!-- ── SECTION 1: Differential Diagnosis ── -->
-      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+      <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
         <div class="flex items-center justify-between mb-1">
-          <h2 class="font-semibold text-gray-900 flex items-center gap-2">
+          <h2 class="font-semibold text-slate-900 flex items-center gap-2">
             <svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
             Differential Diagnosis
             <span class="text-xs font-normal text-blue-500">AI Analysis</span>
           </h2>
-          <span class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-600">
-            <span class="w-2 h-2 rounded-full bg-red-500"/>
-            High Risk
-          </span>
+          <RiskBadge v-if="assessment?.risk" :risk="assessment.risk"/>
         </div>
 
-        <!-- AI brief summary -->
-        <p class="text-sm text-gray-600 leading-relaxed mb-5 bg-blue-50/60 border border-blue-100 rounded-xl px-4 py-3 mt-3">
-          {{ aiSummary }}
-        </p>
+        <!-- Decision-support disclaimer -->
+        <div class="flex items-start gap-2 text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-xl px-3.5 py-2.5 mt-3">
+          <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span>AI-generated decision support — intended to assist, not replace, clinical judgment. Confirm findings before acting.</span>
+        </div>
 
-        <!-- Probability bars -->
-        <div class="space-y-3">
-          <div v-for="(c, i) in conditions" :key="c.name" class="flex items-center gap-3">
-            <span class="text-xs font-bold text-gray-500 w-4">{{ i + 1 }}.</span>
-            <div class="flex-1">
-              <div class="flex justify-between text-xs mb-1">
-                <span :class="['font-semibold', i === 0 ? 'text-red-600' : 'text-gray-700']">{{ c.name }}</span>
-                <span class="font-bold text-gray-700">{{ c.pct }}%</span>
-              </div>
-              <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div :class="['h-full rounded-full transition-all duration-700', c.color]" :style="`width:${c.pct}%`"/>
+        <template v-if="hasAiData">
+          <!-- AI brief summary -->
+          <p v-if="aiSummary" class="text-sm text-slate-600 leading-relaxed mb-5 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 mt-3">
+            {{ aiSummary }}
+          </p>
+
+          <!-- Probability bars -->
+          <div class="space-y-3">
+            <div v-for="(c, i) in conditions" :key="c.name" class="flex items-center gap-3">
+              <span class="text-xs font-bold text-slate-500 w-4">{{ i + 1 }}.</span>
+              <div class="flex-1">
+                <div class="flex justify-between text-xs mb-1">
+                  <span :class="['font-semibold', i === 0 ? 'text-red-600' : 'text-slate-700']">{{ c.name }}</span>
+                  <span class="font-bold text-slate-700">{{ c.pct }}%</span>
+                </div>
+                <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div :class="['h-full rounded-full transition-all duration-700', c.color]" :style="`width:${c.pct}%`"/>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <button @click="router.push(`/assessment/${patientId}/analysis`)"
-          class="text-xs text-blue-600 hover:underline mt-4 flex items-center gap-1">
-          View Full Differential Analysis
-          <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-        </button>
+          <button @click="router.push(`/assessment/${patientId}/analysis`)"
+            class="text-xs text-blue-600 hover:underline mt-4 flex items-center gap-1">
+            View Full Differential Analysis
+            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        </template>
+
+        <!-- Honest empty state — no fabricated diagnosis when the assessment has no real AI output -->
+        <div v-else class="mt-4 flex flex-col items-center rounded-xl border border-dashed border-slate-200 py-10 text-center">
+          <svg class="w-10 h-10 text-slate-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <p class="text-sm font-medium text-slate-600">AI analysis pending</p>
+          <p class="text-xs text-slate-400 max-w-sm mt-1">This assessment hasn't been scored by the AI service yet. Use your clinical judgment and the recorded complaints, history and vitals below to decide next steps.</p>
+        </div>
       </div>
 
       <!-- ── SECTION 2: AI Chatbot ── -->
-      <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
         <button class="w-full flex items-center justify-between px-5 py-4" @click="chatOpen = !chatOpen">
           <div class="flex items-center gap-3">
             <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
               <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             </div>
             <div>
-              <div class="font-semibold text-gray-800 text-sm">Ask AI for Clarification</div>
-              <div class="text-xs text-gray-400">Get detailed explanation or ask follow-up questions</div>
+              <div class="font-semibold text-slate-800 text-sm">Ask AI for Clarification</div>
+              <div class="text-xs text-slate-400">Get detailed explanation or ask follow-up questions</div>
             </div>
           </div>
-          <svg :class="['w-5 h-5 text-gray-400 transition-transform', chatOpen ? 'rotate-180' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>
+          <svg :class="['w-5 h-5 text-slate-400 transition-transform', chatOpen ? 'rotate-180' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>
         </button>
 
-        <div v-if="chatOpen" class="border-t border-gray-100">
+        <div v-if="chatOpen" class="border-t border-slate-100">
           <!-- Chat history -->
-          <div class="h-52 overflow-y-auto px-4 py-3 space-y-3 bg-gray-50/40">
+          <div class="h-52 overflow-y-auto px-4 py-3 space-y-3 bg-slate-50/40">
             <div v-for="(msg, i) in chatHistory" :key="i"
               :class="['flex', msg.role === 'user' ? 'justify-end' : 'justify-start']">
-              <div :class="['max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed', msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-sm' : 'bg-white border border-gray-100 text-gray-700 rounded-tl-sm shadow-sm']">
+              <div :class="['max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed', msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-sm' : 'bg-white border border-slate-100 text-slate-700 rounded-tl-sm shadow-sm']">
                 {{ msg.text }}
               </div>
             </div>
             <div v-if="chatLoading" class="flex justify-start">
-              <div class="bg-white border border-gray-100 shadow-sm px-4 py-3 rounded-2xl rounded-tl-sm">
+              <div class="bg-white border border-slate-100 shadow-sm px-4 py-3 rounded-2xl rounded-tl-sm">
                 <div class="flex gap-1">
                   <span v-for="n in 3" :key="n" :style="`animation-delay:${n*0.15}s`" class="w-2 h-2 bg-blue-400 rounded-full animate-bounce"/>
                 </div>
@@ -276,9 +297,9 @@ function printResult() { window.print() }
             </div>
           </div>
           <!-- Chat input -->
-          <div class="flex items-center gap-2 px-4 py-3 border-t border-gray-100">
+          <div class="flex items-center gap-2 px-4 py-3 border-t border-slate-100">
             <input v-model="chatInput" type="text" placeholder="Ask about diagnosis, treatment, or next steps..." @keyup.enter="sendChat"
-              class="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+              class="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
             <button @click="sendChat" :disabled="!chatInput.trim() || chatLoading"
               class="flex items-center justify-center w-10 h-10 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl transition">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -288,8 +309,8 @@ function printResult() { window.print() }
       </div>
 
       <!-- ── SECTION 3: Plan of Action ── -->
-      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        <h2 class="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+      <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
+        <h2 class="font-semibold text-slate-900 mb-4 flex items-center gap-2">
           <svg class="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
           Plan of Action
           <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-teal-50 text-teal-600 border border-teal-200">
@@ -299,13 +320,13 @@ function printResult() { window.print() }
 
         <!-- Immediate Measures -->
         <div class="mb-5">
-          <h3 class="text-sm font-semibold text-gray-700 mb-3">Immediate Measures</h3>
+          <h3 class="text-sm font-semibold text-slate-700 mb-3">Immediate Measures</h3>
           <ul class="space-y-2.5">
             <li v-for="(a, i) in immediateMeasures" :key="i" class="flex items-center gap-3">
               <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
                 <span class="text-xs font-bold text-green-700">{{ i + 1 }}</span>
               </div>
-              <span class="text-sm text-gray-700">{{ a }}</span>
+              <span class="text-sm text-slate-700">{{ a }}</span>
             </li>
           </ul>
         </div>
@@ -328,13 +349,13 @@ function printResult() { window.print() }
 
         <!-- Referral Required Decision -->
         <div>
-          <h3 class="text-sm font-semibold text-gray-700 mb-3">Referral Required?</h3>
+          <h3 class="text-sm font-semibold text-slate-700 mb-3">Referral Required?</h3>
           <div class="flex gap-3 flex-wrap">
             <button v-for="opt in [
               { val: 'yes',     label: 'Yes — Refer',          cls: 'border-red-400 bg-red-50 text-red-700' },
               { val: 'no',      label: 'No — Manage Here',     cls: 'border-green-400 bg-green-50 text-green-700' },
             ]" :key="opt.val"
-              :class="['px-5 py-2.5 rounded-xl border-2 text-sm font-semibold transition', referralDecision === opt.val ? opt.cls + ' ring-2 ring-offset-1 ring-blue-400' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300']"
+              :class="['px-5 py-2.5 rounded-xl border-2 text-sm font-semibold transition', referralDecision === opt.val ? opt.cls + ' ring-2 ring-offset-1 ring-blue-400' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300']"
               @click="referralDecision = opt.val">
               {{ opt.label }}
             </button>
@@ -352,7 +373,7 @@ function printResult() { window.print() }
             <!-- Nearby Hospitals (ordered by distance, govt first) -->
             <div>
               <div class="flex items-center justify-between mb-2">
-                <h4 class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Nearby Hospitals</h4>
+                <h4 class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Nearby Hospitals</h4>
                 <button @click="openMap('hospitals near ' + (patient.address?.village || patient.location))" class="text-xs text-blue-600 hover:underline flex items-center gap-1">
                   View on Map
                   <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -360,19 +381,19 @@ function printResult() { window.print() }
               </div>
               <div class="space-y-2.5">
                 <div v-for="(h, i) in hospitals" :key="h.id"
-                  :class="['flex items-center gap-3 rounded-xl border p-3', h.govt ? 'border-green-200 bg-green-50/50' : 'border-gray-100 bg-white']">
-                  <div :class="['w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-white text-xs font-bold', h.govt ? 'bg-green-600' : 'bg-gray-600']">
+                  :class="['flex items-center gap-3 rounded-xl border p-3', h.govt ? 'border-green-200 bg-green-50/50' : 'border-slate-100 bg-white']">
+                  <div :class="['w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-white text-xs font-bold', h.govt ? 'bg-green-600' : 'bg-slate-600']">
                     {{ i + 1 }}
                   </div>
                   <div class="flex-1 min-w-0">
-                    <div class="text-sm font-medium text-gray-800 truncate">{{ h.name }}</div>
+                    <div class="text-sm font-medium text-slate-800 truncate">{{ h.name }}</div>
                     <div class="flex items-center gap-2 mt-0.5">
-                      <span :class="['text-xs px-2 py-0.5 rounded font-semibold', h.govt ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600']">{{ h.type }}</span>
+                      <span :class="['text-xs px-2 py-0.5 rounded font-semibold', h.govt ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600']">{{ h.type }}</span>
                       <span v-if="h.govt" class="text-xs text-green-600 font-medium">★ Recommended</span>
                     </div>
                   </div>
                   <div class="flex items-center gap-2 flex-shrink-0">
-                    <span class="text-xs text-gray-500 font-medium">{{ h.distance }}</span>
+                    <span class="text-xs text-slate-500 font-medium">{{ h.distance }}</span>
                     <button @click="openMap(h.location)" class="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center hover:bg-blue-100 transition" title="View on map">
                       <svg class="w-3.5 h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                     </button>
@@ -387,19 +408,19 @@ function printResult() { window.print() }
 
           <!-- REFERRAL = NO: Teleconsultation -->
           <div v-else-if="referralDecision === 'no'" class="mt-4">
-            <h4 class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">{{ auth.isDoctor ? 'Available Specialist Doctors' : 'Available Doctors' }}</h4>
+            <h4 class="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">{{ auth.isDoctor ? 'Available Specialist Doctors' : 'Available Doctors' }}</h4>
             <div class="space-y-2.5">
               <div v-for="d in doctors" :key="d.id"
-                :class="['border rounded-xl p-3 flex items-center gap-3', d.available ? 'border-gray-100' : 'border-gray-100 opacity-60']">
+                :class="['border rounded-xl p-3 flex items-center gap-3', d.available ? 'border-slate-100' : 'border-slate-100 opacity-60']">
                 <div class="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
                   <svg class="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </div>
                 <div class="flex-1 min-w-0">
-                  <div class="text-sm font-semibold text-gray-800">{{ d.name }}</div>
-                  <div class="text-xs text-gray-500">{{ d.specialization }}</div>
+                  <div class="text-sm font-semibold text-slate-800">{{ d.name }}</div>
+                  <div class="text-xs text-slate-500">{{ d.specialization }}</div>
                   <div class="flex items-center gap-1 mt-0.5">
-                    <span :class="['w-1.5 h-1.5 rounded-full', d.available ? 'bg-green-500' : 'bg-gray-300']"/>
-                    <span :class="['text-xs font-medium', d.available ? 'text-green-600' : 'text-gray-400']">{{ d.available ? 'Available' : 'Busy' }}</span>
+                    <span :class="['w-1.5 h-1.5 rounded-full', d.available ? 'bg-green-500' : 'bg-slate-300']"/>
+                    <span :class="['text-xs font-medium', d.available ? 'text-green-600' : 'text-slate-400']">{{ d.available ? 'Available' : 'Busy' }}</span>
                   </div>
                 </div>
                 <div v-if="d.available" class="flex items-center gap-2">
@@ -417,11 +438,11 @@ function printResult() { window.print() }
       </div>
 
       <!-- ── SECTION 4: Action Taken ── -->
-      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        <h2 class="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+      <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
+        <h2 class="font-semibold text-slate-900 mb-4 flex items-center gap-2">
           <svg class="w-5 h-5 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
           Action Taken
-          <span class="text-xs font-normal text-gray-400">Record what was done</span>
+          <span class="text-xs font-normal text-slate-400">Record what was done</span>
         </h2>
 
         <transition enter-active-class="transition duration-300" enter-from-class="opacity-0 -translate-y-2">
@@ -433,13 +454,13 @@ function printResult() { window.print() }
 
         <!-- Immediate measures taken -->
         <div class="mb-5">
-          <h3 class="text-sm font-semibold text-gray-700 mb-3">Immediate Measures Implemented</h3>
+          <h3 class="text-sm font-semibold text-slate-700 mb-3">Immediate Measures Implemented</h3>
           <div class="space-y-2">
             <label v-for="(a, i) in immediateMeasures" :key="i"
               class="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-teal-50 transition"
-              :class="actionTaken.measures[i] ? 'bg-teal-50 border border-teal-100' : 'bg-gray-50'">
-              <input v-model="actionTaken.measures[i]" type="checkbox" class="w-4 h-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500"/>
-              <span :class="['text-sm', actionTaken.measures[i] ? 'text-teal-700 line-through decoration-teal-400' : 'text-gray-700']">{{ a }}</span>
+              :class="actionTaken.measures[i] ? 'bg-teal-50 border border-teal-100' : 'bg-slate-50'">
+              <input v-model="actionTaken.measures[i]" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"/>
+              <span :class="['text-sm', actionTaken.measures[i] ? 'text-teal-700 line-through decoration-teal-400' : 'text-slate-700']">{{ a }}</span>
             </label>
           </div>
         </div>
@@ -449,16 +470,16 @@ function printResult() { window.print() }
           <h3 class="text-sm font-semibold text-red-700">Referral Details</h3>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1.5">Hospital Referred To</label>
+              <label class="block text-xs font-medium text-slate-600 mb-1.5">Hospital Referred To</label>
               <select v-model="actionTaken.referralHospital"
-                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">— Select —</option>
                 <option v-for="h in hospitals" :key="h.id" :value="h.id">{{ h.name }}</option>
               </select>
             </div>
             <div class="flex items-end">
-              <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
-                <input v-model="actionTaken.ambulanceCalled" type="checkbox" class="w-4 h-4 rounded border-gray-300 text-red-600"/>
+              <label class="flex items-center gap-2 cursor-pointer text-sm text-slate-700">
+                <input v-model="actionTaken.ambulanceCalled" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-red-600"/>
                 Ambulance (108) called
               </label>
             </div>
@@ -469,29 +490,29 @@ function printResult() { window.print() }
         <div v-if="referralDecision === 'no'" class="mb-5 p-4 bg-blue-50/40 border border-blue-100 rounded-xl space-y-3">
           <h3 class="text-sm font-semibold text-blue-700">Teleconsultation Details</h3>
           <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1.5">Doctor Consulted</label>
+            <label class="block text-xs font-medium text-slate-600 mb-1.5">Doctor Consulted</label>
             <select v-model="actionTaken.teleconsultDoctor"
-              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+              class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">— Select —</option>
               <option v-for="d in doctors.filter(d => d.available)" :key="d.id" :value="d.id">{{ d.name }}</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1.5">Doctor's Advice / Instructions</label>
+            <label class="block text-xs font-medium text-slate-600 mb-1.5">Doctor's Advice / Instructions</label>
             <textarea v-model="actionTaken.teleconsultNotes" rows="2" placeholder="Note the advice given by the doctor..."
-              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500" lang="auto"/>
+              class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500" lang="auto"/>
           </div>
         </div>
 
         <!-- Additional notes -->
         <div class="mb-4">
-          <label class="block text-xs font-medium text-gray-600 mb-1.5">Additional Notes</label>
+          <label class="block text-xs font-medium text-slate-600 mb-1.5">Additional Notes</label>
           <textarea v-model="actionTaken.additionalNotes" rows="2" placeholder="Any other observations or actions taken..."
-            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500" lang="auto"/>
+            class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500" lang="auto"/>
         </div>
 
         <button @click="submitAction"
-          class="flex items-center gap-2 px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-lg transition">
+          class="flex items-center gap-2 px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold rounded-xl transition">
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
           Save Action Record
         </button>
@@ -499,42 +520,42 @@ function printResult() { window.print() }
 
       <!-- ── Annotation + Version History ── -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
           <div class="flex items-center justify-between mb-3">
-            <h3 class="font-semibold text-gray-800 text-sm flex items-center gap-2">
+            <h3 class="font-semibold text-slate-800 text-sm flex items-center gap-2">
               <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
               {{ t('annotation.label') }}
             </h3>
             <button v-if="!editingAnnotation" @click="startEditAnnotation"
-              class="text-xs text-blue-600 border border-blue-200 px-2.5 py-1 rounded-lg hover:bg-blue-50 transition">
+              class="text-xs text-blue-600 border border-blue-200 px-2.5 py-1 rounded-xl hover:bg-blue-50 transition">
               {{ annotation ? t('annotation.edit') : t('common.add') }}
             </button>
           </div>
           <div v-if="!editingAnnotation">
-            <p v-if="annotation" class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{{ annotation }}</p>
-            <p v-else class="text-sm text-gray-400 italic">{{ t('annotation.add') }}</p>
+            <p v-if="annotation" class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{{ annotation }}</p>
+            <p v-else class="text-sm text-slate-400 italic">{{ t('annotation.add') }}</p>
           </div>
           <div v-else class="space-y-2">
             <textarea v-model="annotationDraft" rows="4" :placeholder="t('annotation.add')"
-              class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500" lang="auto"/>
+              class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500" lang="auto"/>
             <div class="flex gap-2 justify-end">
-              <button @click="editingAnnotation = false" class="px-3 py-1.5 text-xs border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50">{{ t('common.cancel') }}</button>
-              <button @click="saveAnnotation" class="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700">{{ t('annotation.save') }}</button>
+              <button @click="editingAnnotation = false" class="px-3 py-1.5 text-xs border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50">{{ t('common.cancel') }}</button>
+              <button @click="saveAnnotation" class="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-xl hover:bg-blue-700">{{ t('annotation.save') }}</button>
             </div>
           </div>
         </div>
 
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          <h3 class="font-semibold text-gray-800 text-sm flex items-center gap-2 mb-3">
-            <svg class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+        <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
+          <h3 class="font-semibold text-slate-800 text-sm flex items-center gap-2 mb-3">
+            <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
             {{ t('version.history') }}
           </h3>
-          <div v-if="versionHistory.length === 0" class="text-xs text-gray-400 italic">{{ t('version.noHistory') }}</div>
+          <div v-if="versionHistory.length === 0" class="text-xs text-slate-400 italic">{{ t('version.noHistory') }}</div>
           <div v-else class="space-y-2 max-h-40 overflow-y-auto">
-            <div v-for="(v, i) in versionHistory" :key="i" class="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+            <div v-for="(v, i) in versionHistory" :key="i" class="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2">
               <div>
-                <div class="text-xs font-medium text-gray-700">{{ v.ts }}</div>
-                <div class="text-[10px] text-gray-400">{{ i === 0 ? t('version.current') : `v${versionHistory.length - i}` }}</div>
+                <div class="text-xs font-medium text-slate-700">{{ v.ts }}</div>
+                <div class="text-[10px] text-slate-400">{{ i === 0 ? t('version.current') : `v${versionHistory.length - i}` }}</div>
               </div>
               <span v-if="i === 0" class="text-[10px] px-2 py-0.5 bg-blue-100 text-blue-600 rounded font-semibold">{{ t('version.current') }}</span>
             </div>
@@ -543,15 +564,15 @@ function printResult() { window.print() }
       </div>
 
       <!-- Share panel -->
-      <div class="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 flex items-center gap-3 flex-wrap">
-        <span class="text-sm font-medium text-gray-700">{{ t('notif.channel') }}:</span>
+      <div class="bg-white rounded-xl border border-slate-100 shadow-sm px-5 py-4 flex items-center gap-3 flex-wrap">
+        <span class="text-sm font-medium text-slate-700">{{ t('notif.channel') }}:</span>
         <button @click="sendWhatsApp(patient)"
-          class="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded-lg transition">
+          class="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded-xl transition">
           <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/></svg>
           {{ t('notif.sendWhatsapp') }}
         </button>
         <button @click="sendEmail(patient)"
-          class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition">
+          class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition">
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
           {{ t('notif.sendEmail') }}
         </button>
@@ -559,12 +580,12 @@ function printResult() { window.print() }
 
       <!-- Disclaimer + proceed -->
       <div class="flex items-center justify-between flex-wrap gap-3">
-        <div class="flex items-center gap-2 text-xs text-blue-600 bg-blue-50 border border-blue-100 rounded-lg px-4 py-2.5">
+        <div class="flex items-center gap-2 text-xs text-blue-600 bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5">
           <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 15h-2v-6h2zm0-8h-2V7h2z"/></svg>
           AI-generated analysis. A qualified healthcare professional should review before final diagnosis.
         </div>
         <button @click="router.push(`/assessment/${patientId}/measures`)"
-          class="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition flex-shrink-0">
+          class="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition flex-shrink-0">
           {{ t('result.recordMeasures') }}
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </button>

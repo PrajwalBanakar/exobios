@@ -3,6 +3,10 @@ import { ref, reactive, nextTick, watch, computed, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore, PARAMEDIC_ROLES, DOCTOR_ROLES } from '@/features/auth/stores/auth'
 import RadioGroup from '@/shared/components/forms/RadioGroup.vue'
+import AuthTextField from '@/features/auth/components/AuthTextField.vue'
+import AuthButton from '@/features/auth/components/AuthButton.vue'
+import AuthBrandPanel from '@/features/auth/components/AuthBrandPanel.vue'
+import exobiosLogo from '@/assets/brand/exobios-logo-dark.png'
 import { useI18n } from '@/i18n'
 
 // 'ASHA Worker' is the legacy alias kept for backward compatibility (see auth store) —
@@ -19,7 +23,6 @@ const mode = ref('login')
 // ─── Login ────────────────────────────────────────────────────────────────────
 const loginId  = ref('')
 const password = ref('')
-const showPass = ref(false)
 const remember = ref(false)
 const loading  = ref(false)
 const error    = ref('')
@@ -30,7 +33,7 @@ async function handleLogin() {
   try {
     await new Promise(r => setTimeout(r, 600))
     const found = auth.findUser(loginId.value, password.value)
-    if (!found) { error.value = 'Invalid credentials. Please check your Login ID (phone/ASHA ID) and password.'; return }
+    if (!found) { error.value = t('login.authError'); return }
     auth.login({ loginId: found.phone, name: found.name, role: found.role })
     await router.push('/dashboard')
   } catch {
@@ -250,116 +253,87 @@ async function submitContact() {
 </script>
 
 <template>
-  <div class="min-h-screen flex">
+  <div class="flex min-h-screen bg-white">
     <!-- Left branding panel (desktop only) -->
-    <div class="hidden lg:flex lg:w-[45%] flex-col items-center justify-center relative overflow-hidden"
-         style="background: linear-gradient(160deg, #0a1628 0%, #0f1b35 50%, #0a1628 100%)">
-      <div class="absolute inset-0 opacity-20">
-        <svg viewBox="0 0 800 600" class="w-full h-full" preserveAspectRatio="xMidYMid slice">
-          <defs>
-            <radialGradient id="rg1" cx="50%" cy="80%">
-              <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.8"/>
-              <stop offset="100%" stop-color="#1e3a8f" stop-opacity="0"/>
-            </radialGradient>
-          </defs>
-          <ellipse cx="400" cy="500" rx="600" ry="200" fill="url(#rg1)"/>
-        </svg>
-      </div>
-      <div class="relative z-10 text-center px-12">
-        <div class="flex items-center justify-center gap-3 mb-10">
-          <div class="w-12 h-12 rounded-xl bg-blue-500 flex items-center justify-center">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="white" stroke-width="2" stroke-linejoin="round"/>
-              <path d="M2 17l10 5 10-5"           stroke="white" stroke-width="2" stroke-linejoin="round"/>
-              <path d="M2 12l10 5 10-5"           stroke="white" stroke-width="2" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <span class="text-white text-3xl font-bold">Exobios</span>
-        </div>
-        <h2 class="text-white text-4xl font-bold leading-tight mb-4">AI Assisted<br>Healthcare Platform</h2>
-        <div class="w-12 h-1 bg-cyan-400 rounded mx-auto mb-6"/>
-        <p class="text-slate-300 text-base leading-relaxed">Smart tools for faster triage,<br>better decisions, and improved care.</p>
-        <div class="flex justify-center gap-10 mt-12">
-          <div v-for="feature in [
-            { icon: 'M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83', label: 'AI Powered' },
-            { icon: 'M13 2L3 14h9l-1 8 10-12h-9l1-8z', label: 'Fast Triage' },
-            { icon: 'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z', label: 'Better Care' },
-          ]" :key="feature.label" class="flex flex-col items-center gap-2">
-            <div class="w-12 h-12 rounded-full border border-cyan-500/30 flex items-center justify-center">
-              <svg class="w-6 h-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path :d="feature.icon"/></svg>
-            </div>
-            <span class="text-slate-300 text-xs">{{ feature.label }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
+    <AuthBrandPanel />
 
     <!-- Right: auth forms -->
-    <div class="flex-1 flex items-center justify-center bg-white px-8 py-10 overflow-y-auto">
-      <div class="w-full max-w-sm">
+    <div class="flex flex-1 flex-col items-center justify-start overflow-y-auto bg-white px-6 py-10 sm:px-10 lg:justify-center lg:py-12">
+      <div class="w-full max-w-[420px]">
+
+        <!-- Compact brand header (mobile / tablet only) -->
+        <div class="mb-8 flex flex-col items-center gap-1 lg:hidden">
+          <img :src="exobiosLogo" alt="Exobios" class="h-8 w-auto object-contain" />
+        </div>
 
         <!-- ── LOGIN ── -->
         <template v-if="mode === 'login'">
-          <h1 class="text-2xl font-bold text-gray-900 mb-1">{{ t('login.title') }}</h1>
-          <p class="text-sm text-gray-500 mb-8">{{ t('login.subtitle') }}</p>
-          <form @submit.prevent="handleLogin" class="space-y-4">
-            <div class="relative">
-              <div class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              </div>
-              <input v-model="loginId" type="text" :placeholder="t('login.loginId')"
-                class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-            </div>
-            <div class="relative">
-              <div class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              </div>
-              <input v-model="password" :type="showPass ? 'text' : 'password'" :placeholder="t('login.password')"
-                class="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-              <button type="button" @click="showPass = !showPass" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                <svg v-if="!showPass" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-              </button>
-            </div>
+          <h1 class="text-[26px] font-bold tracking-tight text-slate-900">{{ t('login.title') }}</h1>
+          <p class="mt-1.5 text-sm text-slate-500">{{ t('login.subtitle') }}</p>
+
+          <form @submit.prevent="handleLogin" class="mt-8 space-y-5" novalidate>
+            <AuthTextField
+              id="login-id" v-model="loginId" :label="t('login.loginId')"
+              :placeholder="t('login.loginIdPlaceholder')" autocomplete="username" required
+            >
+              <template #icon>
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </template>
+            </AuthTextField>
+
+            <AuthTextField
+              id="login-password" v-model="password" revealable
+              :label="t('login.password')" :placeholder="t('login.passwordPlaceholder')" autocomplete="current-password" required
+            >
+              <template #icon>
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </template>
+            </AuthTextField>
+
             <div class="flex items-center justify-between">
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input v-model="remember" type="checkbox" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"/>
-                <span class="text-sm text-gray-600">{{ t('login.remember') }}</span>
+              <label class="flex cursor-pointer select-none items-center gap-2">
+                <input v-model="remember" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/40"/>
+                <span class="text-sm text-slate-600">{{ t('login.remember') }}</span>
               </label>
               <button type="button" @click="mode = 'forgot'; forgotStep = 'phone'; forgotError = ''"
-                class="text-sm font-medium text-blue-600 hover:underline">{{ t('login.forgot') }}</button>
+                class="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline">{{ t('login.forgot') }}</button>
             </div>
-            <p v-if="error" class="text-red-500 text-xs">{{ error }}</p>
-            <button type="submit" :disabled="loading"
-              class="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-xl transition flex items-center justify-center gap-2 text-sm">
-              <svg v-if="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v8H4z"/></svg>
+
+            <div v-if="error" role="alert" class="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 px-3.5 py-2.5 text-sm text-red-600">
+              <svg class="mt-0.5 h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <span>{{ error }}</span>
+            </div>
+
+            <AuthButton type="submit" :loading="loading">
               {{ loading ? t('login.loggingIn') : t('login.login') }}
-            </button>
-            <div class="flex items-center gap-3">
-              <div class="flex-1 h-px bg-gray-200"/>
-              <span class="text-xs text-gray-400">{{ t('login.orContinueWith') }}</span>
-              <div class="flex-1 h-px bg-gray-200"/>
+            </AuthButton>
+
+            <div class="flex items-center gap-3 pt-1">
+              <div class="h-px flex-1 bg-slate-200"/>
+              <span class="text-xs font-medium uppercase tracking-wide text-slate-400">{{ t('login.orContinueWith') }}</span>
+              <div class="h-px flex-1 bg-slate-200"/>
             </div>
-            <button type="button" @click="mode = 'otp'; otpStep = 'phone'; otpError = ''; otpPhone = ''"
-              class="w-full py-3 border border-blue-600 text-blue-600 font-semibold rounded-xl hover:bg-blue-50 transition text-sm flex items-center justify-center gap-2">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+
+            <AuthButton type="button" variant="secondary" @click="mode = 'otp'; otpStep = 'phone'; otpError = ''; otpPhone = ''">
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
               {{ t('login.loginWithOtp') }}
-            </button>
-            <p class="text-center text-sm text-gray-500">{{ t('login.newToExobios') }}</p>
-            <button type="button" @click="mode = 'signup'; signupError = ''"
-              class="w-full py-3 border border-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition text-sm flex items-center justify-center gap-2">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-              {{ t('login.signUp') }}
-            </button>
-            <p class="text-center text-xs text-gray-400">
-              {{ t('login.termsAgree') }}
-              <button type="button" @click="showTerms = true; termsTab = 'terms'" class="text-blue-600 hover:underline font-medium">{{ t('login.termsLink') }}</button>
+            </AuthButton>
+
+            <p class="pt-2 text-center text-sm text-slate-500">
+              {{ t('login.newToExobios') }}
+              <button type="button" @click="mode = 'signup'; signupError = ''" class="font-semibold text-blue-600 hover:underline">{{ t('login.signUp') }}</button>
             </p>
-            <div class="border-t border-gray-100 pt-4 text-center">
+
+            <p class="text-center text-xs leading-relaxed text-slate-400">
+              {{ t('login.termsAgree') }}
+              <button type="button" @click="showTerms = true; termsTab = 'terms'" class="font-medium text-blue-600 hover:underline">{{ t('login.termsLink') }}</button>
+            </p>
+
+            <div class="border-t border-slate-100 pt-5 text-center">
               <button type="button" @click="mode = 'contactUs'; contactError = ''"
-                class="text-sm text-gray-500 hover:text-blue-600 transition flex items-center gap-1.5 mx-auto">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                Contact Us / Request Access
+                class="mx-auto flex items-center gap-1.5 text-sm text-slate-500 transition hover:text-blue-600">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                {{ t('login.requestAccess') }}
               </button>
             </div>
           </form>
@@ -367,234 +341,194 @@ async function submitContact() {
 
         <!-- ── OTP LOGIN ── -->
         <template v-else-if="mode === 'otp'">
-          <button @click="mode = 'login'; otpStep = 'phone'; otpError = ''" class="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-6">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          <button @click="mode = 'login'; otpStep = 'phone'; otpError = ''" class="mb-6 flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
             {{ t('login.back') }}
           </button>
-          <h1 class="text-2xl font-bold text-gray-900 mb-1">{{ t('login.loginWithOtp') }}</h1>
+          <h1 class="text-[26px] font-bold tracking-tight text-slate-900">{{ t('login.loginWithOtp') }}</h1>
 
           <!-- Step: Enter phone -->
           <template v-if="otpStep === 'phone'">
-            <p class="text-sm text-gray-500 mb-8">{{ t('login.phone') }}</p>
-            <div class="space-y-4">
-              <div class="relative">
-                <div class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-                </div>
-                <input v-model="otpPhone" type="tel" :placeholder="t('login.phonePlaceholder')" maxlength="10"
-                  class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-              </div>
-              <p v-if="otpError" class="text-red-500 text-xs">{{ otpError }}</p>
-              <button @click="sendOtp" :disabled="otpSending"
-                class="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-xl transition text-sm flex items-center justify-center gap-2">
-                <svg v-if="otpSending" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v8H4z"/></svg>
+            <p class="mt-1.5 mb-8 text-sm text-slate-500">{{ t('login.phone') }}</p>
+            <div class="space-y-5">
+              <AuthTextField id="otp-phone" v-model="otpPhone" type="tel" inputmode="numeric" maxlength="10"
+                :placeholder="t('login.phonePlaceholder')" autocomplete="tel">
+                <template #icon>
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                </template>
+              </AuthTextField>
+              <p v-if="otpError" class="text-xs text-red-500">{{ otpError }}</p>
+              <AuthButton @click="sendOtp" :loading="otpSending">
                 {{ otpSending ? t('login.sending') : t('login.send') }}
-              </button>
+              </AuthButton>
             </div>
           </template>
 
           <!-- Step: Verify OTP -->
           <template v-else>
-            <p class="text-sm text-gray-500 mb-1">{{ t('login.otpSent') }} <strong>+91 {{ otpPhone }}</strong></p>
-            <p class="text-xs text-gray-400 mb-4">{{ t('login.enterCode') }}</p>
-            <p class="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-center mb-4">
+            <p class="mt-1.5 mb-1 text-sm text-slate-500">{{ t('login.otpSent') }} <strong class="text-slate-700">+91 {{ otpPhone }}</strong></p>
+            <p class="mb-4 text-xs text-slate-400">{{ t('login.enterCode') }}</p>
+            <p class="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-center text-xs text-blue-700">
               Your OTP: <strong class="text-base tracking-widest">{{ generatedOtp }}</strong>
             </p>
-            <div class="flex gap-2 sm:gap-3 justify-center mb-4">
+            <div class="mb-4 flex justify-center gap-2 sm:gap-3">
               <input v-for="(_, idx) in 6" :key="idx"
                 :id="`otp-${idx}`" type="text" inputmode="numeric" maxlength="1" autocomplete="one-time-code"
                 @input="handleOtpInput(idx, $event)"
                 @keydown="handleOtpKeydown(idx, $event)"
                 @paste="handleOtpPaste($event)"
-                class="w-10 h-12 text-center border-2 border-gray-200 rounded-lg text-lg font-bold text-gray-800 focus:outline-none focus:border-blue-500 transition"/>
+                class="h-12 w-10 rounded-lg border-2 border-slate-200 text-center text-lg font-bold text-slate-800 transition focus:border-blue-500 focus:outline-none"/>
             </div>
-            <p v-if="otpError" class="text-red-500 text-xs text-center mb-3">{{ otpError }}</p>
-            <button @click="verifyOtp" :disabled="otpLoading"
-              class="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-xl transition text-sm flex items-center justify-center gap-2">
-              <svg v-if="otpLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v8H4z"/></svg>
+            <p v-if="otpError" class="mb-3 text-center text-xs text-red-500">{{ otpError }}</p>
+            <AuthButton @click="verifyOtp" :loading="otpLoading">
               {{ otpLoading ? t('login.verifying') : t('login.verify') }}
-            </button>
-            <p class="text-center text-xs text-gray-400 mt-3">
+            </AuthButton>
+            <p class="mt-3 text-center text-xs text-slate-400">
               {{ t('login.didntReceive') }}
-              <span v-if="resendCountdown > 0" class="text-gray-400">{{ t('login.resendIn') }} {{ resendCountdown }}s</span>
-              <button v-else @click="otpStep = 'phone'; otpError = ''" class="text-blue-600 hover:underline ml-1">{{ t('login.resend') }}</button>
+              <span v-if="resendCountdown > 0" class="text-slate-400">{{ t('login.resendIn') }} {{ resendCountdown }}s</span>
+              <button v-else @click="otpStep = 'phone'; otpError = ''" class="ml-1 text-blue-600 hover:underline">{{ t('login.resend') }}</button>
             </p>
           </template>
         </template>
 
         <!-- ── SIGNUP ── -->
         <template v-else-if="mode === 'signup'">
-          <button @click="mode = 'login'" class="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-6">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          <button @click="mode = 'login'" class="mb-6 flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
             {{ t('login.backToLogin') }}
           </button>
-          <h1 class="text-2xl font-bold text-gray-900 mb-1">{{ t('login.createAccount') }}</h1>
-          <p class="text-sm text-gray-500 mb-6">{{ t('login.registerDesc') }}</p>
+          <h1 class="text-[26px] font-bold tracking-tight text-slate-900">{{ t('login.createAccount') }}</h1>
+          <p class="mt-1.5 mb-6 text-sm text-slate-500">{{ t('login.registerDesc') }}</p>
 
-          <div v-if="signupSuccess" class="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm text-center mb-4">
+          <div v-if="signupSuccess" class="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-center text-sm text-green-700">
             {{ t('login.accountCreated') }}
           </div>
 
-          <form v-else @submit.prevent="handleSignup" class="space-y-3.5">
+          <form v-else @submit.prevent="handleSignup" class="space-y-4">
+            <AuthTextField id="signup-name" v-model="signup.name" :label="t('login.fullName')" required
+              :placeholder="t('login.fullNamePlaceholder')" autocomplete="name"/>
+            <AuthTextField id="signup-phone" v-model="signup.phone" type="tel" inputmode="numeric" maxlength="10" required
+              :label="t('login.phoneNumber')" :placeholder="t('login.phonePlaceholder')" autocomplete="tel"/>
             <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ t('login.fullName') }} <span class="text-red-500">*</span></label>
-              <input v-model="signup.name" type="text" :placeholder="t('login.fullNamePlaceholder')"
-                class="w-full px-3.5 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ t('login.phoneNumber') }} <span class="text-red-500">*</span></label>
-              <input v-model="signup.phone" type="tel" maxlength="10" :placeholder="t('login.phonePlaceholder')"
-                class="w-full px-3.5 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ t('login.role') }}</label>
+              <label class="mb-1.5 block text-xs font-medium text-slate-600">{{ t('login.role') }}</label>
               <select v-model="signup.role"
-                class="w-full px-3.5 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                class="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-800 transition hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30">
                 <option v-for="r in SIGNUP_ROLE_OPTIONS" :key="r" :value="r">{{ r }}</option>
               </select>
             </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ signupIdLabel }} <span class="text-red-500">*</span></label>
-              <input v-model="signup.ashaId" type="text" :placeholder="`Your ${signupIdLabel}`"
-                class="w-full px-3.5 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ t('login.password') }} <span class="text-red-500">*</span></label>
-              <input v-model="signup.password" :type="signupShowPass ? 'text' : 'password'" :placeholder="t('login.minPassword')"
-                class="w-full px-3.5 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ t('login.confirmPassword') }} <span class="text-red-500">*</span></label>
-              <input v-model="signup.confirm" :type="signupShowPass ? 'text' : 'password'" :placeholder="t('login.confirmPassword')"
-                class="w-full px-3.5 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-            </div>
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" v-model="signupShowPass" class="w-4 h-4 rounded border-gray-300 text-blue-600"/>
-              <span class="text-xs text-gray-600">{{ t('login.showPassword') }}</span>
+            <AuthTextField id="signup-worker-id" v-model="signup.ashaId" :label="signupIdLabel" required
+              :placeholder="`Your ${signupIdLabel}`"/>
+            <AuthTextField id="signup-password" v-model="signup.password" :type="signupShowPass ? 'text' : 'password'" required
+              :label="t('login.password')" :placeholder="t('login.minPassword')" autocomplete="new-password"/>
+            <AuthTextField id="signup-confirm" v-model="signup.confirm" :type="signupShowPass ? 'text' : 'password'" required
+              :label="t('login.confirmPassword')" :placeholder="t('login.confirmPassword')" autocomplete="new-password"/>
+            <label class="flex cursor-pointer items-center gap-2">
+              <input type="checkbox" v-model="signupShowPass" class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/40"/>
+              <span class="text-xs text-slate-600">{{ t('login.showPassword') }}</span>
             </label>
-            <p v-if="signupError" class="text-red-500 text-xs">{{ signupError }}</p>
-            <button type="submit" :disabled="loading"
-              class="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-xl transition text-sm flex items-center justify-center gap-2">
-              <svg v-if="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v8H4z"/></svg>
+            <p v-if="signupError" class="text-xs text-red-500">{{ signupError }}</p>
+            <AuthButton type="submit" :loading="loading">
               {{ loading ? t('login.creatingAccount') : t('login.createAccount') }}
-            </button>
-            <p class="text-center text-xs text-gray-400">
+            </AuthButton>
+            <p class="text-center text-xs leading-relaxed text-slate-400">
               {{ t('login.signupAgree') }}
-              <button type="button" @click="showTerms = true; termsTab = 'terms'" class="text-blue-600 hover:underline font-medium">{{ t('login.termsLink') }}</button>
+              <button type="button" @click="showTerms = true; termsTab = 'terms'" class="font-medium text-blue-600 hover:underline">{{ t('login.termsLink') }}</button>
             </p>
           </form>
         </template>
 
         <!-- ── CONTACT US ── -->
         <template v-else-if="mode === 'contactUs'">
-          <button @click="mode = 'login'" class="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-6">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          <button @click="mode = 'login'" class="mb-6 flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
             {{ t('login.backToLogin') }}
           </button>
-          <h1 class="text-2xl font-bold text-gray-900 mb-1">Contact Us</h1>
-          <p class="text-sm text-gray-500 mb-6">Fill in your details and we'll get back to you.</p>
+          <h1 class="text-[26px] font-bold tracking-tight text-slate-900">Contact Us</h1>
+          <p class="mt-1.5 mb-6 text-sm text-slate-500">Fill in your details and we'll get back to you.</p>
 
-          <div v-if="contactSuccess" class="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm text-center mb-4">
+          <div v-if="contactSuccess" class="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-center text-sm text-green-700">
             Thank you! We'll reach out to you soon.
           </div>
 
-          <form v-else @submit.prevent="submitContact" class="space-y-3.5">
+          <form v-else @submit.prevent="submitContact" class="space-y-4">
+            <AuthTextField id="contact-name" v-model="contactForm.name" label="Full Name" required
+              placeholder="Your full name" autocomplete="name"/>
+            <AuthTextField id="contact-occupation" v-model="contactForm.occupation" label="Occupation"
+              placeholder="e.g. ASHA Worker, Health Official"/>
+            <AuthTextField id="contact-phone" v-model="contactForm.phone" type="tel" inputmode="numeric" maxlength="10" required
+              label="Phone Number" placeholder="10-digit mobile number" autocomplete="tel"/>
             <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1.5">Full Name <span class="text-red-500">*</span></label>
-              <input v-model="contactForm.name" type="text" placeholder="Your full name"
-                class="w-full px-3.5 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1.5">Occupation</label>
-              <input v-model="contactForm.occupation" type="text" placeholder="e.g. ASHA Worker, Health Official"
-                class="w-full px-3.5 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1.5">Phone Number <span class="text-red-500">*</span></label>
-              <input v-model="contactForm.phone" type="tel" maxlength="10" placeholder="10-digit mobile number"
-                class="w-full px-3.5 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1.5">Role</label>
+              <label class="mb-1.5 block text-xs font-medium text-slate-600">Role</label>
               <RadioGroup v-model="contactForm.role" :options="CONTACT_ROLE_OPTIONS" color="blue" columns="flex flex-wrap gap-2"/>
             </div>
+            <AuthTextField id="contact-worker-id" v-model="contactForm.workerId" :label="workerIdLabel"
+              :placeholder="`Your ${workerIdLabel}`"/>
             <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ workerIdLabel }}</label>
-              <input v-model="contactForm.workerId" type="text" :placeholder="`Your ${workerIdLabel}`"
-                class="w-full px-3.5 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1.5">Any Other Details</label>
+              <label class="mb-1.5 block text-xs font-medium text-slate-600">Any Other Details</label>
               <textarea v-model="contactForm.other" rows="3" placeholder="Your query, district, sub-center, etc."
-                class="w-full px-3.5 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"/>
+                class="w-full resize-none rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-800 placeholder-slate-400 transition hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"/>
             </div>
-            <p v-if="contactError" class="text-red-500 text-xs">{{ contactError }}</p>
-            <button type="submit" :disabled="loading"
-              class="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-xl transition flex items-center justify-center gap-2 text-sm">
-              <svg v-if="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v8H4z"/></svg>
+            <p v-if="contactError" class="text-xs text-red-500">{{ contactError }}</p>
+            <AuthButton type="submit" :loading="loading">
               {{ loading ? 'Sending...' : 'Send Message' }}
-            </button>
+            </AuthButton>
           </form>
         </template>
 
         <!-- ── FORGOT PASSWORD ── -->
         <template v-else-if="mode === 'forgot'">
-          <button @click="mode = 'login'" class="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-6">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          <button @click="mode = 'login'" class="mb-6 flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
             {{ t('login.backToLogin') }}
           </button>
-          <h1 class="text-2xl font-bold text-gray-900 mb-1">{{ t('login.forgotTitle') }}</h1>
+          <h1 class="text-[26px] font-bold tracking-tight text-slate-900">{{ t('login.forgotTitle') }}</h1>
 
-          <div v-if="forgotSuccess" class="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm text-center mt-4">
+          <div v-if="forgotSuccess" class="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-center text-sm text-green-700">
             {{ t('login.passwordResetSuccess') }}
           </div>
 
           <!-- Step 1: Phone number -->
           <template v-else-if="forgotStep === 'phone'">
-            <p class="text-sm text-gray-500 mb-8">{{ t('login.forgotDesc') }}</p>
-            <div class="space-y-4">
-              <input v-model="forgotPhone" type="tel" maxlength="10" :placeholder="t('login.phonePlaceholder')"
-                class="w-full px-3.5 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-              <p v-if="forgotError" class="text-red-500 text-xs">{{ forgotError }}</p>
-              <button @click="sendForgotOtp" :disabled="loading"
-                class="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-xl transition text-sm flex items-center justify-center gap-2">
-                <svg v-if="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v8H4z"/></svg>
+            <p class="mt-1.5 mb-8 text-sm text-slate-500">{{ t('login.forgotDesc') }}</p>
+            <div class="space-y-5">
+              <AuthTextField id="forgot-phone" v-model="forgotPhone" type="tel" inputmode="numeric" maxlength="10"
+                :placeholder="t('login.phonePlaceholder')" autocomplete="tel"/>
+              <p v-if="forgotError" class="text-xs text-red-500">{{ forgotError }}</p>
+              <AuthButton @click="sendForgotOtp" :loading="loading">
                 {{ loading ? t('login.sending') : t('login.send') }}
-              </button>
+              </AuthButton>
             </div>
           </template>
 
           <!-- Step 2: Verify OTP -->
           <template v-else-if="forgotStep === 'otp'">
-            <p class="text-sm text-gray-500 mb-2">{{ t('login.otpSent') }} <strong>+91 {{ forgotPhone }}</strong></p>
-            <p class="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-center mb-4">
+            <p class="mt-1.5 mb-2 text-sm text-slate-500">{{ t('login.otpSent') }} <strong class="text-slate-700">+91 {{ forgotPhone }}</strong></p>
+            <p class="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-center text-xs text-blue-700">
               Your OTP: <strong class="text-base tracking-widest">{{ forgotGeneratedOtp }}</strong>
             </p>
-            <div class="flex gap-2 sm:gap-3 justify-center mb-4">
+            <div class="mb-4 flex justify-center gap-2 sm:gap-3">
               <input v-for="(_, idx) in forgotOtp" :key="idx"
                 :id="`fotp-${idx}`" type="text" inputmode="numeric" maxlength="1"
                 @input="handleForgotOtpInput(idx, $event)"
                 @keydown="(e) => { if(e.key==='Backspace'){ e.preventDefault(); if(forgotOtp[idx]){ forgotOtp[idx]=''; e.target.value='' } else if(idx>0){ const p=document.getElementById('fotp-'+(idx-1)); if(p){p.focus();p.value='';forgotOtp[idx-1]=''} } } }"
-                class="w-10 h-12 text-center border-2 border-gray-200 rounded-lg text-lg font-bold text-gray-800 focus:outline-none focus:border-blue-500 transition"/>
+                class="h-12 w-10 rounded-lg border-2 border-slate-200 text-center text-lg font-bold text-slate-800 transition focus:border-blue-500 focus:outline-none"/>
             </div>
-            <p v-if="forgotError" class="text-red-500 text-xs text-center mb-3">{{ forgotError }}</p>
-            <button @click="verifyForgotOtp" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition text-sm">{{ t('login.verify') }}</button>
+            <p v-if="forgotError" class="mb-3 text-center text-xs text-red-500">{{ forgotError }}</p>
+            <AuthButton @click="verifyForgotOtp">{{ t('login.verify') }}</AuthButton>
           </template>
 
           <!-- Step 3: New password -->
           <template v-else>
-            <p class="text-sm text-gray-500 mb-8">{{ t('login.setNewPassword') }}</p>
-            <div class="space-y-4">
-              <input v-model="forgotNewPass" type="password" :placeholder="t('login.newPassword')"
-                class="w-full px-3.5 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-              <input v-model="forgotConfirm" type="password" :placeholder="t('login.confirmNewPassword')"
-                class="w-full px-3.5 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-              <p v-if="forgotError" class="text-red-500 text-xs">{{ forgotError }}</p>
-              <button @click="resetPassword" :disabled="loading"
-                class="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-xl transition text-sm flex items-center justify-center gap-2">
-                <svg v-if="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v8H4z"/></svg>
+            <p class="mt-1.5 mb-8 text-sm text-slate-500">{{ t('login.setNewPassword') }}</p>
+            <div class="space-y-5">
+              <AuthTextField id="forgot-new-password" v-model="forgotNewPass" revealable
+                :label="t('login.newPassword')" :placeholder="t('login.newPassword')" autocomplete="new-password"/>
+              <AuthTextField id="forgot-confirm-password" v-model="forgotConfirm" revealable
+                :label="t('login.confirmNewPassword')" :placeholder="t('login.confirmNewPassword')" autocomplete="new-password"/>
+              <p v-if="forgotError" class="text-xs text-red-500">{{ forgotError }}</p>
+              <AuthButton @click="resetPassword" :loading="loading">
                 {{ loading ? t('login.resetting') : t('login.resetPassword') }}
-              </button>
+              </AuthButton>
             </div>
           </template>
         </template>
@@ -603,46 +537,46 @@ async function submitContact() {
 
     <!-- Terms & Privacy Modal -->
     <teleport to="body">
-      <div v-if="showTerms" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" @click.self="showTerms = false">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
-          <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <div v-if="showTerms" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="showTerms = false">
+        <div class="flex max-h-[80vh] w-full max-w-lg flex-col rounded-2xl bg-white shadow-2xl">
+          <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
             <div class="flex gap-4">
-              <button :class="['text-sm font-semibold pb-1 transition', termsTab === 'terms' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700']" @click="termsTab = 'terms'">Terms of Service</button>
-              <button :class="['text-sm font-semibold pb-1 transition', termsTab === 'privacy' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700']" @click="termsTab = 'privacy'">Privacy Policy</button>
+              <button :class="['pb-1 text-sm font-semibold transition', termsTab === 'terms' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-slate-500 hover:text-slate-700']" @click="termsTab = 'terms'">Terms of Service</button>
+              <button :class="['pb-1 text-sm font-semibold transition', termsTab === 'privacy' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-slate-500 hover:text-slate-700']" @click="termsTab = 'privacy'">Privacy Policy</button>
             </div>
-            <button @click="showTerms = false" class="text-gray-400 hover:text-gray-600 p-1" aria-label="Close">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            <button @click="showTerms = false" class="p-1 text-slate-400 hover:text-slate-600" aria-label="Close">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
           </div>
-          <div class="flex-1 overflow-y-auto px-6 py-5 text-sm text-gray-600 space-y-4 leading-relaxed">
+          <div class="flex-1 space-y-4 overflow-y-auto px-6 py-5 text-sm leading-relaxed text-slate-600">
             <template v-if="termsTab === 'terms'">
-              <h3 class="font-bold text-gray-800 text-base">Terms of Service</h3>
+              <h3 class="text-base font-bold text-slate-800">Terms of Service</h3>
               <p>Welcome to Exobios. By accessing or using our platform, you agree to be bound by these Terms of Service.</p>
-              <h4 class="font-semibold text-gray-700">1. Use of Platform</h4>
+              <h4 class="font-semibold text-slate-700">1. Use of Platform</h4>
               <p>Exobios is intended solely for use by registered healthcare workers including ASHA workers, ANMs, and other certified health enablers. Unauthorized access is strictly prohibited.</p>
-              <h4 class="font-semibold text-gray-700">2. AI-Generated Recommendations</h4>
+              <h4 class="font-semibold text-slate-700">2. AI-Generated Recommendations</h4>
               <p>All clinical suggestions generated by the AI are intended to assist, not replace, professional medical judgment. Final decisions must be made by qualified healthcare professionals.</p>
-              <h4 class="font-semibold text-gray-700">3. Patient Data</h4>
+              <h4 class="font-semibold text-slate-700">3. Patient Data</h4>
               <p>All patient data is confidential. Users are responsible for maintaining the privacy and security of patient information.</p>
-              <h4 class="font-semibold text-gray-700">4. Account Responsibility</h4>
+              <h4 class="font-semibold text-slate-700">4. Account Responsibility</h4>
               <p>You are responsible for all activities under your account. Do not share your login credentials.</p>
             </template>
             <template v-else>
-              <h3 class="font-bold text-gray-800 text-base">Privacy Policy</h3>
+              <h3 class="text-base font-bold text-slate-800">Privacy Policy</h3>
               <p>Your privacy is important to us. This policy explains how Exobios collects, uses, and protects your data.</p>
-              <h4 class="font-semibold text-gray-700">1. Data Collection</h4>
+              <h4 class="font-semibold text-slate-700">1. Data Collection</h4>
               <p>We collect information necessary to provide healthcare assessment services, including user registration details and patient health information.</p>
-              <h4 class="font-semibold text-gray-700">2. Data Use</h4>
+              <h4 class="font-semibold text-slate-700">2. Data Use</h4>
               <p>Collected data is used exclusively to provide clinical decision support and improve patient care. We do not sell data to third parties.</p>
-              <h4 class="font-semibold text-gray-700">3. Data Security</h4>
+              <h4 class="font-semibold text-slate-700">3. Data Security</h4>
               <p>All data is encrypted in transit and at rest using industry-standard security measures.</p>
-              <h4 class="font-semibold text-gray-700">4. Contact</h4>
+              <h4 class="font-semibold text-slate-700">4. Contact</h4>
               <p>For privacy concerns, contact us at privacy@exobios.health</p>
             </template>
           </div>
-          <div class="px-6 py-4 border-t border-gray-100 flex justify-end">
+          <div class="flex justify-end border-t border-slate-100 px-6 py-4">
             <button @click="showTerms = false"
-              class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition">
+              class="rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700">
               {{ t('login.iUnderstand') }}
             </button>
           </div>

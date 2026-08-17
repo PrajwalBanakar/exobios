@@ -16,12 +16,12 @@ const router = useRouter()
           <path d="M9 12l2 2 4-4"/>
         </svg>
       </div>
-      <h1 class="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
-      <p class="text-gray-500 text-sm max-w-xs mb-6 leading-relaxed">
+      <h1 class="text-2xl font-bold text-slate-900 mb-2">Access Denied</h1>
+      <p class="text-slate-500 text-sm max-w-xs mb-6 leading-relaxed">
         You don't have the required permissions to view this page. Contact your administrator if you think this is a mistake.
       </p>
       <div class="flex gap-3">
-        <button @click="router.back()" class="px-5 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition">
+        <button @click="router.back()" class="px-5 py-2.5 border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-50 transition">
           Go Back
         </button>
         <button @click="router.push('/dashboard')" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition">

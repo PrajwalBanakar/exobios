@@ -50,7 +50,7 @@ const typeIcon = {
       <!-- Type filters -->
       <div class="flex items-center gap-2 flex-wrap">
         <button v-for="tp in types" :key="tp"
-          :class="['px-3 py-1.5 rounded-full text-xs font-medium transition', typeFilter === tp ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-blue-300']"
+          :class="['px-3 py-1.5 rounded-full text-xs font-medium transition', typeFilter === tp ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:border-blue-300']"
           @click="typeFilter = tp">
           {{ tp }}
         </button>
@@ -59,7 +59,7 @@ const typeIcon = {
       <!-- Notifications list -->
       <div class="space-y-3">
         <div v-for="n in filtered" :key="n.id"
-          :class="['bg-white rounded-xl border shadow-sm px-4 md:px-5 py-4 flex items-start gap-4 transition cursor-pointer', n.read ? 'border-gray-100' : 'border-blue-200 bg-blue-50/20']"
+          :class="['bg-white rounded-xl border shadow-sm px-4 md:px-5 py-4 flex items-start gap-4 transition cursor-pointer', n.read ? 'border-slate-100' : 'border-blue-200 bg-blue-50/20']"
           @click="notifStore.markRead(n.id)">
           <div :class="[typeIcon[n.type].bg, 'w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5']">
             <svg v-if="n.type==='error'"   class="w-5 h-5 text-red-500"    fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>
@@ -69,20 +69,20 @@ const typeIcon = {
           </div>
           <div class="flex-1 min-w-0">
             <div class="flex items-start justify-between gap-3">
-              <span class="font-semibold text-gray-800 text-sm">{{ n.title }}</span>
+              <span class="font-semibold text-slate-800 text-sm">{{ n.title }}</span>
               <div class="flex items-center gap-2 flex-shrink-0">
-                <span class="text-xs text-gray-400 hidden sm:block">{{ n.date }}, {{ n.time }}</span>
-                <span class="text-xs text-gray-400 sm:hidden">{{ n.time }}</span>
+                <span class="text-xs text-slate-400 hidden sm:block">{{ n.date }}, {{ n.time }}</span>
+                <span class="text-xs text-slate-400 sm:hidden">{{ n.time }}</span>
                 <span v-if="!n.read" class="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"/>
               </div>
             </div>
-            <p class="text-sm text-gray-600 mt-1 leading-relaxed">{{ n.body }}</p>
+            <p class="text-sm text-slate-600 mt-1 leading-relaxed">{{ n.body }}</p>
           </div>
         </div>
 
-        <div v-if="!filtered.length" class="bg-white rounded-xl border border-gray-100 py-16 text-center">
-          <svg class="w-12 h-12 text-gray-200 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          <p class="text-sm text-gray-500">{{ t('notif.noNotifications') }}</p>
+        <div v-if="!filtered.length" class="bg-white rounded-xl border border-slate-100 py-16 text-center">
+          <svg class="w-12 h-12 text-slate-200 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <p class="text-sm text-slate-500">{{ t('notif.noNotifications') }}</p>
         </div>
       </div>
     </div>

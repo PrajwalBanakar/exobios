@@ -6,7 +6,7 @@ defineProps({
   exam: { type: Object, required: true },
 })
 
-const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
+const LC = 'block text-xs font-medium text-slate-600 mb-1.5'
 
 const PRESENT_ABSENT      = ['Present', 'Absent']
 const PERCUSSION_OPTIONS  = ['Normal', 'Fluid signs']
@@ -16,7 +16,7 @@ const BOWEL_SOUNDS_OPTIONS = ['Normal', 'Increased', 'Decreased', 'Absent']
 <template>
   <div class="space-y-4">
     <div>
-      <div class="text-xs font-semibold text-gray-500 mb-2">Inspection</div>
+      <div class="text-xs font-semibold text-slate-500 mb-2">Inspection</div>
       <div class="space-y-3">
         <div>
           <label :class="LC">Distension</label>
@@ -34,7 +34,7 @@ const BOWEL_SOUNDS_OPTIONS = ['Normal', 'Increased', 'Decreased', 'Absent']
     </div>
 
     <div>
-      <div class="text-xs font-semibold text-gray-500 mb-2">Palpation</div>
+      <div class="text-xs font-semibold text-slate-500 mb-2">Palpation</div>
       <div class="space-y-3">
         <div>
           <label :class="LC">Tenderness</label>
@@ -48,12 +48,12 @@ const BOWEL_SOUNDS_OPTIONS = ['Normal', 'Increased', 'Decreased', 'Absent']
     </div>
 
     <div>
-      <div class="text-xs font-semibold text-gray-500 mb-2">Percussion</div>
+      <div class="text-xs font-semibold text-slate-500 mb-2">Percussion</div>
       <RadioGroup v-model="exam.percussion.finding" :options="PERCUSSION_OPTIONS" color="purple"/>
     </div>
 
     <div>
-      <div class="text-xs font-semibold text-gray-500 mb-2">Auscultation</div>
+      <div class="text-xs font-semibold text-slate-500 mb-2">Auscultation</div>
       <label :class="LC">Bowel Sounds</label>
       <RadioGroup v-model="exam.auscultation.bowelSounds" :options="BOWEL_SOUNDS_OPTIONS" color="purple"/>
     </div>

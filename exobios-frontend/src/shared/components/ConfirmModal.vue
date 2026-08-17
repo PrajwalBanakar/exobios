@@ -24,10 +24,10 @@ defineEmits(['confirm', 'cancel'])
                 <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
               </svg>
             </div>
-            <h3 class="font-bold text-gray-900 text-lg mb-2">{{ title }}</h3>
-            <p class="text-sm text-gray-500 mb-6 leading-relaxed">{{ message }}</p>
+            <h3 class="font-bold text-slate-900 text-lg mb-2">{{ title }}</h3>
+            <p class="text-sm text-slate-500 mb-6 leading-relaxed">{{ message }}</p>
             <div class="flex gap-3">
-              <button @click="$emit('cancel')" class="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition">
+              <button @click="$emit('cancel')" class="flex-1 py-2.5 border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-50 transition">
                 {{ cancelText }}
               </button>
               <button @click="$emit('confirm')" :class="['flex-1 py-2.5 text-white text-sm font-semibold rounded-xl transition', danger ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700']">

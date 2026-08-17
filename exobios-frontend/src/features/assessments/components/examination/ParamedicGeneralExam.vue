@@ -6,7 +6,7 @@ defineProps({
   exam: { type: Object, required: true },
 })
 
-const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
+const LC = 'block text-xs font-medium text-slate-600 mb-1.5'
 
 const GENERAL_APPEARANCE_OPTIONS = ['Conscious', 'Oriented', 'Comfortable', 'Distressed', 'Weak']
 const EYES_OPTIONS               = ['Pallor', 'Icterus', 'Redness', 'Discharge']
@@ -36,15 +36,15 @@ const EXTREMITIES_OPTIONS        = ['Edema', 'Injury', 'Deformity']
       <CheckboxGroup v-model="exam.extremities" :options="EXTREMITIES_OPTIONS" color="teal" columns="grid-cols-1 sm:grid-cols-3"/>
     </div>
 
-    <div class="border border-gray-100 rounded-xl overflow-hidden">
-      <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition">
-        <input v-model="exam.visibleInjuries.present" type="checkbox" class="w-4 h-4 rounded border-gray-300 text-teal-600 accent-teal-600"/>
-        <span class="text-sm font-medium text-gray-700 flex-1">Visible Injuries Present</span>
+    <div class="border border-slate-100 rounded-xl overflow-hidden">
+      <label class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 transition">
+        <input v-model="exam.visibleInjuries.present" type="checkbox" class="w-4 h-4 rounded border-slate-300 text-teal-600 accent-teal-600"/>
+        <span class="text-sm font-medium text-slate-700 flex-1">Visible Injuries Present</span>
       </label>
       <div v-if="exam.visibleInjuries.present" class="px-4 pb-4 pt-0">
         <label :class="LC">Description</label>
         <textarea v-model="exam.visibleInjuries.description" rows="2" placeholder="Describe visible injuries..."
-          class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-teal-500" lang="auto"/>
+          class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-teal-500" lang="auto"/>
       </div>
     </div>
   </div>

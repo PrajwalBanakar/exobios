@@ -26,7 +26,7 @@ const colorClass = (key) => (COLOR_MAP[props.color] || COLOR_MAP.teal)[key]
   <div :class="columns">
     <label v-for="opt in options" :key="optValue(opt)"
       :class="['flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition text-sm',
-        modelValue === optValue(opt) ? colorClass('selected') : 'border-gray-200 text-gray-700 hover:bg-gray-50']">
+        modelValue === optValue(opt) ? colorClass('selected') : 'border-slate-200 text-slate-700 hover:bg-slate-50']">
       <input type="radio" :checked="modelValue === optValue(opt)" @change="emit('update:modelValue', optValue(opt))"
         :class="['w-3.5 h-3.5 flex-shrink-0', colorClass('accent')]"/>
       <span>{{ optLabel(opt) }}</span>

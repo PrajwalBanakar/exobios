@@ -8,7 +8,7 @@ const { t } = useI18n()
 const contacts = computed(() => [
   { name: t('sos.ambulance'),       phone: '108',          icon: 'ambulance', color: 'bg-red-500',   desc: t('sos.ambulanceDesc') },
   { name: t('sos.nearestHospital'), phone: '05952-234567', icon: 'hospital',  color: 'bg-blue-600',  desc: t('sos.hospitalDesc') },
-  { name: t('sos.police'),          phone: '100',          icon: 'police',    color: 'bg-gray-700',  desc: t('sos.policeDesc') },
+  { name: t('sos.police'),          phone: '100',          icon: 'police',    color: 'bg-slate-700',  desc: t('sos.policeDesc') },
   { name: t('sos.chc'),             phone: '05952-345678', icon: 'hospital2', color: 'bg-green-600', desc: t('sos.chcDesc') },
 ])
 
@@ -35,11 +35,11 @@ function callNumber(phone) { window.location.href = `tel:${phone}` }
 
       <!-- Call buttons -->
       <div class="w-full max-w-2xl">
-        <h2 class="text-center text-sm font-semibold text-gray-500 uppercase tracking-widest mb-6">{{ t('sos.tapToCall') }}</h2>
+        <h2 class="text-center text-sm font-semibold text-slate-500 uppercase tracking-widest mb-6">{{ t('sos.tapToCall') }}</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <button v-for="c in contacts" :key="c.phone"
             @click="callNumber(c.phone)"
-            class="group flex flex-col items-center gap-4 bg-white hover:shadow-lg border-2 border-gray-100 hover:border-transparent rounded-2xl px-6 py-8 transition-all duration-200 hover:-translate-y-1 cursor-pointer">
+            class="group flex flex-col items-center gap-4 bg-white hover:shadow-lg border-2 border-slate-100 hover:border-transparent rounded-2xl px-6 py-8 transition-all duration-200 hover:-translate-y-1 cursor-pointer">
             <div :class="[c.color, 'w-16 h-16 rounded-full flex items-center justify-center shadow-md group-hover:scale-110 transition-transform']">
               <svg v-if="c.icon === 'ambulance'" class="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.18h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
@@ -52,9 +52,9 @@ function callNumber(phone) { window.location.href = `tel:${phone}` }
               </svg>
             </div>
             <div class="text-center">
-              <div class="font-bold text-gray-900 text-base">{{ c.name }}</div>
+              <div class="font-bold text-slate-900 text-base">{{ c.name }}</div>
               <div class="text-2xl font-mono font-extrabold mt-1" :class="c.color.replace('bg-', 'text-')">{{ c.phone }}</div>
-              <div class="text-xs text-gray-400 mt-1">{{ c.desc }}</div>
+              <div class="text-xs text-slate-400 mt-1">{{ c.desc }}</div>
             </div>
             <div :class="[c.color, 'w-full py-2.5 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2 group-hover:opacity-90 transition']">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

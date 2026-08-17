@@ -134,7 +134,7 @@ const hasAnyReading = computed(() =>
   readings.bp.systolic || readings.spo2 || readings.heartRate || readings.temperature || readings.glucose
 )
 
-const IC = 'w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500'
+const IC = 'w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500'
 </script>
 
 <template>
@@ -155,11 +155,11 @@ const IC = 'w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gr
       </div>
 
       <!-- Connection card -->
-      <div class="bg-white rounded-xl border border-gray-100 shadow-sm">
-        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+      <div class="bg-white rounded-xl border border-slate-100 shadow-sm">
+        <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h2 class="font-semibold text-gray-900">Bluetooth Device</h2>
-            <p class="text-xs text-gray-400 mt-0.5">
+            <h2 class="font-semibold text-slate-900">Bluetooth Device</h2>
+            <p class="text-xs text-slate-400 mt-0.5">
               <span v-if="connectionState === 'disconnected'">No device connected</span>
               <span v-else-if="connectionState === 'scanning'" class="text-blue-500">Scanning for nearby devices…</span>
               <span v-else-if="connectionState === 'connecting'" class="text-amber-500">Connecting to {{ selectedDevice?.name }}…</span>
@@ -168,13 +168,13 @@ const IC = 'w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gr
           </div>
           <div class="flex items-center gap-2">
             <button v-if="connectionState === 'connected'" @click="disconnect"
-              class="px-3 py-1.5 text-xs border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition">
+              class="px-3 py-1.5 text-xs border border-red-200 text-red-600 rounded-xl hover:bg-red-50 transition">
               Disconnect
             </button>
             <button v-if="connectionState !== 'connected' && connectionState !== 'connecting'"
               @click="startScan"
               :disabled="connectionState === 'scanning'"
-              class="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-semibold rounded-lg transition">
+              class="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition">
               <svg v-if="connectionState === 'scanning'" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                 <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15"/>
               </svg>
@@ -184,7 +184,7 @@ const IC = 'w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gr
               {{ connectionState === 'scanning' ? 'Scanning…' : 'Scan for Devices' }}
             </button>
             <button v-if="connectionState === 'connecting'"
-              class="flex items-center gap-1.5 px-4 py-2 bg-gray-100 text-gray-500 text-sm rounded-lg cursor-not-allowed">
+              class="flex items-center gap-1.5 px-4 py-2 bg-slate-100 text-slate-500 text-sm rounded-xl cursor-not-allowed">
               <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                 <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15"/>
               </svg>
@@ -194,9 +194,9 @@ const IC = 'w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gr
         </div>
 
         <!-- Discovered devices list -->
-        <div v-if="discoveredDevices.length && connectionState !== 'connected'" class="divide-y divide-gray-50">
+        <div v-if="discoveredDevices.length && connectionState !== 'connected'" class="divide-y divide-slate-50">
           <div v-for="dev in discoveredDevices" :key="dev.id"
-            :class="['flex items-center gap-4 px-5 py-3.5 cursor-pointer transition hover:bg-gray-50', selectedDevice?.id === dev.id ? 'bg-blue-50' : '']"
+            :class="['flex items-center gap-4 px-5 py-3.5 cursor-pointer transition hover:bg-slate-50', selectedDevice?.id === dev.id ? 'bg-blue-50' : '']"
             @click="selectDevice(dev)">
             <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
               <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
@@ -204,8 +204,8 @@ const IC = 'w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gr
               </svg>
             </div>
             <div class="flex-1 min-w-0">
-              <div class="text-sm font-semibold text-gray-800">{{ dev.name }}</div>
-              <div class="text-xs text-gray-400">{{ dev.type }}</div>
+              <div class="text-sm font-semibold text-slate-800">{{ dev.name }}</div>
+              <div class="text-xs text-slate-400">{{ dev.type }}</div>
             </div>
             <div class="flex items-center gap-3 text-xs">
               <span :class="['font-medium', signalColor(dev.signal)]">
@@ -219,7 +219,7 @@ const IC = 'w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gr
           </div>
 
           <div v-if="selectedDevice" class="px-5 py-3 flex justify-end">
-            <button @click="connectDevice" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition">
+            <button @click="connectDevice" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition">
               Connect to {{ selectedDevice.name }}
             </button>
           </div>
@@ -227,23 +227,23 @@ const IC = 'w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gr
 
         <!-- Empty / no devices found -->
         <div v-if="!discoveredDevices.length && connectionState === 'disconnected'" class="py-10 text-center px-5">
-          <svg class="w-12 h-12 text-gray-200 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">
+          <svg class="w-12 h-12 text-slate-200 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">
             <path d="M8.111 16.404a5.5 5.5 0 0 1 7.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/>
           </svg>
-          <p class="text-sm text-gray-400">No devices paired yet.</p>
-          <p class="text-xs text-gray-400 mt-1">Click "Scan for Devices" to discover nearby Bluetooth devices.</p>
+          <p class="text-sm text-slate-400">No devices paired yet.</p>
+          <p class="text-xs text-slate-400 mt-1">Click "Scan for Devices" to discover nearby Bluetooth devices.</p>
         </div>
       </div>
 
       <!-- Connected device readings -->
-      <div v-if="connectionState === 'connected'" class="bg-white rounded-xl border border-gray-100 shadow-sm">
-        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+      <div v-if="connectionState === 'connected'" class="bg-white rounded-xl border border-slate-100 shadow-sm">
+        <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
           <div>
-            <h3 class="font-semibold text-gray-900">Live Readings</h3>
-            <p v-if="readingTimestamp" class="text-xs text-gray-400">Last read at {{ readingTimestamp }}</p>
+            <h3 class="font-semibold text-slate-900">Live Readings</h3>
+            <p v-if="readingTimestamp" class="text-xs text-slate-400">Last read at {{ readingTimestamp }}</p>
           </div>
           <button @click="refreshReading" :disabled="readingLoading"
-            class="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-gray-600 text-xs rounded-lg hover:bg-gray-50 transition disabled:opacity-50">
+            class="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 text-slate-600 text-xs rounded-xl hover:bg-slate-50 transition disabled:opacity-50">
             <svg :class="['w-3.5 h-3.5', readingLoading ? 'animate-spin' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
               <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15"/>
             </svg>
@@ -279,7 +279,7 @@ const IC = 'w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gr
             <div class="text-2xl font-bold text-green-600">{{ readings.glucose }}</div>
             <div class="text-xs text-green-400 mt-1 font-medium">Blood Glucose (mg/dL)</div>
           </div>
-          <div v-if="!hasAnyReading" class="col-span-full py-6 text-center text-sm text-gray-400">
+          <div v-if="!hasAnyReading" class="col-span-full py-6 text-center text-sm text-slate-400">
             Waiting for readings…
           </div>
         </div>
@@ -294,52 +294,52 @@ const IC = 'w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gr
       </div>
 
       <!-- Manual Entry Fallback -->
-      <div class="bg-white rounded-xl border border-gray-100 shadow-sm">
+      <div class="bg-white rounded-xl border border-slate-100 shadow-sm">
         <button
           class="w-full flex items-center justify-between px-5 py-4 text-left"
           @click="showManualEntry = !showManualEntry">
           <div>
-            <h3 class="font-semibold text-gray-900">Manual Entry</h3>
-            <p class="text-xs text-gray-400 mt-0.5">Enter vitals directly without a device</p>
+            <h3 class="font-semibold text-slate-900">Manual Entry</h3>
+            <p class="text-xs text-slate-400 mt-0.5">Enter vitals directly without a device</p>
           </div>
-          <svg :class="['w-4 h-4 text-gray-400 transition-transform', showManualEntry ? 'rotate-180' : '']"
+          <svg :class="['w-4 h-4 text-slate-400 transition-transform', showManualEntry ? 'rotate-180' : '']"
             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>
         </button>
 
-        <div v-if="showManualEntry" class="px-5 pb-5 border-t border-gray-100 pt-4 space-y-4">
+        <div v-if="showManualEntry" class="px-5 pb-5 border-t border-slate-100 pt-4 space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1.5">BP Systolic (mmHg)</label>
+              <label class="block text-xs font-medium text-slate-600 mb-1.5">BP Systolic (mmHg)</label>
               <input v-model="manual.systolic" type="number" min="60" max="200" placeholder="e.g. 120" :class="IC"/>
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1.5">BP Diastolic (mmHg)</label>
+              <label class="block text-xs font-medium text-slate-600 mb-1.5">BP Diastolic (mmHg)</label>
               <input v-model="manual.diastolic" type="number" min="40" max="140" placeholder="e.g. 80" :class="IC"/>
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1.5">SpO₂ (%)</label>
+              <label class="block text-xs font-medium text-slate-600 mb-1.5">SpO₂ (%)</label>
               <input v-model="manual.spo2" type="number" min="80" max="100" placeholder="e.g. 98" :class="IC"/>
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1.5">Heart Rate (bpm)</label>
+              <label class="block text-xs font-medium text-slate-600 mb-1.5">Heart Rate (bpm)</label>
               <input v-model="manual.heartRate" type="number" min="40" max="200" placeholder="e.g. 72" :class="IC"/>
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1.5">Temperature (°F)</label>
+              <label class="block text-xs font-medium text-slate-600 mb-1.5">Temperature (°F)</label>
               <input v-model="manual.temperature" type="number" step="0.1" min="94" max="107" placeholder="e.g. 98.6" :class="IC"/>
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1.5">Blood Glucose (mg/dL)</label>
+              <label class="block text-xs font-medium text-slate-600 mb-1.5">Blood Glucose (mg/dL)</label>
               <input v-model="manual.glucose" type="number" min="40" max="600" placeholder="e.g. 90" :class="IC"/>
             </div>
           </div>
           <div class="flex gap-3">
             <button @click="applyManual"
-              class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition">
+              class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition">
               Apply Readings
             </button>
             <button @click="useInAssessment"
-              class="flex-1 py-2.5 border border-blue-200 text-blue-600 hover:bg-blue-50 text-sm font-semibold rounded-lg transition">
+              class="flex-1 py-2.5 border border-blue-200 text-blue-600 hover:bg-blue-50 text-sm font-semibold rounded-xl transition">
               Use in Assessment
             </button>
           </div>
@@ -347,18 +347,18 @@ const IC = 'w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gr
       </div>
 
       <!-- Supported device types -->
-      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        <h3 class="font-semibold text-gray-900 mb-4">Supported Devices <span class="text-xs font-normal text-gray-400">(coming soon)</span></h3>
+      <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
+        <h3 class="font-semibold text-slate-900 mb-4">Supported Devices <span class="text-xs font-normal text-slate-400">(coming soon)</span></h3>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div v-for="d in [
             { icon: '🩺', label: 'BP Monitor', desc: 'Systolic/diastolic, HR' },
             { icon: '🫀', label: 'Pulse Oximeter', desc: 'SpO₂, Heart Rate' },
             { icon: '🌡', label: 'Thermometer', desc: 'Body temperature' },
             { icon: '🩸', label: 'Glucometer', desc: 'Blood glucose (RBS)' },
-          ]" :key="d.label" class="border border-gray-100 rounded-xl p-3 text-center hover:border-blue-200 transition cursor-default">
+          ]" :key="d.label" class="border border-slate-100 rounded-xl p-3 text-center hover:border-blue-200 transition cursor-default">
             <div class="text-2xl mb-1.5">{{ d.icon }}</div>
-            <div class="text-xs font-semibold text-gray-800">{{ d.label }}</div>
-            <div class="text-[10px] text-gray-400 mt-0.5">{{ d.desc }}</div>
+            <div class="text-xs font-semibold text-slate-800">{{ d.label }}</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">{{ d.desc }}</div>
           </div>
         </div>
       </div>

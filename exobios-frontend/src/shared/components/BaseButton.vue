@@ -19,9 +19,9 @@ defineProps({
 
 const VARIANTS = {
   primary:   'bg-blue-600 hover:bg-blue-700 text-white border-transparent',
-  secondary: 'bg-white hover:bg-gray-50 text-gray-700 border-gray-200',
+  secondary: 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200',
   danger:    'bg-red-600 hover:bg-red-700 text-white border-transparent',
-  ghost:     'bg-transparent hover:bg-gray-100 text-gray-600 border-transparent',
+  ghost:     'bg-transparent hover:bg-slate-100 text-slate-600 border-transparent',
 }
 
 const SIZES = {

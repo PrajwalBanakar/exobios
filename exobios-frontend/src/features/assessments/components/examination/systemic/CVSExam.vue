@@ -7,7 +7,7 @@ defineProps({
   exam: { type: Object, required: true },
 })
 
-const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
+const LC = 'block text-xs font-medium text-slate-600 mb-1.5'
 
 const PRESENT_ABSENT       = ['Present', 'Absent']
 const APEX_BEAT_OPTIONS    = ['Normal', 'Displaced', 'Not palpable']
@@ -17,7 +17,7 @@ const AUSCULTATION_OPTIONS = ['Normal heart sounds', 'Murmur', 'Added sounds']
 <template>
   <div class="space-y-4">
     <div>
-      <div class="text-xs font-semibold text-gray-500 mb-2">Inspection</div>
+      <div class="text-xs font-semibold text-slate-500 mb-2">Inspection</div>
       <div class="space-y-3">
         <div>
           <label :class="LC">Precordial Bulge</label>
@@ -31,7 +31,7 @@ const AUSCULTATION_OPTIONS = ['Normal heart sounds', 'Murmur', 'Added sounds']
     </div>
 
     <div>
-      <div class="text-xs font-semibold text-gray-500 mb-2">Palpation</div>
+      <div class="text-xs font-semibold text-slate-500 mb-2">Palpation</div>
       <div class="space-y-3">
         <div>
           <label :class="LC">Apex Beat</label>
@@ -45,7 +45,7 @@ const AUSCULTATION_OPTIONS = ['Normal heart sounds', 'Murmur', 'Added sounds']
     </div>
 
     <div>
-      <div class="text-xs font-semibold text-gray-500 mb-2">Auscultation</div>
+      <div class="text-xs font-semibold text-slate-500 mb-2">Auscultation</div>
       <CheckboxGroup v-model="exam.auscultation.findings" :options="AUSCULTATION_OPTIONS" color="red" columns="grid-cols-1 sm:grid-cols-3"/>
     </div>
   </div>

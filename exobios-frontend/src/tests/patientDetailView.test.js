@@ -33,7 +33,7 @@ describe('PatientDetailView', () => {
 
   it('shows a not-found message for an unknown patient id', async () => {
     await renderDetail(999999)
-    expect(screen.getByText('Patient not found.')).toBeTruthy()
+    expect(screen.getByText('Patient not found')).toBeTruthy()
   })
 
   it('renders patient demographics and assessment history for a known patient', async () => {

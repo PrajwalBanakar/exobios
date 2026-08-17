@@ -7,7 +7,7 @@ defineProps({
   exam: { type: Object, required: true },
 })
 
-const LC = 'block text-xs font-medium text-gray-600 mb-1.5'
+const LC = 'block text-xs font-medium text-slate-600 mb-1.5'
 
 const CHEST_MOVEMENT_OPTIONS   = ['Normal', 'Reduced', 'Paradoxical']
 const RESP_EFFORT_OPTIONS      = ['Normal', 'Labored', 'Use of accessory muscles']
@@ -21,7 +21,7 @@ const AUSCULTATION_OPTIONS     = ['Normal breath sounds', 'Wheeze', 'Crackles', 
 <template>
   <div class="space-y-4">
     <div>
-      <div class="text-xs font-semibold text-gray-500 mb-2">Inspection</div>
+      <div class="text-xs font-semibold text-slate-500 mb-2">Inspection</div>
       <div class="space-y-3">
         <div>
           <label :class="LC">Chest Movement</label>
@@ -39,7 +39,7 @@ const AUSCULTATION_OPTIONS     = ['Normal breath sounds', 'Wheeze', 'Crackles', 
     </div>
 
     <div>
-      <div class="text-xs font-semibold text-gray-500 mb-2">Palpation</div>
+      <div class="text-xs font-semibold text-slate-500 mb-2">Palpation</div>
       <div class="space-y-3">
         <div>
           <label :class="LC">Tracheal Position</label>
@@ -53,12 +53,12 @@ const AUSCULTATION_OPTIONS     = ['Normal breath sounds', 'Wheeze', 'Crackles', 
     </div>
 
     <div>
-      <div class="text-xs font-semibold text-gray-500 mb-2">Percussion</div>
+      <div class="text-xs font-semibold text-slate-500 mb-2">Percussion</div>
       <RadioGroup v-model="exam.percussion.finding" :options="PERCUSSION_OPTIONS" color="blue"/>
     </div>
 
     <div>
-      <div class="text-xs font-semibold text-gray-500 mb-2">Auscultation</div>
+      <div class="text-xs font-semibold text-slate-500 mb-2">Auscultation</div>
       <CheckboxGroup v-model="exam.auscultation.findings" :options="AUSCULTATION_OPTIONS" color="blue" columns="grid-cols-2"/>
     </div>
   </div>

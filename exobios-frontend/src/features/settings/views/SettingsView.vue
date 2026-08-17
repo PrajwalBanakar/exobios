@@ -2,6 +2,7 @@
 import { ref, reactive, computed } from 'vue'
 import AppShell from '@/shared/components/AppShell.vue'
 import { useAuthStore } from '@/features/auth/stores/auth'
+import { useSyncStatus } from '@/shared/offline/useSyncStatus'
 import { useI18n } from '@/i18n'
 
 const auth             = useAuthStore()
@@ -52,12 +53,11 @@ function changePassword() {
   setTimeout(() => { passwordSuccess.value = false }, 3000)
 }
 
-const devices = ref([
-  { id: 1, name: 'Redmi Note 12 (Current)', type: 'Mobile', lastSync: 'Just now',    active: true  },
-  { id: 2, name: 'Laptop - Chrome',          type: 'Web',    lastSync: '2 hours ago', active: false },
-  { id: 3, name: 'Tablet - Chrome',          type: 'Web',    lastSync: '3 days ago',  active: false },
-  { id: 4, name: 'Old Phone (Redmi 9)',       type: 'Mobile', lastSync: '7 days ago',  active: false },
-])
+// Real connectivity/sync state — no fabricated multi-device list. This app doesn't
+// have a backend session API to enumerate other logged-in devices, so rather than
+// showing invented devices with non-functional "Remove" buttons, this shows only
+// what's actually true: the current device's sync status.
+const { isOnline, formattedLastSync, label: syncLabel } = useSyncStatus()
 
 const availableLanguages = [
   { code: 'en', name: 'English', native: 'English', flag: '🇬🇧' },
@@ -76,10 +76,10 @@ const availableLanguages = [
 
         <!-- Sidebar nav -->
         <div class="lg:w-48 flex-shrink-0">
-          <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-2 flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible">
+          <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-2 flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible">
             <button v-for="s in sections" :key="s.id"
               @click="activeSection = s.id"
-              :class="['flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition whitespace-nowrap flex-shrink-0', activeSection === s.id ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50']">
+              :class="['flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition whitespace-nowrap flex-shrink-0', activeSection === s.id ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-50']">
               <svg v-if="s.icon==='bell'" class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
               <svg v-else-if="s.icon==='settings'" class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
               <svg v-else-if="s.icon==='globe'" class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
@@ -94,16 +94,16 @@ const availableLanguages = [
         <div class="flex-1 min-w-0">
 
           <!-- Notifications -->
-          <div v-if="activeSection==='notifications'" class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 md:p-6">
-            <h2 class="font-semibold text-gray-800 text-base mb-1">{{ t('settings.notifications') }}</h2>
-            <p class="text-xs text-gray-400 mb-6">{{ t('settings.notifSubtitle') }}</p>
-            <div v-for="item in notifSettingsList" :key="item.key" class="flex items-center justify-between py-4 border-b border-gray-50 last:border-0">
+          <div v-if="activeSection==='notifications'" class="bg-white rounded-xl border border-slate-100 shadow-sm p-5 md:p-6">
+            <h2 class="font-semibold text-slate-800 text-base mb-1">{{ t('settings.notifications') }}</h2>
+            <p class="text-xs text-slate-400 mb-6">{{ t('settings.notifSubtitle') }}</p>
+            <div v-for="item in notifSettingsList" :key="item.key" class="flex items-center justify-between py-4 border-b border-slate-50 last:border-0">
               <div class="flex-1 min-w-0 pr-4">
-                <div class="text-sm font-medium text-gray-800">{{ item.label }}</div>
-                <div class="text-xs text-gray-500 mt-0.5">{{ item.desc }}</div>
+                <div class="text-sm font-medium text-slate-800">{{ item.label }}</div>
+                <div class="text-xs text-slate-500 mt-0.5">{{ item.desc }}</div>
               </div>
               <button class="relative w-11 h-6 rounded-full flex-shrink-0 transition-colors duration-200"
-                :class="notifPrefs[item.key] ? 'bg-blue-600' : 'bg-gray-200'"
+                :class="notifPrefs[item.key] ? 'bg-blue-600' : 'bg-slate-200'"
                 @click="notifPrefs[item.key] = !notifPrefs[item.key]">
                 <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200"
                   :class="notifPrefs[item.key] ? 'translate-x-5' : 'translate-x-0'"/>
@@ -119,16 +119,16 @@ const availableLanguages = [
           </div>
 
           <!-- App Settings -->
-          <div v-if="activeSection==='app'" class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 md:p-6">
-            <h2 class="font-semibold text-gray-800 text-base mb-1">{{ t('settings.app') }}</h2>
-            <p class="text-xs text-gray-400 mb-6">{{ t('settings.appSubtitle') }}</p>
-            <div v-for="item in appSettingsList" :key="item.key" class="flex items-center justify-between py-4 border-b border-gray-50 last:border-0">
+          <div v-if="activeSection==='app'" class="bg-white rounded-xl border border-slate-100 shadow-sm p-5 md:p-6">
+            <h2 class="font-semibold text-slate-800 text-base mb-1">{{ t('settings.app') }}</h2>
+            <p class="text-xs text-slate-400 mb-6">{{ t('settings.appSubtitle') }}</p>
+            <div v-for="item in appSettingsList" :key="item.key" class="flex items-center justify-between py-4 border-b border-slate-50 last:border-0">
               <div class="flex-1 min-w-0 pr-4">
-                <div class="text-sm font-medium text-gray-800">{{ item.label }}</div>
-                <div class="text-xs text-gray-500 mt-0.5">{{ item.desc }}</div>
+                <div class="text-sm font-medium text-slate-800">{{ item.label }}</div>
+                <div class="text-xs text-slate-500 mt-0.5">{{ item.desc }}</div>
               </div>
               <button class="relative w-11 h-6 rounded-full flex-shrink-0 transition-colors duration-200"
-                :class="appSettings[item.key] ? 'bg-blue-600' : 'bg-gray-200'"
+                :class="appSettings[item.key] ? 'bg-blue-600' : 'bg-slate-200'"
                 @click="appSettings[item.key] = !appSettings[item.key]">
                 <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200"
                   :class="appSettings[item.key] ? 'translate-x-5' : 'translate-x-0'"/>
@@ -144,100 +144,84 @@ const availableLanguages = [
           </div>
 
           <!-- Language -->
-          <div v-if="activeSection==='language'" class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 md:p-6">
-            <h2 class="font-semibold text-gray-800 text-base mb-1">{{ t('settings.language') }}</h2>
-            <p class="text-xs text-gray-400 mb-6">{{ t('settings.langSubtitle') }}</p>
+          <div v-if="activeSection==='language'" class="bg-white rounded-xl border border-slate-100 shadow-sm p-5 md:p-6">
+            <h2 class="font-semibold text-slate-800 text-base mb-1">{{ t('settings.language') }}</h2>
+            <p class="text-xs text-slate-400 mb-6">{{ t('settings.langSubtitle') }}</p>
             <div class="space-y-3 max-w-sm">
               <div v-for="lang in availableLanguages" :key="lang.code"
                 @click="setLocale(lang.code)"
-                :class="['flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition', locale===lang.code ? 'border-blue-500 bg-blue-50/50' : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50']">
+                :class="['flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition', locale===lang.code ? 'border-blue-500 bg-blue-50/50' : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50']">
                 <div class="flex items-center gap-3">
                   <span class="text-2xl">{{ lang.flag }}</span>
                   <div>
-                    <div class="text-sm font-semibold text-gray-800">{{ lang.native }}</div>
-                    <div class="text-xs text-gray-500">{{ lang.name }}</div>
+                    <div class="text-sm font-semibold text-slate-800">{{ lang.native }}</div>
+                    <div class="text-xs text-slate-500">{{ lang.name }}</div>
                   </div>
                 </div>
-                <div :class="['w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0', locale===lang.code ? 'border-blue-500 bg-blue-500' : 'border-gray-300']">
+                <div :class="['w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0', locale===lang.code ? 'border-blue-500 bg-blue-500' : 'border-slate-300']">
                   <svg v-if="locale===lang.code" class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
                 </div>
               </div>
             </div>
-            <p class="text-xs text-gray-400 mt-4">{{ t('settings.langNote') }}</p>
+            <p class="text-xs text-slate-400 mt-4">{{ t('settings.langNote') }}</p>
           </div>
 
           <!-- Security -->
-          <div v-if="activeSection==='security'" class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 md:p-6">
-            <h2 class="font-semibold text-gray-800 text-base mb-1">{{ t('settings.security') }}</h2>
-            <p class="text-xs text-gray-400 mb-6">{{ t('settings.securitySubtitle') }}</p>
+          <div v-if="activeSection==='security'" class="bg-white rounded-xl border border-slate-100 shadow-sm p-5 md:p-6">
+            <h2 class="font-semibold text-slate-800 text-base mb-1">{{ t('settings.security') }}</h2>
+            <p class="text-xs text-slate-400 mb-6">{{ t('settings.securitySubtitle') }}</p>
             <div class="max-w-md space-y-4">
               <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ t('settings.currentPassword') }}</label>
-                <input v-model="currentPassword" type="password" class="w-full border border-gray-200 rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                <label class="block text-xs font-medium text-slate-600 mb-1.5">{{ t('settings.currentPassword') }}</label>
+                <input v-model="currentPassword" type="password" class="w-full border border-slate-200 rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
               </div>
               <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ t('settings.newPassword') }}</label>
-                <input v-model="newPassword" type="password" class="w-full border border-gray-200 rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                <label class="block text-xs font-medium text-slate-600 mb-1.5">{{ t('settings.newPassword') }}</label>
+                <input v-model="newPassword" type="password" class="w-full border border-slate-200 rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
               </div>
               <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1.5">{{ t('settings.confirmNewPassword') }}</label>
-                <input v-model="confirmPassword" type="password" class="w-full border border-gray-200 rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                <label class="block text-xs font-medium text-slate-600 mb-1.5">{{ t('settings.confirmNewPassword') }}</label>
+                <input v-model="confirmPassword" type="password" class="w-full border border-slate-200 rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
               </div>
               <p v-if="passwordError" class="text-xs text-red-500">{{ passwordError }}</p>
-              <div v-if="passwordSuccess" class="flex items-center gap-2 text-green-600 text-xs bg-green-50 px-3 py-2 rounded-lg">
+              <div v-if="passwordSuccess" class="flex items-center gap-2 text-green-600 text-xs bg-green-50 px-3 py-2 rounded-xl">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
                 {{ t('settings.passwordChanged') }}
               </div>
               <button @click="changePassword" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition">{{ t('settings.changePassword') }}</button>
             </div>
-            <div class="mt-8 pt-6 border-t border-gray-100">
-              <h3 class="font-medium text-gray-800 text-sm mb-4">{{ t('settings.activeSessions') }}</h3>
-              <div class="space-y-3">
-                <div class="flex items-center gap-3 py-3 border-b border-gray-50">
-                  <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                    <svg class="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-                  </div>
-                  <div class="flex-1">
-                    <div class="text-sm font-medium text-gray-800">Redmi Note 12 <span class="text-xs text-green-500">({{ t('settings.current') }})</span></div>
-                    <div class="text-xs text-gray-400">Rampur, Uttar Pradesh · Just now</div>
-                  </div>
+            <div class="mt-8 pt-6 border-t border-slate-100">
+              <h3 class="font-medium text-slate-800 text-sm mb-4">{{ t('settings.activeSessions') }}</h3>
+              <div class="flex items-center gap-3 py-3">
+                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                  <svg class="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
                 </div>
-                <div class="flex items-center gap-3 py-3">
-                  <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                    <svg class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-                  </div>
-                  <div class="flex-1">
-                    <div class="text-sm font-medium text-gray-800">Chrome on Windows</div>
-                    <div class="text-xs text-gray-400">Delhi · 2 hours ago</div>
-                  </div>
-                  <button class="text-xs text-red-500 hover:text-red-700 transition">{{ t('settings.signOut') }}</button>
+                <div class="flex-1">
+                  <div class="text-sm font-medium text-slate-800">This device <span class="text-xs text-green-500">({{ t('settings.current') }})</span></div>
+                  <div class="text-xs text-slate-400">{{ isOnline ? 'Active now' : 'Offline' }}</div>
                 </div>
               </div>
+              <p class="mt-2 text-xs text-slate-400">Exobios doesn't yet support viewing or signing out other devices remotely.</p>
             </div>
           </div>
 
-          <!-- Devices -->
-          <div v-if="activeSection==='devices'" class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 md:p-6">
-            <h2 class="font-semibold text-gray-800 text-base mb-1">{{ t('settings.devices') }}</h2>
-            <p class="text-xs text-gray-400 mb-6">{{ t('settings.devicesSubtitle') }}</p>
-            <div class="space-y-3">
-              <div v-for="d in devices" :key="d.id"
-                :class="['flex items-center justify-between p-4 rounded-xl border transition', d.active ? 'border-blue-200 bg-blue-50/30' : 'border-gray-100 hover:bg-gray-50']">
-                <div class="flex items-center gap-3">
-                  <div :class="['w-10 h-10 rounded-full flex items-center justify-center', d.active ? 'bg-blue-100' : 'bg-gray-100']">
-                    <svg v-if="d.type==='Mobile'" class="w-5 h-5" :class="d.active ? 'text-blue-600' : 'text-gray-500'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-                    <svg v-else class="w-5 h-5" :class="d.active ? 'text-blue-600' : 'text-gray-500'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-                  </div>
-                  <div>
-                    <div class="text-sm font-medium text-gray-800">{{ d.name }}</div>
-                    <div class="text-xs text-gray-400">{{ d.type }} · Last sync: {{ d.lastSync }}</div>
-                  </div>
+          <!-- Devices & Sync -->
+          <div v-if="activeSection==='devices'" class="bg-white rounded-xl border border-slate-100 shadow-sm p-5 md:p-6">
+            <h2 class="font-semibold text-slate-800 text-base mb-1">{{ t('settings.devices') }}</h2>
+            <p class="text-xs text-slate-400 mb-6">Sync status for this device</p>
+            <div class="flex items-center justify-between p-4 rounded-xl border border-blue-200 bg-blue-50/30">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                  <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
                 </div>
-                <span v-if="d.active" class="flex items-center gap-1 text-xs text-green-600 font-medium">
-                  <span class="w-1.5 h-1.5 rounded-full bg-green-500"/>{{ t('settings.active') }}
-                </span>
-                <button v-else class="text-xs text-gray-400 hover:text-red-500 border border-gray-200 px-2.5 py-1 rounded-lg transition">{{ t('settings.remove') }}</button>
+                <div>
+                  <div class="text-sm font-medium text-slate-800">This device</div>
+                  <div class="text-xs text-slate-400">{{ syncLabel || (isOnline ? t('topbar.online') : t('sync.offline')) }}<template v-if="formattedLastSync"> · {{ t('topbar.synced') }} {{ formattedLastSync }}</template></div>
+                </div>
               </div>
+              <span class="flex items-center gap-1 text-xs font-medium" :class="isOnline ? 'text-green-600' : 'text-amber-600'">
+                <span class="w-1.5 h-1.5 rounded-full" :class="isOnline ? 'bg-green-500' : 'bg-amber-500'"/>{{ isOnline ? t('topbar.online') : t('sync.offline') }}
+              </span>
             </div>
             <div class="mt-5 p-4 bg-blue-50 rounded-xl border border-blue-100">
               <div class="flex items-start gap-3">
