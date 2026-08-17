@@ -12,14 +12,15 @@ This repository is a monorepo with three parts:
 | Folder | Status | Description |
 |---|---|---|
 | `exobios-frontend/` | **Active** | Vue 3 PWA. Functionally complete against mock/local data — every role (ASHA/ANM/CHO/LHV/Health Assistant, MBBS Doctor, Super Admin) is implemented end to end. Not yet wired to the live backend. |
-| `exobios-backend/` | **Active** | Spring Boot API (Java 21). 20+ domain modules covering auth, patients, assessments, clinical decision support, referrals, doctor review, devices, SOS, notifications, feedback, analytics, and audit — with a full Testcontainers-backed test suite. Not yet integrated with the frontend. |
-| `exobios-ai/` | Reserved, not started | Placeholder for the standalone RAG/LLM service the backend's AI gateway already expects to call. See [AI integration](#ai-integration--exobios-ai) below. |
+| `exobios-backend/` | **Active** | Spring Boot API (Java 21). 20+ domain modules covering auth, patients, assessments, clinical decision support, referrals, doctor review, devices, SOS, notifications, feedback, analytics, and audit — with a full Testcontainers-backed test suite. Calls `exobios-ai` synchronously on assessment submit; not yet integrated with the frontend. |
+| `exobios-ai/` | **Active** | FastAPI + LangGraph RAG service — grounded clinical diagnosis/investigation/treatment/plan-of-action pipeline over a Qdrant corpus, called by the backend's `AiGateway`. Own CI (lint + test + docker build), retry/rate-limiting, and a mocked test suite. See [AI integration](#ai-integration--exobios-ai) below and [`exobios-ai/README.md`](exobios-ai/README.md) for the full pipeline/setup docs. |
 
-**Frontend and backend are each independently functional but not yet connected.** The
-frontend runs entirely on mock data seeded into `localStorage`, by design, so it can be
-developed and demoed without a live API. The backend exposes a complete REST API of its
-own and can be run and tested in isolation via Postman/Swagger. Wiring the two together
-is the next major milestone — see [Known limitations](#known-limitations).
+**Frontend and backend are each independently functional but not yet connected to each
+other.** The frontend runs entirely on mock data seeded into `localStorage`, by design,
+so it can be developed and demoed without a live API. The backend exposes a complete
+REST API of its own, integrates with the real `exobios-ai` service, and can be run and
+tested in isolation via Postman/Swagger. Wiring the frontend to the backend is the next
+major milestone — see [Known limitations](#known-limitations).
 
 ```
                      ┌───────────────────┐        (not yet wired)        ┌──────────────────────┐
@@ -30,9 +31,9 @@ is the next major milestone — see [Known limitations](#known-limitations).
                                                                                       │ X-Api-Key
                                                                                       ▼
                                                                           ┌──────────────────────┐
-                                                                          │   exobios-ai          │
-                                                                          │   (reserved — not      │
-                                                                          │    built yet)          │
+                                                                          │   exobios-ai         │
+                                                                          │   FastAPI + LangGraph│
+                                                                          │   RAG pipeline       │
                                                                           └──────────────────────┘
 ```
 
@@ -88,22 +89,32 @@ role-based access control, and an AOP-based audit trail on every write.
 
 ### AI integration — `exobios-ai`
 
-The backend already speaks a complete contract to an external AI service — it just
-doesn't exist yet:
-
 - On `POST /assessments/{id}/submit`, `AssessmentService` synchronously calls
   `AiGateway.analyzeAssessment(...)`, which posts the assessment (complaint, symptoms,
   vitals, history) to `${AI_SERVICE_URL}/analyze` with an `X-Api-Key` header.
 - Response (`risk level`, `summary`, `red flags`, `recommendations`, `confidence`) is
   persisted 1:1 against the assessment and mirrored onto `assessments.risk_level` for
   analytics.
-- If the AI service is unreachable (2 retries, 5s connect / 30s read timeout), the
-  gateway falls back to a `PENDING` placeholder result rather than failing the request.
-- `exobios-ai/` is reserved for this service — a RAG-based clinical decision-support API
-  (red-flag detection, risk classification, referral-urgency guidance) grounded in
-  approved clinical protocols (IMNCI/national CHW guidelines). It is planned, not yet
-  implemented; `docker-compose.yml` already wires the env vars (`AI_SERVICE_URL`,
-  `AI_API_KEY`) it will need.
+- If the AI service is unreachable or exhausts 2 retries, the gateway falls back to a
+  `FAILED`-status placeholder result rather than failing the request or fabricating a
+  clinical judgment.
+- `exobios-ai/` implements this service: a FastAPI app running a 5-stage LangGraph
+  pipeline (deterministic rule engine → diagnosis → investigation → treatment protocol →
+  plan of action) grounded via hybrid (dense + BM25) retrieval over a Qdrant corpus of
+  approved clinical protocols (IMNCI/national CHW guidelines), with every LLM-cited
+  finding cross-checked against what was actually retrieved before it's trusted —
+  ungrounded findings are dropped, and an empty/insufficient retrieval result short-
+  circuits straight to `insufficient_evidence` rather than letting the model
+  free-associate. A separate `ingestion/` pipeline populates that Qdrant corpus from
+  source documents (PDF/DOCX → parse → classify → chunk → embed → upsert), and the
+  service persists per-stage state to MongoDB, one document per assessment. Full
+  architecture, pipeline detail, and local setup: [`exobios-ai/README.md`](exobios-ai/README.md).
+- The service's `/analyze` response is a superset of the flat legacy shape
+  `AiGateway`/`AiResponse` deserialize (`status`/`summary`/`riskLevel`/
+  `confidenceScore`/`redFlags`/`recommendations`/`modelVersion`/`source`), plus the full
+  per-stage detail as additive fields the backend currently ignores
+  (`fail-on-unknown-properties: false`) — see
+  [`docs/api/ai-service-contract.md`](docs/api/ai-service-contract.md).
 
 ### Setup
 
@@ -149,6 +160,51 @@ Once running: Swagger UI at `http://localhost:8080/swagger-ui.html`, health chec
 mvn test      # unit + web-layer tests
 mvn verify    # + Testcontainers-backed repository integration tests (*RepositoryIT)
 ```
+
+---
+
+## `exobios-ai`
+
+FastAPI service running a grounded, citation-verified clinical RAG pipeline, plus a
+separate offline `ingestion/` pipeline that populates the Qdrant corpus it reads from.
+Full detail (architecture, environment setup, request/response shape, troubleshooting):
+[`exobios-ai/README.md`](exobios-ai/README.md).
+
+### Tech stack
+
+- **FastAPI** + **Pydantic v2** — HTTP layer, config, request/response validation
+- **LangGraph** — orchestrates the 5-stage pipeline (deterministic rules → diagnosis →
+  investigation → treatment protocol → plan of action); **LangSmith** for optional
+  tracing
+- **Qdrant** — hybrid vector store (dense + BM25 sparse, RRF fusion)
+- **MongoDB** — per-assessment stage persistence
+- **Groq** (`llama-3.3-70b-versatile`) — LLM generation; **Hugging Face** hosted
+  inference — embeddings + reranking
+- **pytest** — full suite mocks every external dependency (Qdrant/Mongo/HF/Groq), so it
+  needs no live services to run
+- **ruff** — lint, enforced in CI
+
+### Setup
+
+```bash
+cd exobios-ai
+docker compose up -d          # Qdrant (+ Mongo, if not already running)
+cd app
+uv sync
+cp .env.example .env          # Qdrant, HF, Groq, Mongo keys — see exobios-ai/README.md
+uv run uvicorn main:app --reload --port 8000
+```
+
+### Testing
+
+```bash
+cd exobios-ai
+uv run --project app pytest tests/ -v      # app/ — mocked, no live services
+cd ingestion && uv run pytest tests/ -v    # ingestion/ — pure-logic, no live services
+```
+
+CI (`.github/workflows/exobios-ai.yml`) runs both suites plus `ruff check` and a Docker
+build on every push/PR touching `exobios-ai/`.
 
 ---
 
@@ -243,9 +299,14 @@ npm run test:coverage  # coverage report
 - `referrals` and `teleconsult` Pinia stores are in-memory only (reset on full page
   reload); `patients` and `auth` do persist to `localStorage`.
 - Frontend AI differential diagnosis, treatment protocols, and investigation
-  recommendations are static placeholder content, not a real model. The backend's AI
-  gateway contract is real and wired, but has no live AI service behind it yet — see
-  [AI integration](#ai-integration--exobios-ai).
+  recommendations are static placeholder content, not the real model — the frontend
+  isn't wired to the backend at all yet (see above), so it never reaches the real
+  `exobios-ai` pipeline. The backend↔`exobios-ai` integration itself is real and tested
+  — see [AI integration](#ai-integration--exobios-ai).
+- `exobios-ai`'s retrieval quality depends entirely on what's been ingested into its
+  Qdrant corpus. With a small or non-clinical corpus, `/analyze` correctly returns
+  `insufficient_evidence: true` rather than a fabricated diagnosis — see
+  [`exobios-ai/README.md`](exobios-ai/README.md) for current corpus status.
 - Frontend reports page is static demo data, not derived from the patient/assessment
   stores.
 - AI-assisted results on the backend are computed **synchronously** inside the

@@ -12,42 +12,54 @@ projects, one shared Qdrant corpus.
   classifies, embeds (dense + BM25 sparse), uploads raw/parsed files to S3,
   writes document metadata to Supabase, writes vectors + payload to Qdrant.
 - **`app/`** — FastAPI service. Exposes `POST /analyze`, called by the Spring
-  Boot backend. Runs a 4-stage LangGraph pipeline (diagnosis → investigation
-  → treatment protocol → plan of action) against the Qdrant corpus, generates
-  with an LLM, persists the running assessment state to MongoDB.
+  Boot backend. Runs a 5-stage pipeline (deterministic rule engine →
+  diagnosis → investigation → treatment protocol → plan of action) against
+  the Qdrant corpus via LangGraph, generates with an LLM, persists the
+  running assessment state to MongoDB.
 
 They share nothing at runtime except the Qdrant collection — `ingestion`
 writes to it, `app` reads from it. Separate `.venv`s, separate `pyproject.toml`s.
 
 ---
 
-## Current local status (verified, 2026-08-10)
+## Current status (2026-08-17 — merged to `main`, post production-hardening pass)
 
 - `app/` runs and passes a full live `/analyze` round trip: rule_engine ->
   Groq LLM calls -> Qdrant hybrid search -> MongoDB persistence, all real,
-  no mocks.
-- `ingestion/` has completed one real end-to-end run: `Biochemistry.pdf`
-  (800 pages) -> 2,853 chunks -> embedded -> stored in Qdrant, with metadata
-  written to Supabase. Collection `corpus` currently holds only this one
-  document, which is a general biochemistry textbook, **not** a clinical
-  diagnostic guideline — so `/analyze` correctly returns
-  `insufficient_evidence: true` for symptom-based queries right now. That's
-  the grounding safeguard working as intended, not a bug. Ingest an actual
-  clinical reference (e.g. the IMNCI chart booklet already in this repo) to
-  see real diagnosis candidates.
-- **Known non-blocking issue**: the reranker's configured model
-  (`cross-encoder/ms-marco-MiniLM-L-6-v2`) is no longer served by Hugging
-  Face's `hf-inference` provider (`"error":"Model not supported by provider
-  hf-inference"`, HTTP 400). `services/reranker_service.py`'s built-in
-  fallback handles this correctly — retrieval still works, just falls back
-  to unranked hybrid-search order. Needs a replacement model or provider,
-  not urgent.
-- Two real bugs found and fixed during the first ingestion run (see
-  `git log` on `ingestion/chunkers/chunker.py` and
-  `ingestion/embedder/embedder.py`): a debug `print()` loop that crashed on
-  non-cp1252 Unicode in OCR'd text, and no retry/validation across ~2,850
-  sequential embedding calls (one transient HF 500 used to abort the whole
-  document).
+  no mocks. Verified example runs (both the grounding safeguard on a
+  non-clinical corpus, and a real diagnosis-with-citations result once
+  clinical content was ingested) are in
+  [`docs/POSTMAN_GUIDE.md`](docs/POSTMAN_GUIDE.md) and
+  [`app/responses.md`](app/responses.md).
+- `/analyze`'s response shape and the Spring Boot backend's `AiGateway`
+  contract are reconciled: `AssessmentResponse` returns a flat, legacy-
+  compatible envelope (`status`/`summary`/`riskLevel`/`confidenceScore`/
+  `redFlags`/`recommendations`/`modelVersion`/`source`) that `RestAiGateway`
+  deserializes directly, plus the full per-stage detail as additive fields.
+  See `exobios-backend`'s `AiResponseContractTest` (network-free) and
+  `RestAiGatewayLiveIT` (real service, self-skips if one isn't running) for
+  the backend-side verification of this contract.
+- A production-hardening pass added: `core/retry.py` exponential backoff
+  around every external call (Qdrant, embedding, reranker, LLM), rate
+  limiting (`core/rate_limit.py`), structured JSON request logging with
+  request-id correlation, and a `/health/ready` dependency check separate
+  from bare liveness. Every external dependency is mocked in
+  `tests/conftest.py`, so the suite (`app/`: 80 tests, `ingestion/`: 24
+  tests) needs no live services and runs in well under a minute.
+- CI (`.github/workflows/exobios-ai.yml`) runs `ruff check`, both test
+  suites, and a Docker build on every push/PR touching `exobios-ai/`.
+- Retrieval quality still depends entirely on what's been ingested into the
+  Qdrant `corpus` collection at request time — with a small or non-clinical
+  corpus, `/analyze` correctly returns `insufficient_evidence: true` rather
+  than fabricating a diagnosis. That's the grounding safeguard working as
+  intended, not a bug; see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+  for how it's enforced.
+- The reranker (`cross-encoder/ms-marco-MiniLM-L-6-v2` via HF hosted
+  inference) now has retry-with-backoff plus an automatic fallback to
+  unranked hybrid-search order on any failure — including the case where
+  HF's `hf-inference` provider doesn't serve that model — logged with a
+  `degraded_component` field for alerting rather than failing the request.
+  `RERANKER__ENABLED=false` disables it outright if needed.
 
 ---
 
