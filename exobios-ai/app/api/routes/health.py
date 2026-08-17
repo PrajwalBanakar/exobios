@@ -40,7 +40,7 @@ def readiness():
     try:
         assesment.ping()
         checks["mongo"] = "ok"
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — readiness probe must never 5xx on a dependency error
         healthy = False
         checks["mongo"] = f"unreachable: {e}"
         logger.warning(f"readiness check failed for mongo: {e}")
@@ -48,7 +48,7 @@ def readiness():
     try:
         qdrant_service.client.get_collections()
         checks["qdrant"] = "ok"
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — readiness probe must never 5xx on a dependency error
         healthy = False
         checks["qdrant"] = f"unreachable: {e}"
         logger.warning(f"readiness check failed for qdrant: {e}")

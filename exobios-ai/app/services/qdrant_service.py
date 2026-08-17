@@ -56,7 +56,7 @@ class QdrantService:
             points = self.client.retrieve(
                 collection_name=self.collection_name, ids=[_CORPUS_METADATA_POINT_ID], with_payload=True,
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 — best-effort check; hybrid_search's own retry/error handling covers real failures
             logger.warning(f"could not verify embedding compatibility (will retry next call): {e}")
             return
 

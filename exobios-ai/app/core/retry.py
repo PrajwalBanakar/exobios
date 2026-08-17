@@ -1,13 +1,11 @@
 import logging
 import time
 from collections.abc import Callable
-from typing import TypeVar
 
-T = TypeVar("T")
 logger = logging.getLogger("app.retry")
 
 
-def retry_with_backoff(
+def retry_with_backoff[T](
     fn: Callable[[], T],
     *,
     max_attempts: int = 2,
