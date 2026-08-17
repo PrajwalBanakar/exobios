@@ -7,7 +7,11 @@ substitute for client-supplied/clinically-reviewed thresholds.
 
 from core.reporting import reporter
 from schemas.request import AiRequest
-from schemas.stages.deterministic_rule import DeterministicFlag, DeterministicRuleResult, Severity
+from schemas.stages.deterministic_rule import (
+    DeterministicFlag,
+    DeterministicRuleResult,
+    Severity,
+)
 from schemas.step import StepResult, StepStatus
 
 

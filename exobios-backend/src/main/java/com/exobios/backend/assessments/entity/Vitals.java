@@ -38,6 +38,9 @@ public class Vitals {
     @Column(name = "spo2", precision = 5, scale = 2)
     private BigDecimal spo2;
 
+    // Fahrenheit — see VitalsRequest.temperature's doc comment for why (this
+    // column previously had no unit documented at all and was validated as
+    // Celsius one layer up, contradicting the frontend and the AI service).
     @Column(name = "temperature", precision = 5, scale = 2)
     private BigDecimal temperature;
 

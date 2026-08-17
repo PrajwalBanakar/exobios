@@ -23,8 +23,18 @@ public class VitalsRequest {
     @DecimalMax(value = "100.0", message = "SpO2 must not exceed 100")
     private BigDecimal spo2;
 
-    @DecimalMin(value = "30.0",  message = "Temperature must be at least 30°C")
-    @DecimalMax(value = "45.0",  message = "Temperature must not exceed 45°C")
+    // Fahrenheit, not Celsius — this bound was previously 30.0-45.0 with "°C"
+    // messages, which contradicted every other part of the product: the
+    // frontend collects and labels temperature as "(°F)" everywhere (see
+    // NewAssessmentView.vue, DeviceView.vue), and exobios-ai's rule engine
+    // (rule_engine.py) uses unambiguously Fahrenheit thresholds (104/102 —
+    // Celsius equivalents would be ~40/~38.9, not what's coded). 86.0-113.0
+    // is the mathematical Fahrenheit conversion of the original 30.0-45.0°C
+    // bound (a physiological-plausibility ceiling/floor, not a clinical
+    // threshold), not a newly invented range — see the 2026-08 audit's
+    // Priority 2 for the full cross-service trace.
+    @DecimalMin(value = "86.0",  message = "Temperature must be at least 86°F")
+    @DecimalMax(value = "113.0", message = "Temperature must not exceed 113°F")
     private BigDecimal temperature;
 
     @Min(value = 50,  message = "Systolic BP must be at least 50 mmHg")

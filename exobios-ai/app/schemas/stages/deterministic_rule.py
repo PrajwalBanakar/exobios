@@ -1,25 +1,6 @@
-# from pydantic import BaseModel
-# from enum import StrEnum
-
-# class Severity(StrEnum):
-#     LOW = "LOW"
-#     MEDIUM = "MEDIUM"
-#     HIGH = "HIGH"
-#     CRITICAL = "CRITICAL"
-
-# class DeterministicFlag(BaseModel):
-#     code: str              # "OXYGEN_SATURATION_ABNORMAL"
-#     severity: Severity
-#     value: float | int | None = None
-#     threshold: str | None = None   # human-readable, e.g. "< 90%"
-
-# class DeterministicRuleResult(BaseModel):
-#     flags: list[DeterministicFlag]
-#     risk_floor: Severity           # the non-negotiable floor every later stage must respect
-
 from enum import StrEnum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Severity(StrEnum):
@@ -38,4 +19,6 @@ class DeterministicFlag(BaseModel):
 
 class DeterministicRuleResult(BaseModel):
     flags: list[DeterministicFlag] = []
-    risk_floor: Severity = Severity.LOW
+    # Values are identical to Java's RiskLevel enum literals (LOW/MEDIUM/HIGH/
+    # CRITICAL) — no translation needed at the contract boundary.
+    risk_floor: Severity = Field(default=Severity.LOW, serialization_alias="riskFloor")

@@ -9,11 +9,27 @@ a server — separate project from the FastAPI request-serving service.
 
 1. Load a raw document (PDF/DOCX/etc.) and parse it into a structured form
 2. Classify it — assign `complaint_category` and `applicable_roles`
-3. Register it — save its metadata to a local registry file
+3. Register it — upsert its metadata into Supabase
 4. Clean/process the parsed structure (currently a pass-through stage)
 5. Chunk it into retrieval-sized pieces, each carrying heading/page info
 6. Embed each chunk into a vector
 7. Store each chunk (vector + metadata) as a point in Qdrant
+
+### Idempotency
+
+`document_id` is derived deterministically from a SHA-256 hash of the source
+file's bytes (`loaders/loader.py::_compute_document_id`), and each chunk's
+Qdrant point id is derived from `(document_id, position in document)`
+(`chunkers/chunker.py`). Re-running the pipeline on the same file —
+deliberately, or as a retry after a crash/partial failure — always produces
+the same ids, so the Supabase upsert and Qdrant upsert overwrite in place
+rather than creating duplicates. If a run fails after the Supabase metadata
+row is written but before Qdrant is fully populated (`run()` in
+`loaders/loader.py` checks and logs this case explicitly), the fix is simply
+to re-run the pipeline over the same file — it will fill in the missing
+vectors without duplicating what already succeeded. Editing a file's content
+and re-ingesting it produces a *new* document_id (different hash), i.e. is
+treated as a new document version, not an in-place update of the old one.
 
 ## Prerequisites
 
@@ -65,7 +81,10 @@ Create a `.env` file in the project root:
 file — it holds your real API key.
 
 ### 5. Start Qdrant locally
-There exists a `Dockerfile` in ingestion/ root, so do the following:
+
+`docker-compose.yaml` in this directory defines a local Qdrant service (no
+Dockerfile for the ingestion script itself — it runs directly via `uv run`,
+not in a container).
 
 ##### 1. Start docker (either via CLI or docker desktop)
 ##### 2. Execute:
@@ -102,12 +121,10 @@ exobios-ingest/
 │   ├── config/
 │   │   └── settings.py             # all tunable values, loaded from .env
 │   ├── loaders/
-│   │   └── loader.py               # raw file -> executes all following services:
-│   │   └── load_documents.py       
-│   │   └── convert.py              
-│   │   ├── classify_documents.py   
-
-
+│   │   ├── loader.py               # raw file -> executes all following services
+│   │   ├── load_documents.py
+│   │   ├── convert.py
+│   │   └── classify_documents.py
 │   ├── services/
 │   │   └── upload.py               # writes document metadata + S3 identifiers to supabase + uploads parsed document and raw document to S3
 │   ├── process/
@@ -130,3 +147,18 @@ exobios-ingest/
 #### To check out stored embeddings, : 
 -> hit : http://localhost:6333/dashboard
 -> Set up your AWS and Supabase account, fill in .env, then everything shall work end to end
+
+## Tests
+
+```bash
+uv sync --dev
+uv run pytest tests/ -v
+```
+
+These are pure-logic unit tests for the deterministic id derivation
+(`_compute_document_id`, chunk id generation) that idempotency depends on —
+they don't touch live Qdrant/Supabase/HF and skip themselves automatically
+if docling isn't importable. There is no coverage yet for the full
+load→classify→chunk→embed→store pipeline end to end; that would need a
+recorded-fixture or live-integration test harness, which doesn't exist in
+this project.

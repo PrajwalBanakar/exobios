@@ -4,7 +4,7 @@ import logging
 
 from exceptions import DocumentDiscoveryError
 from core.reporting import reporter
-from schemas.step import StepResult, StepStatus
+from schemas.step_result import StepResult, StepStatus
 
 logger = logging.getLogger(__name__)
 

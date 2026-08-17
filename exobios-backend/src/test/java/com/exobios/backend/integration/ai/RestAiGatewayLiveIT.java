@@ -12,13 +12,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
- * Live contract check between {@link RestAiGateway} and a real running exobios-ai
- * instance (AI-1 stub). Not part of the default unit test run: it talks to a real
- * HTTP service, so it self-skips via JUnit assumptions when that service isn't
- * reachable at AI_LIVE_TEST_URL (default http://localhost:8000).
+ * Live contract check between {@link RestAiGateway} and a real running
+ * exobios-ai instance (LangGraph pipeline, not the AI-1 stub). Not part of
+ * the default unit test run: it talks to a real HTTP service (and, through
+ * it, real Qdrant/MongoDB/HF/Groq), so it self-skips via JUnit assumptions
+ * when that service isn't reachable at AI_LIVE_TEST_URL (default
+ * http://localhost:8000).
  *
- * Run explicitly once exobios-ai is up, e.g.:
+ * Run explicitly once exobios-ai (and its Qdrant/Mongo dependencies) are up:
  *   mvn -Dtest=RestAiGatewayLiveIT -DfailIfNoTests=false test
+ *
+ * Unlike the pre-2026-08 version of this file, this does NOT assert a fixed
+ * stub response — the real pipeline's output depends on what's ingested
+ * into Qdrant. It asserts the *contract* (shape, valid enum values, no
+ * silent-empty-success) rather than specific clinical content. See
+ * AiResponseContractTest for the network-free version of this check.
  */
 class RestAiGatewayLiveIT {
 
@@ -43,7 +51,7 @@ class RestAiGatewayLiveIT {
     }
 
     @Test
-    void analyzeAssessment_deserializesStubResponseWithinContract() {
+    void analyzeAssessment_returnsContractCompliantResponse() {
         assumeAiServiceReachable();
 
         AiRequest request = AiRequest.builder()
@@ -60,7 +68,9 @@ class RestAiGatewayLiveIT {
                 .vitals(AiRequest.VitalsSummary.builder()
                         .heartRate(88)
                         .spo2(BigDecimal.valueOf(97.5))
-                        .temperature(BigDecimal.valueOf(38.2))
+                        // Fahrenheit — see docs/api/ai-service-contract.md's Temperature Unit
+                        // section. 100.8F is a real, plausible mild-fever value.
+                        .temperature(BigDecimal.valueOf(100.8))
                         .bloodPressureSystolic(120)
                         .bloodPressureDiastolic(80)
                         .respiratoryRate(18)
@@ -73,14 +83,24 @@ class RestAiGatewayLiveIT {
         AiResponse response = newGateway().analyzeAssessment(request);
 
         assertThat(response).isNotNull();
-        assertThat(response.getStatus()).isEqualTo(AiResultStatus.PENDING);
-        assertThat(response.getRiskLevel()).isNull();
-        assertThat(response.getConfidenceScore()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(response.getRedFlags()).isEmpty();
-        assertThat(response.getRecommendations()).isEmpty();
-        assertThat(response.getModelVersion()).isEqualTo("stub-v0.1.0");
-        assertThat(response.getSource()).isEqualTo("exobios-ai-stub");
-        assertThat(response.getSummary()).containsIgnoringCase("not implemented");
+        // Never PENDING/PROCESSING from a synchronous call — either it produced
+        // a real result (COMPLETED, possibly with insufficient_evidence baked
+        // into the summary/null confidence) or it genuinely failed (FAILED).
+        assertThat(response.getStatus()).isIn(AiResultStatus.COMPLETED, AiResultStatus.FAILED);
+        assertThat(response.getSummary()).isNotBlank();
+        assertThat(response.getSource()).isNotBlank();
+        assertThat(response.getModelVersion()).isNotBlank();
+
+        if (response.getStatus() == AiResultStatus.COMPLETED) {
+            // A real completed result must not be indistinguishable from the
+            // placeholder/failure path — this is the exact silent-empty-success
+            // bug the contract fix closes.
+            assertThat(response.getSource()).isNotEqualTo("exobios-ai-unavailable");
+            assertThat(response.getModelVersion()).isNotEqualTo("unavailable");
+        } else {
+            assertThat(response.getRiskLevel()).isNull();
+            assertThat(response.getConfidenceScore()).isNull();
+        }
     }
 
     private void assumeAiServiceReachable() {
