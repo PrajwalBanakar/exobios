@@ -46,3 +46,6 @@ ingestion/ingestion.log
 # ── uv ───────────────────────────────────────────────────────────────────────
 app/.venv/
 ingestion/.venv/
+# Local-only fallback venv (system Python, not uv-managed) — never assume this
+# exists; app/.venv/ is the real one.
+app/.venv_sys/

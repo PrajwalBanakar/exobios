@@ -28,7 +28,7 @@ def _is_retryable(e: Exception) -> bool:
 
 class QdrantService:
     def __init__(self):
-        self.client = QdrantClient(url=settings.qdrant.url)
+        self.client = QdrantClient(url=settings.qdrant.url, api_key=settings.qdrant.api_key)
         self.collection_name = settings.qdrant.collection_name
         self._sparse_model = SparseTextEmbedding(model_name=_SPARSE_MODEL_NAME)
         self._compatibility_checked = False

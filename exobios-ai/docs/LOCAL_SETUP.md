@@ -147,7 +147,8 @@ See `docs/POSTMAN_GUIDE.md` for exact requests, headers, and sample bodies.
 | Symptom | Cause | Fix |
 |---|---|---|
 | `only one usage of each socket address... 8000` | Another process already bound to port 8000 | `netstat -ano \| findstr :8000` then `Stop-Process -Id <pid> -Force`, or use `--port 8001` |
-| `Qdrant client version ... incompatible with server version` | Local Qdrant image older than the pinned `qdrant-client` version | Already fixed in `docker-compose.yml` (pinned to `v1.12.4`); run `docker compose up -d qdrant` to recreate |
+| `Qdrant client version ... incompatible with server version` | Local Qdrant image older than the pinned `qdrant-client` version | Already fixed in `docker-compose.yml` (pinned to `v1.19.0`, matching production Qdrant Cloud); run `docker compose up -d qdrant` to recreate |
+| Local Qdrant panics on startup with `unknown variant \`on_disk\`, expected \`mmap\` or \`in_ram_mmap\`` when loading an old volume | The on-disk segment format changed between Qdrant versions; jumping straight from a `v1.12.x` volume to `v1.19.0` isn't a supported direct upgrade | Step through intermediate versions against the same volume first (e.g. `v1.13.6` → `v1.16.1` → `v1.19.0`, restarting the container at each step) to let Qdrant migrate the format incrementally, then take a fresh snapshot |
 | `pydantic_core._pydantic_core.ValidationError` on startup mentioning `embedding.hf_token` / `llm.groq_api_key` / `mongo.uri` | Missing/blank required setting in `app/.env` | Fill in the field — these have no defaults by design |
 | `/analyze` returns `502 retrieval_failed: ... 401 Unauthorized ... huggingface.co` | `EMBEDDING__HF_TOKEN` / `RERANKER__HF_TOKEN` missing or invalid | Add a real Hugging Face token |
 | `/analyze` returns `502 llm_generation_failed` | `LLM__GROQ_API_KEY` missing/invalid, or Groq rate-limited | Add a real Groq key; check https://console.groq.com usage |

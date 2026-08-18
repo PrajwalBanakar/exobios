@@ -1,0 +1,11 @@
+# exobios is a monorepo — the Vercel project's Root Directory is set to
+# exobios-frontend, but a `vercel deploy` from the repo root still walks the
+# whole tree to build the upload archive before applying that setting, and
+# doesn't reliably respect nested .gitignore files in the other sub-projects
+# (exobios-ai/.gitignore, exobios-backend/.gitignore). Without this, that
+# walk picks up hundreds of MB of unrelated content — Python venvs, ingested
+# textbook PDFs, Maven build output — and can exceed Vercel's 100MB
+# single-file upload limit. Exclude the other sub-projects entirely; the
+# frontend build never needs them.
+exobios-ai/
+exobios-backend/

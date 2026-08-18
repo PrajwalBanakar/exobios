@@ -33,7 +33,7 @@ function stayLoggedIn() {
 
 function logoutNow() {
   auth.logout()
-  router.push('/')
+  router.push('/login')
 }
 </script>
 

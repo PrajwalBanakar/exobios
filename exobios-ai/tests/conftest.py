@@ -35,6 +35,7 @@ from schemas.stages.diagnosis import DiagnosisCandidate, DiagnosisResult
 from schemas.stages.investigation import InvestigationResult, RecommendedTest, UrgencyLevel
 from schemas.stages.plan_of_action import ImmediateMeasure, PlanOfActionResult
 from schemas.stages.treatment_protocol import TreatmentProtocolResult, TreatmentStep
+from schemas.chat import ChatAnswer
 
 # ── Fixed identifiers shared between the mocked Qdrant results and the mocked
 # LLM output, so a citation the fake LLM returns always matches a chunk that
@@ -94,6 +95,8 @@ def fake_generate_structured(system_prompt, user_prompt, response_schema):
             risk_level=Severity.LOW,
             referral_advice=None,
         )
+    if response_schema is ChatAnswer:
+        return ChatAnswer(answer="Mocked chat answer for tests.", grounded=True)
     raise AssertionError(f"fake_generate_structured got an unexpected schema: {response_schema}")
 
 

@@ -8,13 +8,17 @@ WORKDIR /app
 
 # Install dependencies first, separately from app code, so the (slow) dependency
 # layer is only rebuilt when pyproject.toml/uv.lock change, not on every code edit.
+# No --mount=type=cache here: a persistent BuildKit cache mount needs
+# builder-specific handling (plain Docker accepts a bare `id=`, Railway's
+# Metal builder additionally requires a "cacheKey prefix" on it, undocumented
+# as of this writing) — skipping it trades a bit of build speed for a
+# Dockerfile that builds identically everywhere without depending on any one
+# builder's cache-mount conventions.
 COPY pyproject.toml uv.lock ./
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project --no-dev
+RUN uv sync --frozen --no-install-project --no-dev
 
 COPY . .
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
+RUN uv sync --frozen --no-dev
 
 # Run as a non-root user, not the container default root.
 RUN useradd --create-home --uid 1000 appuser \

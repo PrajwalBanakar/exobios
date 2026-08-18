@@ -5,6 +5,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class QdrantSettings(BaseModel):
     url: str = "http://localhost:6333"
     collection_name: str = "corpus"
+    # None for local/self-hosted Qdrant (ignored by the client). Required for
+    # Qdrant Cloud, which authenticates every request via this header.
+    api_key: str | None = None
 
 
 class EmbeddingSettings(BaseModel):
@@ -74,6 +77,11 @@ class Settings(BaseSettings):
     )
 
     ai_api_key: str
+    # Comma-separated origins allowed to call /chat from a browser (see
+    # main.py's CORSMiddleware). Defaults to local Vite dev only — set to the
+    # real frontend origin(s) in production, e.g.
+    # "https://exobios.in,https://www.exobios.in".
+    cors_allowed_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
     qdrant: QdrantSettings = QdrantSettings()
     embedding: EmbeddingSettings

@@ -9,6 +9,11 @@ import { useAuthStore } from '@/features/auth/stores/auth'
 const routes = [
   {
     path: '/',
+    name: 'Landing',
+    component: () => import('@/pages/LandingView.vue'),
+  },
+  {
+    path: '/login',
     name: 'Login',
     component: () => import('@/features/auth/views/LoginView.vue'),
   },
@@ -205,7 +210,7 @@ router.beforeEach((to) => {
   const isLoggedIn = auth.isLoggedIn
 
   if (to.meta.requiresAuth && !isLoggedIn) return { name: 'Login' }
-  if (to.name === 'Login' && isLoggedIn) {
+  if ((to.name === 'Login' || to.name === 'Landing') && isLoggedIn) {
     return { name: auth.isDoctor ? 'DoctorDashboard' : 'Dashboard' }
   }
 

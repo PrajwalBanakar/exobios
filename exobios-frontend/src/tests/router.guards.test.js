@@ -18,17 +18,29 @@ describe('Router — role-based navigation guards', () => {
     expect(router.currentRoute.value.name).toBe('Login')
   })
 
-  it('allows an unauthenticated user to reach the Login route itself', async () => {
+  it('allows an unauthenticated user to reach the public Landing route', async () => {
     await router.push('/')
+    expect(router.currentRoute.value.name).toBe('Landing')
+  })
+
+  it('allows an unauthenticated user to reach the Login route itself', async () => {
+    await router.push('/login')
     expect(router.currentRoute.value.name).toBe('Login')
   })
 
-  it('redirects an already-logged-in user away from Login to the Dashboard', async () => {
+  it('redirects an already-logged-in user away from Landing to the Dashboard', async () => {
     useAuthStore().login({ loginId: '9000000001', name: 'Sunita', role: 'ASHA Worker' })
     // Navigate elsewhere first — pushing to the route we're already on is a no-op
     // in Vue Router (guards don't re-run for a fully-duplicate navigation).
     await router.push('/unauthorized')
     await router.push('/')
+    expect(router.currentRoute.value.name).toBe('Dashboard')
+  })
+
+  it('redirects an already-logged-in user away from Login to the Dashboard', async () => {
+    useAuthStore().login({ loginId: '9000000009', name: 'Sunita', role: 'ASHA Worker' })
+    await router.push('/unauthorized')
+    await router.push('/login')
     expect(router.currentRoute.value.name).toBe('Dashboard')
   })
 
