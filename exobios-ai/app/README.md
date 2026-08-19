@@ -5,18 +5,16 @@ Called by the Spring Boot backend via `POST /analyze`. Separate from the
 `ingestion/` project, which populates the Qdrant corpus this service reads
 from.
 
-> **Cross-service contract note:** `docs/api/ai-service-contract.md` (repo
-> root) documents an older, flatter `AiResponse` shape
-> (status/summary/riskLevel/confidenceScore/redFlags/recommendations/
-> modelVersion/source) that `exobios-backend`'s `RestAiGateway` actually
-> deserializes `/analyze` responses into. This service currently returns a
-> different, richer `AssessmentResponse` shape (see below) — that contract
-> doc was written for the AI-1 placeholder phase and was never updated when
-> the LangGraph pipeline replaced it. Until one side is reconciled with the
-> other, real end-to-end calls from the Spring Boot backend will not
-> deserialize correctly. This needs a product decision (compress the rich
-> output to the legacy shape, or update the backend DTO), not a unilateral
-> code change — see the production-readiness audit for detail.
+> **Cross-service contract note (resolved 2026-08-14):** `AssessmentResponse`
+> (see below) returns both shapes in one payload: a flat, camelCase legacy
+> envelope (status/summary/riskLevel/confidenceScore/redFlags/
+> recommendations/modelVersion/source) that `exobios-backend`'s
+> `RestAiGateway` deserializes directly, plus the full rich per-stage detail
+> alongside it as additive fields Jackson ignores unless explicitly parsed.
+> Verified by `AiResponseContractTest` (network-free, backend side) and
+> `RestAiGatewayLiveIT` (real service, self-skips if none is running). See
+> `docs/api/ai-service-contract.md` for the full before/after — that doc
+> predates this fix and describes the old, now-resolved mismatch.
 
 ## Stack
 
