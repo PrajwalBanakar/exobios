@@ -4,7 +4,7 @@ defineProps({
   disabled: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['new-chat'])
+const emit = defineEmits(['new-chat', 'toggle-sidebar'])
 </script>
 
 <template>
@@ -13,6 +13,17 @@ const emit = defineEmits(['new-chat'])
     style="background: linear-gradient(135deg, #0a1628 0%, #0d1a30 100%)"
   >
     <div class="flex min-w-0 items-center gap-3">
+      <button
+        type="button"
+        @click="emit('toggle-sidebar')"
+        title="Chat history"
+        aria-label="Toggle chat history"
+        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-200 transition motion-safe:duration-150 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50 sm:hidden"
+      >
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
+        </svg>
+      </button>
       <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/20 ring-1 ring-blue-400/30">
         <svg class="h-4 w-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
           <path

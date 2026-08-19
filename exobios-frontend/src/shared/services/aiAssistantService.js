@@ -18,6 +18,8 @@ function serviceError(message, code, status) {
 
 /**
  * @param {string} question
+ * @param {Array<{role: 'user'|'assistant', content: string}>} [history] Prior turns of the
+ *   same conversation, oldest first, so the backend can resolve follow-up references.
  * @param {{ timeoutMs?: number, signal?: AbortSignal }} [options]
  * @returns {Promise<{ answer: string, citations: Array<{chunkId: string, documentId: string, excerpt: string, heading: string, page: number}>, grounded: boolean }>}
  *
@@ -25,7 +27,7 @@ function serviceError(message, code, status) {
  * and, for 'http', a `status`, so the UI can render a specific error state
  * instead of a raw message.
  */
-export async function askExobiosAssistant(question, { timeoutMs = DEFAULT_TIMEOUT_MS, signal } = {}) {
+export async function askExobiosAssistant(question, history = [], { timeoutMs = DEFAULT_TIMEOUT_MS, signal } = {}) {
   const controller = new AbortController()
   const onExternalAbort = () => controller.abort()
   signal?.addEventListener('abort', onExternalAbort)
@@ -39,7 +41,7 @@ export async function askExobiosAssistant(question, { timeoutMs = DEFAULT_TIMEOU
         'Content-Type': 'application/json',
         'X-Api-Key': AI_API_KEY,
       },
-      body: JSON.stringify({ question }),
+      body: JSON.stringify({ question, history }),
       signal: controller.signal,
     })
   } catch (e) {
