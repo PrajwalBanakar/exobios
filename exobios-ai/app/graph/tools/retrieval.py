@@ -19,7 +19,7 @@ def retrieve_and_rerank(query_text: str, filters: dict, top_k: int = 8) -> list[
         citations.append(SupportingCitation(
             chunk_id=c["chunk_id"],
             document_id=doc_meta.get("document_id", ""),
-            excerpt=chunk_meta.get("content", "")[:500],
+            excerpt=chunk_meta.get("content", ""),
             heading=chunk_meta.get("heading", ""),
             page=chunk_meta.get("page_start", 0),
         ))

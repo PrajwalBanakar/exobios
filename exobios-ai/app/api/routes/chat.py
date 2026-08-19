@@ -37,7 +37,7 @@ _NO_EVIDENCE_ANSWER = (
 def chat(request: ChatRequest) -> ChatResponse:
     logger.info("chat question received")
 
-    citations = retrieve_and_rerank(request.question, filters={}, top_k=5)
+    citations = retrieve_and_rerank(request.question, filters={}, top_k=10)
 
     if not citations:
         # Same rule as diagnosis_node: nothing retrieved means the LLM never
